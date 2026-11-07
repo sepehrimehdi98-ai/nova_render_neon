@@ -1,0 +1,14 @@
+export const PORTAL_ROLE = (import.meta.env.VITE_PORTAL_ROLE || '') as ''|'student'|'teacher'|'admin';
+export type Role = 'student'|'teacher'|'admin';
+export interface User {id:string;username:string;name:string;role:Role;active:boolean}
+export type Row = Record<string, any>;
+export class ApiError extends Error {constructor(public status:number,message:string){super(message)}}
+export async function api<T=Row>(path:string,data?:unknown,signal?:AbortSignal):Promise<T>{
+ const response=await fetch('/api/platform'+(PORTAL_ROLE?'/portal/'+PORTAL_ROLE:'')+path,{method:data===undefined?'GET':'POST',credentials:'same-origin',headers:data===undefined?undefined:{'Content-Type':'application/json'},body:data===undefined?undefined:JSON.stringify(data),signal});
+ const result=await response.json();if(!response.ok){if(response.status===401&&!['/login','/me'].includes(path))window.dispatchEvent(new Event('nova:session-expired'));throw new ApiError(response.status,result.error||'ارتباط با سرور برقرار نشد.');}if(data!==undefined&&(path==='/courses'||/^\/courses\/[^/]+\/(status|members)$/.test(path)))window.dispatchEvent(new Event('nova:courses-changed'));return result;
+}
+export const uid=()=>crypto.randomUUID();
+export const fa=(v:unknown)=>typeof v==='number'?v.toLocaleString('fa-IR'):String(v??'—');
+export const date=(v:string)=>v?new Date(v).toLocaleString('fa-IR',{dateStyle:'medium',timeStyle:'short'}):'—';
+export const labels:Record<string,string>={student:'دانش‌آموز',teacher:'مدرس',admin:'مدیر',published:'منتشرشده',draft:'پیش‌نویس',archived:'بایگانی',active:'فعال',withdrawn:'لغو عضویت',approved:'تأییدشده',pending:'در انتظار بررسی',rejected:'ردشده',queued:'در صف',running:'در حال پردازش',completed:'انجام‌شده',blocked:'نیازمند تنظیم سرویس',manual:'ارزیابی مدرس',reviewed:'بررسی‌شده',revision_required:'نیازمند اصلاح',open:'باز',issued:'کد صادر شد',resolved:'حل‌شده'};
+export function downloadCsv(filename:string,rows:Row[]){if(!rows.length)return;const cols=Object.keys(rows[0]);const cell=(x:unknown)=>'"'+String(x??'').replace(/^[=+@-]/,"'$&").replace(/"/g,'""')+'"';const blob=new Blob(['\ufeff'+[cols.map(cell).join(','),...rows.map(r=>cols.map(k=>cell(r[k])).join(','))].join('\r\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}

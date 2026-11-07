@@ -1,0 +1,3 @@
+let total=0;let lines=[];
+function output(s){const text=String(s);total+=text.length;if(total>24000)throw Error('Output limit exceeded');lines.push(text)}
+onmessage=async e=>{try{importScripts('/python/pyodide.js');const py=await loadPyodide({indexURL:'/python/'});const inputs=String(e.data.stdin||'').split('\n');let i=0;py.setStdin({stdin:()=>inputs[i++]??null});py.setStdout({batched:output});py.setStderr({batched:output});await py.runPythonAsync(e.data.code);postMessage({output:lines.join('\n')})}catch(error){postMessage({output:lines.join('\n')+'\n'+String(error)})}};

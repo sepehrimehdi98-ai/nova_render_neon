@@ -1,0 +1,1 @@
+export default function Link({href,...props}:any){return <a href={href} {...props}/>};export const usePathname=()=>location.pathname;export const useRouter=()=>({push:(p:string)=>location.assign(p),replace:(p:string)=>location.replace(p)});
