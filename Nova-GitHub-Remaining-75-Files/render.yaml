@@ -1,0 +1,67 @@
+services:
+  - type: web
+    name: nova-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.render
+    healthCheckPath: /api/platform/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: AI_PROVIDER
+        value: openrouter
+      - key: OPENROUTER_CHAT_MODEL
+        value: nvidia/nemotron-3-ultra-550b-a55b:free
+      - key: OPENROUTER_FREE_ONLY
+        value: "true"
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL
+        value: verify-full
+      - key: DATABASE_POOL_MAX
+        value: "3"
+      - key: APP_ORIGINS
+        sync: false
+      - key: BACKUP_ENCRYPTION_KEY
+        generateValue: true
+  - type: web
+    name: nova-student
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.portal
+    healthCheckPath: /api/platform/health
+    envVars:
+      - key: PORTAL_ROLE
+        value: student
+      - key: API_UPSTREAM
+        sync: false
+      - key: NODE_ENV
+        value: production
+  - type: web
+    name: nova-teacher
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.portal
+    healthCheckPath: /api/platform/health
+    envVars:
+      - key: PORTAL_ROLE
+        value: teacher
+      - key: API_UPSTREAM
+        sync: false
+      - key: NODE_ENV
+        value: production
+  - type: web
+    name: nova-admin
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.portal
+    healthCheckPath: /api/platform/health
+    envVars:
+      - key: PORTAL_ROLE
+        value: admin
+      - key: API_UPSTREAM
+        sync: false
+      - key: NODE_ENV
+        value: production

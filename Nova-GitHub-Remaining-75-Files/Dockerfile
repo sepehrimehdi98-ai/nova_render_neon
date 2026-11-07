@@ -1,0 +1,20 @@
+FROM node:24-bookworm-slim AS build
+WORKDIR /app
+COPY frontend/package*.json frontend/
+RUN cd frontend && npm ci
+COPY frontend frontend
+COPY scripts/python-assets.cjs scripts/python-assets.cjs
+RUN cd frontend && npm run typecheck && npm run build
+RUN node scripts/python-assets.cjs
+FROM node:24-bookworm-slim
+ENV NODE_ENV=production PORT=3003 HOST=0.0.0.0
+WORKDIR /app
+COPY backend/package*.json backend/
+RUN cd backend && npm ci --omit=dev && npm cache clean --force
+COPY backend backend
+COPY --from=build /app/backend/dist backend/dist
+RUN mkdir -p /app/backups && chown -R node:node /app
+USER node
+EXPOSE 3003
+HEALTHCHECK --interval=30s --timeout=5s CMD node -e "fetch('http://127.0.0.1:3003/api/platform/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+CMD ["node", "backend/product-server.js"]

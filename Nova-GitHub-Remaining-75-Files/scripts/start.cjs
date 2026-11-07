@@ -1,0 +1,4 @@
+const path=require('node:path');process.chdir(path.join(__dirname,'..'));require('../backend/lib/load-env');
+const production=process.env.NODE_ENV==='production';process.env.PORT||='3003';process.env.APP_ORIGIN||=`http://127.0.0.1:${process.env.PORT}`;
+if(!production)process.env.APP_ORIGINS||='http://127.0.0.1:3101,http://127.0.0.1:3102,http://127.0.0.1:3103';
+(async()=>{if(!production&&!process.env.DATABASE_URL)await require('../backend/scripts/demo-seed').seed();const app=await require('../backend/product-server').start();console.log(`Nova ready: ${process.env.APP_ORIGIN}`);console.log(production?'Production mode':'Local storage: backend/data/nova-platform.sqlite');for(const sig of ['SIGINT','SIGTERM'])process.on(sig,()=>app.close().then(()=>process.exit(0)));})().catch(e=>{console.error(e);process.exitCode=1});

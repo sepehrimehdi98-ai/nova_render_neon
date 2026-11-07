@@ -1,0 +1,120 @@
+'use strict';
+// The same repository contract is exercised locally with SQLite and used with PostgreSQL in production.
+const fs = require('node:fs');
+const path = require('node:path');
+const schema = `
+CREATE TABLE IF NOT EXISTS nova_users(id TEXT PRIMARY KEY,username TEXT NOT NULL UNIQUE,name TEXT NOT NULL,role TEXT NOT NULL CHECK(role IN ('admin','teacher','student')),password_hash TEXT NOT NULL,active INTEGER NOT NULL DEFAULT 1 CHECK(active IN(0,1)),created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_sessions(token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES nova_users(id),expires_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS nova_sessions_user ON nova_sessions(user_id);
+CREATE TABLE IF NOT EXISTS nova_throttles(key_hash TEXT PRIMARY KEY,failures INTEGER NOT NULL,window_at BIGINT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_courses(id TEXT PRIMARY KEY,title TEXT NOT NULL,description TEXT NOT NULL DEFAULT '',status TEXT NOT NULL CHECK(status IN('draft','published','archived')),created_by TEXT NOT NULL REFERENCES nova_users(id),created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_teachers(course_id TEXT NOT NULL REFERENCES nova_courses(id),user_id TEXT NOT NULL REFERENCES nova_users(id),PRIMARY KEY(course_id,user_id));
+CREATE TABLE IF NOT EXISTS nova_enrollments(course_id TEXT NOT NULL REFERENCES nova_courses(id),user_id TEXT NOT NULL REFERENCES nova_users(id),status TEXT NOT NULL CHECK(status IN('active','withdrawn')),PRIMARY KEY(course_id,user_id));
+CREATE TABLE IF NOT EXISTS nova_lessons(id TEXT PRIMARY KEY,course_id TEXT NOT NULL REFERENCES nova_courses(id),position INTEGER NOT NULL CHECK(position>=0),draft_json TEXT NOT NULL,draft_rev INTEGER NOT NULL DEFAULT 1,published_version INTEGER NOT NULL DEFAULT 0,status TEXT NOT NULL CHECK(status IN('draft','published','archived')),created_by TEXT NOT NULL REFERENCES nova_users(id),UNIQUE(course_id,position));
+CREATE TABLE IF NOT EXISTS nova_versions(lesson_id TEXT NOT NULL REFERENCES nova_lessons(id),version INTEGER NOT NULL,content_json TEXT NOT NULL,published_by TEXT NOT NULL REFERENCES nova_users(id),published_at TEXT NOT NULL,PRIMARY KEY(lesson_id,version));
+CREATE TABLE IF NOT EXISTS nova_practice(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES nova_users(id),lesson_id TEXT NOT NULL,version INTEGER NOT NULL,code TEXT NOT NULL,created_at TEXT NOT NULL,FOREIGN KEY(lesson_id,version) REFERENCES nova_versions(lesson_id,version));
+CREATE INDEX IF NOT EXISTS nova_practice_scope ON nova_practice(user_id,lesson_id,version);
+CREATE TABLE IF NOT EXISTS nova_attempts(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES nova_users(id),lesson_id TEXT NOT NULL,version INTEGER NOT NULL,answers_json TEXT NOT NULL,score INTEGER NOT NULL CHECK(score>=0 AND score<=100),created_at TEXT NOT NULL,FOREIGN KEY(lesson_id,version) REFERENCES nova_versions(lesson_id,version));
+CREATE INDEX IF NOT EXISTS nova_attempts_scope ON nova_attempts(user_id,lesson_id,version);
+CREATE TABLE IF NOT EXISTS nova_progress(user_id TEXT NOT NULL REFERENCES nova_users(id),lesson_id TEXT NOT NULL,version INTEGER NOT NULL,video_ack INTEGER NOT NULL DEFAULT 0 CHECK(video_ack IN(0,1)),completed_at TEXT,updated_at TEXT NOT NULL,PRIMARY KEY(user_id,lesson_id,version),FOREIGN KEY(lesson_id,version) REFERENCES nova_versions(lesson_id,version));
+CREATE TABLE IF NOT EXISTS nova_recovery_requests(id TEXT PRIMARY KEY,username TEXT NOT NULL,user_id TEXT REFERENCES nova_users(id),status TEXT NOT NULL DEFAULT 'open',created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_reset_tokens(token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES nova_users(id),expires_at TEXT NOT NULL,used_at TEXT,issued_by TEXT NOT NULL REFERENCES nova_users(id));
+CREATE TABLE IF NOT EXISTS nova_reviews(submission_id TEXT PRIMARY KEY REFERENCES nova_practice(id),reviewer_id TEXT NOT NULL REFERENCES nova_users(id),grade INTEGER NOT NULL CHECK(grade>=0 AND grade<=100),feedback TEXT NOT NULL,revision INTEGER NOT NULL,updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_modules(id TEXT PRIMARY KEY,course_id TEXT NOT NULL REFERENCES nova_courses(id),title TEXT NOT NULL,position INTEGER NOT NULL,UNIQUE(course_id,position));
+CREATE TABLE IF NOT EXISTS nova_lesson_layout(lesson_id TEXT PRIMARY KEY REFERENCES nova_lessons(id),module_id TEXT REFERENCES nova_modules(id));
+CREATE TABLE IF NOT EXISTS nova_prerequisites(lesson_id TEXT NOT NULL REFERENCES nova_lessons(id),required_id TEXT NOT NULL REFERENCES nova_lessons(id),PRIMARY KEY(lesson_id,required_id),CHECK(lesson_id<>required_id));
+CREATE TABLE IF NOT EXISTS nova_course_revisions(course_id TEXT PRIMARY KEY REFERENCES nova_courses(id),revision INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_activity_events(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES nova_users(id),lesson_id TEXT NOT NULL,version INTEGER NOT NULL,accepted_seconds INTEGER NOT NULL,created_at TEXT NOT NULL,FOREIGN KEY(lesson_id,version) REFERENCES nova_versions(lesson_id,version));
+CREATE TABLE IF NOT EXISTS nova_activity_clock(user_id TEXT PRIMARY KEY REFERENCES nova_users(id),lesson_id TEXT NOT NULL,last_at BIGINT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_grading_jobs(submission_id TEXT PRIMARY KEY REFERENCES nova_practice(id),status TEXT NOT NULL,score INTEGER,passed INTEGER,total INTEGER,result_json TEXT,lease_id TEXT,lease_until BIGINT,updated_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS nova_activity_user_lesson ON nova_activity_events(user_id,lesson_id,created_at);
+CREATE INDEX IF NOT EXISTS nova_activity_lesson_date ON nova_activity_events(lesson_id,created_at);
+CREATE INDEX IF NOT EXISTS nova_grading_queue ON nova_grading_jobs(status,lease_until,updated_at);
+CREATE TABLE IF NOT EXISTS nova_ai_sources(id TEXT PRIMARY KEY,course_id TEXT NOT NULL REFERENCES nova_courses(id),owner_id TEXT NOT NULL REFERENCES nova_users(id),title TEXT NOT NULL,body TEXT NOT NULL,status TEXT NOT NULL,review_json TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS nova_ai_sources_course ON nova_ai_sources(course_id,status);
+CREATE TABLE IF NOT EXISTS nova_ai_jobs(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES nova_users(id),course_id TEXT NOT NULL REFERENCES nova_courses(id),lesson_id TEXT,kind TEXT NOT NULL,input_json TEXT NOT NULL,status TEXT NOT NULL,result_json TEXT NOT NULL,lease_id TEXT,lease_until BIGINT,created_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS nova_ai_queue ON nova_ai_jobs(status,lease_until,created_at);
+CREATE TABLE IF NOT EXISTS nova_embedding_cache(cache_key TEXT PRIMARY KEY,course_id TEXT NOT NULL REFERENCES nova_courses(id),model TEXT NOT NULL,vector_json TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_worker_health(kind TEXT PRIMARY KEY,last_seen TEXT NOT NULL,state TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS nova_enrollments_user_status ON nova_enrollments(user_id,status,course_id);
+CREATE INDEX IF NOT EXISTS nova_teachers_user ON nova_teachers(user_id,course_id);
+CREATE INDEX IF NOT EXISTS nova_ai_history ON nova_ai_jobs(user_id,course_id,lesson_id,kind,status,created_at);
+CREATE INDEX IF NOT EXISTS nova_attempts_lesson_version ON nova_attempts(lesson_id,version);
+CREATE INDEX IF NOT EXISTS nova_practice_lesson_date ON nova_practice(lesson_id,created_at);
+CREATE TABLE IF NOT EXISTS nova_audit(id TEXT PRIMARY KEY,actor_id TEXT NOT NULL REFERENCES nova_users(id),action TEXT NOT NULL,target_id TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_contact(user_id TEXT PRIMARY KEY REFERENCES nova_users(id),phone TEXT NOT NULL,address TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_lesson_notes(user_id TEXT NOT NULL REFERENCES nova_users(id),lesson_id TEXT NOT NULL REFERENCES nova_lessons(id),body TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(user_id,lesson_id));
+CREATE TABLE IF NOT EXISTS nova_notes(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES nova_users(id),body TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS nova_notes_owner ON nova_notes(user_id,updated_at);
+CREATE TABLE IF NOT EXISTS nova_profiles(user_id TEXT PRIMARY KEY REFERENCES nova_users(id),avatar INTEGER NOT NULL DEFAULT 1 CHECK(avatar BETWEEN 1 AND 8));
+CREATE TABLE IF NOT EXISTS nova_exams(id TEXT PRIMARY KEY,course_id TEXT NOT NULL REFERENCES nova_courses(id),title TEXT NOT NULL,questions_json TEXT NOT NULL,opens_at TEXT NOT NULL,closes_at TEXT NOT NULL,duration_minutes INTEGER NOT NULL,pass_score INTEGER NOT NULL,status TEXT NOT NULL,revision INTEGER NOT NULL DEFAULT 1,created_by TEXT NOT NULL REFERENCES nova_users(id),created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_exam_attempts(id TEXT PRIMARY KEY,exam_id TEXT NOT NULL REFERENCES nova_exams(id),user_id TEXT NOT NULL REFERENCES nova_users(id),started_at TEXT NOT NULL,deadline TEXT NOT NULL,answers_json TEXT NOT NULL DEFAULT '[]',score INTEGER,submitted_at TEXT,UNIQUE(exam_id,user_id));
+CREATE TABLE IF NOT EXISTS nova_media(id TEXT PRIMARY KEY,course_id TEXT NOT NULL REFERENCES nova_courses(id),owner_id TEXT NOT NULL REFERENCES nova_users(id),title TEXT NOT NULL,mime TEXT NOT NULL,content_base64 TEXT NOT NULL,status TEXT NOT NULL,reason TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_library(id TEXT PRIMARY KEY,course_id TEXT NOT NULL REFERENCES nova_courses(id),title TEXT NOT NULL,body TEXT NOT NULL,created_by TEXT NOT NULL REFERENCES nova_users(id),updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_local_chat(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES nova_users(id),lesson_id TEXT NOT NULL REFERENCES nova_lessons(id),question TEXT NOT NULL,answer TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_portal_samples(user_id TEXT NOT NULL REFERENCES nova_users(id), section TEXT NOT NULL, value_json TEXT NOT NULL, revision INTEGER NOT NULL, PRIMARY KEY(user_id,section));
+CREATE TABLE IF NOT EXISTS nova_tickets(id TEXT PRIMARY KEY,teacher_id TEXT NOT NULL REFERENCES nova_users(id),course_id TEXT REFERENCES nova_courses(id),subject TEXT NOT NULL,category TEXT NOT NULL,priority TEXT NOT NULL,status TEXT NOT NULL,assigned_to TEXT REFERENCES nova_users(id),created_at TEXT NOT NULL,updated_at TEXT NOT NULL,revision INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_ticket_messages(id TEXT PRIMARY KEY,ticket_id TEXT NOT NULL REFERENCES nova_tickets(id),author_id TEXT NOT NULL REFERENCES nova_users(id),body TEXT NOT NULL,internal INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_ticket_reads(ticket_id TEXT NOT NULL REFERENCES nova_tickets(id),user_id TEXT NOT NULL REFERENCES nova_users(id),last_read_at TEXT NOT NULL,PRIMARY KEY(ticket_id,user_id));
+CREATE INDEX IF NOT EXISTS nova_tickets_teacher ON nova_tickets(teacher_id,updated_at);
+CREATE INDEX IF NOT EXISTS nova_ticket_messages_thread ON nova_ticket_messages(ticket_id,created_at);
+`;
+async function openStore(options = {}) {
+    const postgres = Boolean(options.url ?? process.env.DATABASE_URL);
+    let pool, db;
+    let tail = Promise.resolve();
+    if (postgres) {
+        const { getPool } = require('../database');
+        pool = options.pool || getPool();
+    }
+    else {
+        if (process.env.NODE_ENV === 'production')
+            throw new Error('Production requires PostgreSQL.');
+        const { DatabaseSync } = require('node:sqlite');
+        const filename = options.filename || process.env.NOVA_LOCAL_DB || path.join(__dirname, '../../data/nova-platform.sqlite');
+        if (filename !== ':memory:')
+            fs.mkdirSync(path.dirname(filename), { recursive: true, mode: 0o700 });
+        db = new DatabaseSync(filename);
+        db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
+    }
+    function adapter(client) { return { postgres, async all(sql, values = []) { if (postgres) {
+            let i = 0;
+            return (await client.query(sql.replace(/\?/g, () => '$' + (++i)), values)).rows;
+        } return db.prepare(sql).all(...values); }, async one(sql, values = []) { return (await this.all(sql, values))[0] || null; }, async run(sql, values = []) { if (postgres) {
+            let i = 0;
+            return client.query(sql.replace(/\?/g, () => '$' + (++i)), values);
+        } return db.prepare(sql).run(...values); }, async lockCourse(id) { return this.one('SELECT * FROM nova_courses WHERE id=?' + (postgres ? ' FOR UPDATE' : ''), [id]); } }; }
+    if(options.migrate!==false){if (postgres) {
+        const migration = await pool.connect();
+        try { await migration.query('BEGIN'); await migration.query('SELECT pg_advisory_xact_lock(737014210)'); await migration.query(schema); await migration.query('COMMIT'); }
+        catch(error) { await migration.query('ROLLBACK'); throw error; }
+        finally { migration.release(); }
+    } else db.exec(schema);}
+    return { postgres, async tx(work) { if (postgres) {
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+                const result = await work(adapter(client));
+                await client.query('COMMIT');
+                return result;
+            }
+            catch (e) {
+                await client.query('ROLLBACK');
+                throw e;
+            }
+            finally {
+                client.release();
+            }
+        } const job = tail.then(async () => { db.exec('BEGIN IMMEDIATE'); try {
+            const result = await work(adapter());
+            db.exec('COMMIT');
+            return result;
+        }
+        catch (e) {
+            db.exec('ROLLBACK');
+            throw e;
+        } }); tail = job.catch(() => { }); return job; }, async close() { await tail; if (db)
+            db.close(); if (pool)
+            await pool.end(); } };
+}
+module.exports = { openStore, schema };
