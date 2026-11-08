@@ -15,4 +15,8 @@ function loadEnv(file = path.join(__dirname, '..', '.env')) {
 }
 
 loadEnv();
+// Neon CLI writes project-root environment files. Deployment environment
+// variables and explicit backend settings retain precedence.
+loadEnv(path.join(__dirname, '../../.env.local'));
+loadEnv(path.join(__dirname, '../../.env'));
 module.exports = loadEnv;

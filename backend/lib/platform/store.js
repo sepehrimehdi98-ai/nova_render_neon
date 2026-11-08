@@ -35,6 +35,9 @@ CREATE INDEX IF NOT EXISTS nova_ai_sources_course ON nova_ai_sources(course_id,s
 CREATE TABLE IF NOT EXISTS nova_ai_jobs(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES nova_users(id),course_id TEXT NOT NULL REFERENCES nova_courses(id),lesson_id TEXT,kind TEXT NOT NULL,input_json TEXT NOT NULL,status TEXT NOT NULL,result_json TEXT NOT NULL,lease_id TEXT,lease_until BIGINT,created_at TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS nova_ai_queue ON nova_ai_jobs(status,lease_until,created_at);
 CREATE TABLE IF NOT EXISTS nova_embedding_cache(cache_key TEXT PRIMARY KEY,course_id TEXT NOT NULL REFERENCES nova_courses(id),model TEXT NOT NULL,vector_json TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_ai_chunks(id TEXT PRIMARY KEY,course_id TEXT NOT NULL REFERENCES nova_courses(id),source_id TEXT NOT NULL REFERENCES nova_ai_sources(id),content_hash TEXT NOT NULL,model TEXT NOT NULL,body TEXT NOT NULL,vector_json TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS nova_ai_chunks_scope ON nova_ai_chunks(course_id,source_id,model);
+CREATE TABLE IF NOT EXISTS nova_ai_visibility(source_id TEXT PRIMARY KEY REFERENCES nova_ai_sources(id),student_visible INTEGER NOT NULL DEFAULT 0 CHECK(student_visible IN(0,1)));
 CREATE TABLE IF NOT EXISTS nova_worker_health(kind TEXT PRIMARY KEY,last_seen TEXT NOT NULL,state TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS nova_enrollments_user_status ON nova_enrollments(user_id,status,course_id);
 CREATE INDEX IF NOT EXISTS nova_teachers_user ON nova_teachers(user_id,course_id);

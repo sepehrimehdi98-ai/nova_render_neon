@@ -67,6 +67,8 @@ test('grading queue and course analysis use private tests and server bounded act
         await call(`/courses/${cid}/ai/approve`,teacher,{sourceId:source},409);
         await processAi(store,{client:{json:async()=>({accepted:true,feedback:'Relevant Python material'})}});
         await call(`/courses/${cid}/ai/approve`,teacher,{sourceId:source});
+        await processAi(store,{client:{embeddingModel:'test',embed:async texts=>texts.map(()=>[1,0])}});
+        assert.ok((await store.tx(q=>q.all('SELECT id FROM nova_ai_chunks WHERE source_id=?',[source]))).length);
         const job=(await call(`/courses/${cid}/ai/jobs`,student,{question:'Explain doubling a number',lessonId:lid},202)).data.id;
         let calls=0;
         await processAi(store,{client:{embed:async texts=>texts.map(()=>[1,0]),json:async(instruction,data)=>{calls++;assert.equal(JSON.stringify(data).includes('gradingTests'),false);assert.equal(JSON.stringify(data).includes('Python for loops'),false);return calls===1?{answer:'Use multiplication by two.',citations:['lesson:'+lid+':1'],needsTeacher:false}:{accepted:true,feedback:'Supported'};}}});

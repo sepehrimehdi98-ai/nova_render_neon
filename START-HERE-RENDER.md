@@ -1,3 +1,7 @@
+# Document RAG update
+
+See RAG-SETUP.md for the current document indexing, source approval, semantic embedding and optional web research setup. This supersedes older AI limitations below.
+
 # OpenRouter Render demo update
 
 Set OPENROUTER_API_KEY privately on nova-api. The Blueprint selects AI_PROVIDER=openrouter and nvidia/nemotron-3-ultra-550b-a55b:free, with OPENROUTER_FREE_ONLY=true. Paid fallback and web search are disabled. The API starts its AI worker in the same service. Free Render sleep interrupts processing; queued jobs recover after their ten-minute lease. Free model quotas and availability are not guaranteed.

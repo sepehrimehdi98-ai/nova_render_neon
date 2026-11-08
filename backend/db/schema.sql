@@ -54,3 +54,7 @@ CREATE TABLE IF NOT EXISTS nova_ticket_messages(id TEXT PRIMARY KEY,ticket_id TE
 CREATE TABLE IF NOT EXISTS nova_ticket_reads(ticket_id TEXT NOT NULL REFERENCES nova_tickets(id),user_id TEXT NOT NULL REFERENCES nova_users(id),last_read_at TEXT NOT NULL,PRIMARY KEY(ticket_id,user_id));
 CREATE INDEX IF NOT EXISTS nova_tickets_teacher ON nova_tickets(teacher_id,updated_at);
 CREATE INDEX IF NOT EXISTS nova_ticket_messages_thread ON nova_ticket_messages(ticket_id,created_at);
+
+CREATE TABLE IF NOT EXISTS nova_ai_chunks(id TEXT PRIMARY KEY,course_id TEXT NOT NULL REFERENCES nova_courses(id),source_id TEXT NOT NULL REFERENCES nova_ai_sources(id),content_hash TEXT NOT NULL,model TEXT NOT NULL,body TEXT NOT NULL,vector_json TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS nova_ai_chunks_scope ON nova_ai_chunks(course_id,source_id,model);
+CREATE TABLE IF NOT EXISTS nova_ai_visibility(source_id TEXT PRIMARY KEY REFERENCES nova_ai_sources(id),student_visible INTEGER NOT NULL DEFAULT 0 CHECK(student_visible IN(0,1)));

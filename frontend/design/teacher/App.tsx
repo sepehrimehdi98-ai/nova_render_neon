@@ -1,3 +1,4 @@
+import {WebTopic,DocumentSources} from '../ResearchControls';
 import {consult} from '../consult';
 import {api,type Row} from '../../src/live/api';
 import {useEffect} from 'react';
@@ -575,6 +576,7 @@ function درس‌هاPage() {
   const [blocks, setBlocks] = useState(initialBlocks);
   const [selected, setSelected] = useState(2);
   const [chat, setChat] = useState("");
+  const [publicTopic,setPublicTopic]=useState("");
   const [toast, setToast] = useState("");
   const [aiMode, setAiMode] = useState<"chat" | "review">("chat");
   const [messages, setMessages] = useState([
@@ -972,7 +974,7 @@ function درس‌هاPage() {
               <button
                 className="apply-suggestion"
                 onClick={() => {
-                  setBlocks(bs=>[...bs,{id:Date.now(),type:"یادداشت",title:"پرسش پیش‌بینی",content:"پیش از اجرای کد، خروجی آن را پیش‌بینی کنید."}]);setToast("پیشنهاد به پیش‌نویس اضافه شد");
+                  const suggestion=[...messages].reverse().find(m=>m.role==="ai");if(!suggestion){setToast("ابتدا از دستیار پاسخ بگیرید");return;}setBlocks(bs=>[...bs,{id:Date.now(),type:"یادداشت",title:"پیشنهاد دستیار — نیازمند بازبینی",content:suggestion.text}]);setToast("پیشنهاد واقعی به پیش‌نویس اضافه شد؛ بازبینی و ذخیره کنید");
                   setTimeout(() => setToast(""), 2200);
                 }}
               >
@@ -980,6 +982,8 @@ function درس‌هاPage() {
               </button>
             </div>
           )}
+          <DocumentSources key={course} course={course}/>
+          <WebTopic value={publicTopic} onChange={setPublicTopic}/>
           <form
             onSubmit={async(e)=>{
               e.preventDefault();
@@ -987,7 +991,7 @@ function درس‌هاPage() {
               if(!question)return;
               if(!saved){setToast('ابتدا پیش‌نویس را ذخیره کنید.');return}
               setMessages(m=>[...m,{role:'user',text:question}]);setChat('');
-              try{const answer=await consult(course,saved.id,question);setMessages(m=>[...m,{role:'ai',text:answer}])}
+              try{const answer=await consult(course,saved.id,question,publicTopic);setMessages(m=>[...m,{role:'ai',text:answer}])}
               catch(error){setToast(String(error))}
             }}
             className={aiMode === "review" ? "hidden-form" : ""}

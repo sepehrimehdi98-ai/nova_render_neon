@@ -1,3 +1,4 @@
+import {WebTopic} from '../../ResearchControls';
 import {api} from '../../../src/live/api';
 import {consult} from '../../consult';
 'use client'
@@ -56,6 +57,7 @@ function getAnswer(question: string): Message {
 
 export default function AssistantPage() {
   const [input, setInput] = useState('')
+  const [publicTopic,setPublicTopic]=useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [typing, setTyping] = useState(false)
   const [sidebar, setSidebar] = useState(false)
@@ -83,7 +85,7 @@ export default function AssistantPage() {
         const {lessons}=await api('/courses/'+course.id);
         if(!lessons.length)continue;
         const lesson=lessons[0],cap=await api('/capabilities');
-        answer=cap.ai?await consult(course.id,lesson.id,text):'جست‌وجوی محلی · '+lesson.title+'\n'+(await api('/lessons/'+lesson.id+'/local-chat',{question:text})).answer;
+        answer=cap.ai?await consult(course.id,lesson.id,text,publicTopic):'جست‌وجوی محلی · '+lesson.title+'\n'+(await api('/lessons/'+lesson.id+'/local-chat',{question:text})).answer;
         break;
       }
       setMessages(current=>[...current,{role:'bot',text:answer}]);
@@ -299,6 +301,7 @@ export default function AssistantPage() {
         <div className="shrink-0 bg-gradient-to-t from-white via-white to-white/0 px-4 pb-4 pt-4">
           <div className="mx-auto max-w-[780px]">
             <div className="rounded-[22px] border border-[#dcd6df] bg-white p-2 shadow-[0_12px_38px_rgba(41,30,58,.11)] focus-within:border-[#8065bb]">
+              <WebTopic value={publicTopic} onChange={setPublicTopic}/>
               <textarea
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
