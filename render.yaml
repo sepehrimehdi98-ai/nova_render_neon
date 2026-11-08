@@ -22,8 +22,6 @@ services:
         value: verify-full
       - key: DATABASE_POOL_MAX
         value: "3"
-      - key: APP_ORIGINS
-        sync: false
       - key: BACKUP_ENCRYPTION_KEY
         generateValue: true
   - type: web
@@ -36,7 +34,10 @@ services:
       - key: PORTAL_ROLE
         value: student
       - key: API_UPSTREAM
-        sync: false
+        fromService:
+          type: web
+          name: nova-api
+          envVarKey: RENDER_EXTERNAL_URL
       - key: NODE_ENV
         value: production
   - type: web
@@ -49,7 +50,10 @@ services:
       - key: PORTAL_ROLE
         value: teacher
       - key: API_UPSTREAM
-        sync: false
+        fromService:
+          type: web
+          name: nova-api
+          envVarKey: RENDER_EXTERNAL_URL
       - key: NODE_ENV
         value: production
   - type: web
@@ -62,6 +66,9 @@ services:
       - key: PORTAL_ROLE
         value: admin
       - key: API_UPSTREAM
-        sync: false
+        fromService:
+          type: web
+          name: nova-api
+          envVarKey: RENDER_EXTERNAL_URL
       - key: NODE_ENV
         value: production

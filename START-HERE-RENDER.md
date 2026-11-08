@@ -1,53 +1,25 @@
-# Document RAG update
+# Render + Neon live demo
 
-See RAG-SETUP.md for the current document indexing, source approval, semantic embedding and optional web research setup. This supersedes older AI limitations below.
+1. Create a Render Blueprint from this repository, main branch, render.yaml.
+2. Enter only DATABASE_URL (the complete private Neon pooled PostgreSQL connection string) and OPENROUTER_API_KEY.
+3. API_UPSTREAM is linked automatically to nova-api's RENDER_EXTERNAL_URL using fromService. You do not need to guess portal or API addresses. APP_ORIGIN is derived automatically in the API startup script.
+4. The portal validates mutating browser requests against its own RENDER_EXTERNAL_URL before forwarding a normalized API origin. No wildcard origins or circular service dependencies are used. Free services use the public HTTPS API address because Render free web services cannot receive private-network traffic.
+5. If adding a custom portal domain later, set PORTAL_ORIGINS on that portal to its exact HTTPS origin (comma-separated for several); retain the default Render URL. No trailing slashes. Never place DATABASE_URL or AI keys on portals.
+6. After deployment confirm all four services are Live, then run scripts/check-portals.cjs using private per-role test credentials and actual HTTPS URLs. No live deployment was verified during development.
 
-# OpenRouter Render demo update
+## Demo accounts
+For an EMPTY dedicated demo Neon database, configure DATABASE_URL, DATABASE_SSL=verify-full, NOVA_SEED_CONFIRM=empty-demo-database and a private NOVA_SEED_PASSWORD (16+ characters) in backend/.env, then run node backend/scripts/demo-seed.js locally with Node 24 and backend dependencies installed. It creates admin/teacher/student accounts with that password, a shared course, lessons, quizzes, an exam and library content. Existing nonempty databases are preserved. Remove seed variables afterwards. Never commit .env. Production startup does not create accounts automatically.
 
-Set OPENROUTER_API_KEY privately on nova-api. The Blueprint selects AI_PROVIDER=openrouter and nvidia/nemotron-3-ultra-550b-a55b:free, with OPENROUTER_FREE_ONLY=true. Paid fallback and web search are disabled. The API starts its AI worker in the same service. Free Render sleep interrupts processing; queued jobs recover after their ten-minute lease. Free model quotas and availability are not guaranteed.
+For a real deployment instead, bootstrap an admin with backend/scripts/platform-admin.js and the documented BOOTSTRAP_ADMIN_* settings, then remove those variables before startup. PostgreSQL transport uses certificate-verifying TLS; never disable it to bypass connection failures. Back up before migrations/upgrades and export backups outside Render's ephemeral filesystem.
 
-RAG defaults to local keyword vectors, without embedding API charges. This is keyword retrieval, not semantic embeddings or model training. Optional OPENROUTER_EMBEDDING_MODEL requires OPENROUTER_FREE_ONLY=false and may cost money. Python examples still require an isolated grader; unverified generated code is withheld without it. Conceptual answers can pass without code execution. Automatic web harvesting is not implemented.
+## Internal communication
+Teacher Messages and Admin Support now use the shared /tickets API, not sample-state. Teachers create and reply to their own tickets. Admins reply, change status, and add internal notes hidden from teachers. Both screens poll every 15 seconds while visible. Errors are displayed, drafts are preserved on send failures, and stale revisions trigger refresh. Sample charts and sample student administration remain illustrative; connecting tickets does not make all mock screens production-ready.
 
-## Hosted demo data
-Use an EMPTY dedicated Neon database before bootstrapping an admin. Set DATABASE_URL, DATABASE_SSL=verify-full, NOVA_SEED_CONFIRM=empty-demo-database and NOVA_SEED_PASSWORD (at least 16 characters) in private backend/.env. From the root run `node backend/scripts/demo-seed.js` after installing backend dependencies. This creates admin, teacher and student accounts, a shared course, three published lessons, quizzes, an exam and library content. Existing databases are preserved. Log in with your configured seed password; remove seed variables afterwards. Never commit .env. Remove demo accounts before real use.
+## AI and hosting limits
+See RAG-SETUP.md. OpenRouter chat worker starts inside nova-api when its key is configured. Web search and semantic embedding APIs are optional and may incur charges. Isolated Python grading needs a separate supported runner. Free Render services sleep and share the account's compute allowance. Cold starts can delay requests. User data lives in Neon; do not rely on the local container filesystem for persistence.
 
-Original sample charts and layouts are preserved. Chart values are illustrative fixtures, not measured live analytics. Supervisor sample users/tickets are separate from real account and ticket APIs. Seeded lessons are actual database records. Some original mock controls remain unconnected; this package is for deployment and demonstration, not a claim of complete production integration.
+## Validation
+2026-11-09: TypeScript and all three portal builds passed; 24 existing backend/portal tests plus the Render origin validation regression passed. Run the latter with node --test --test-isolation=none scripts/render-gateway.test.cjs. This tests request forwarding/rejection and cross-role ticket API flows locally. Browser interaction tests and real Render/Neon/OpenRouter checks remain pending.
 
-See VALIDATION.md for local results. Live OpenRouter, Neon and Render checks require your credentials and deployment.
-
----
-
-# Nova on Render and Neon
-
-This is a separate copy for Render. The Liara folder and ZIPs are preserved.
-
-## Deployment
-
-1. Create a Neon PostgreSQL project near your Render region. Copy its pooled connection string privately. Use the direct connection for migration/administration if your pool endpoint rejects administrative operations.
-2. Push this folder to a private Git repository. In Render choose New Blueprint, connect the repository and use render.yaml.
-3. Supply DATABASE_URL only on nova-api. Certificate verification is enabled. APP_ORIGIN is derived from Render's RENDER_EXTERNAL_URL at startup. If you later attach a custom API domain, set APP_ORIGIN explicitly.
-4. Set APP_ORIGINS on nova-api to the exact three HTTPS portal origins, comma-separated, without trailing slashes. Actual Render hostnames can have suffixes. You may initially use intended domains, then update after Render allocates the real hostnames.
-5. Set API_UPSTREAM separately on each portal to the actual HTTPS backend origin. Correct it after allocation if needed. The portal health checks fail until the backend is reachable. Redeploy after changing configuration.
-6. PORTAL_ROLE is provided as a Docker build argument and runtime variable by Render. Each portal builds its own design. Container listeners use Render's PORT and 0.0.0.0.
-7. Startup initializes additive schema tables transactionally. To check before release, run backend/scripts/platform-migrate.js and backend/scripts/database-check.js locally against the staging Neon database using a private environment file. Node 24 and npm --prefix backend ci are required.
-8. Create the first admin with backend/scripts/platform-admin.js using temporary BOOTSTRAP_ADMIN_USERNAME, BOOTSTRAP_ADMIN_NAME and BOOTSTRAP_ADMIN_PASSWORD. Run this locally with the Neon connection; remove bootstrap variables afterward. Never place them on the running service.
-9. Run scripts/check-portals.cjs with NOVA_TEST_STUDENT_ORIGIN, NOVA_TEST_TEACHER_ORIGIN, NOVA_TEST_ADMIN_ORIGIN and matching _USERNAME/_PASSWORD environment variables. Create accounts, enrollment and a published test lesson first. This check logs in, reads and logs out without modifying lessons.
-
-## Free hosting boundaries
-
-All four services are free web services. They SHARE Render's 750 instance-hour monthly allowance. Idle services sleep, and cold starts may require refreshing after the API wakes. Four continuously active services exceed the allowance. This arrangement is for intermittent demonstrations within the provider quotas. Monitor usage in Render and Neon.
-
-Neon stores persistent application records. Render free disks are ephemeral. Local backup files and SQLite are unsuitable as deployed storage. Save database exports outside Render and verify a restore before production. Use Neon-supported backup/export procedures; the existing admin local-backup screen is not a durable Neon backup solution.
-
-The OpenRouter AI worker starts inside nova-api when its key is configured. Automatic grading still requires a dedicated isolated Docker runner outside this free web Blueprint.
-
-The existing frontend feature limitations carry into this package: the teacher/admin inbox integration is still pending, several exam/analytics screens use sample behavior, and real accounts/tickets are distinct from administrator sample collections. This hosting adaptation does not complete those product features.
-
-## Verification and references
-
-Local code tests cover persistence and role boundaries. Live Render containers, Neon TLS connectivity and browser workflows require the configured accounts. No deployment was performed.
-
-Render blueprint: https://render.com/docs/blueprint-spec
-Render Docker build variables: https://render.com/docs/docker
-Render free limits: https://render.com/docs/free
-Neon connections: https://neon.com/docs/connect/connect-from-any-app
+Official Blueprint reference: https://render.com/docs/blueprint-spec
+Private-network limitations: https://render.com/docs/private-network

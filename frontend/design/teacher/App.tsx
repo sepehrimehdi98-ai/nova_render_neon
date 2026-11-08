@@ -1,3 +1,4 @@
+import LiveTickets from '../LiveTickets';
 import {WebTopic,DocumentSources} from '../ResearchControls';
 import {consult} from '../consult';
 import {api,type Row} from '../../src/live/api';
@@ -1517,89 +1518,7 @@ function تحلیل‌هاPage() {
   );
 }
 
-function پیام‌هاPage() {
-  const [active, setActive] = useState(0);
-  const messages = [
-    {
-      from: "تیم مدیریت",
-      title: "اطلاعیه نگهداری سامانه",
-      متن: "سامانه نوا جمعه ساعت ۱۸ به‌روزرسانی می‌شود. نیازی به اقدام شما نیست.",
-      time: "10:24",
-      unread: true,
-    },
-    {
-      from: "دیانا بروکس · مدیر",
-      title: "درخواست پشتیبانی شما به‌روزرسانی شد",
-      متن: "سلام علی، مشکل نمایش ویدیویی که گزارش کرده بودید برطرف شد.",
-      time: "دیروز",
-      unread: true,
-    },
-    {
-      from: "امور دانش‌آموزان",
-      title: "برنامه نیم‌سال پایه دهم",
-      متن: "نسخه جدید برنامه نیم‌سال برای بررسی شما آماده است.",
-      time: "ش",
-      unread: false,
-    },
-  ];
-  return (
-    <div className="inbox-layout">
-      <section className="message-list">
-        <div className="inbox-heading">
-          <p className="eyebrow">ارتباطات</p>
-          <h2>پیام‌ها</h2>
-          <button className="icon-btn">
-            <Icon name="plus" />
-          </button>
-        </div>
-        {messages.map((m, i) => (
-          <button
-            className={active === i ? "active" : ""}
-            onClick={() => setActive(i)}
-            key={m.title}
-          >
-            {m.unread && <i />}
-            <span>
-              <strong>
-                {m.from}
-                <small>{m.time}</small>
-              </strong>
-              <b>{m.title}</b>
-              <p>{m.متن}</p>
-            </span>
-          </button>
-        ))}
-      </section>
-      <section className="message-view">
-        <div className="message-meta">
-          <span className="avatar">د‌ب</span>
-          <div>
-            <strong>{messages[active].from}</strong>
-            <small>به: علی مرادی · معلم</small>
-          </div>
-          <span>{messages[active].time}</span>
-        </div>
-        <h2>{messages[active].title}</h2>
-        <p>سلام علی،</p>
-        <p>{messages[active].متن}</p>
-        <p>
-          اگر پرسشی دارید، به همین پیام پاسخ دهید یا از بخش پروفایل یک درخواست پشتیبانی ثبت کنید.
-        </p>
-        <p>
-          با احترام،
-          <br />
-          <strong>مدیریت نوا</strong>
-        </p>
-        <div className="reply-box">
-          <textarea placeholder="پاسخ خود را بنویسید..." />
-          <button className="primary-btn">
-            <Icon name="send" size={17} /> ارسال پاسخ
-          </button>
-        </div>
-      </section>
-    </div>
-  );
-}
+function پیام‌هاPage() { return <LiveTickets role="teacher"/>; }
 
 function Dashboard() {
   const [page, setPage] = useState<Page>("خانه");

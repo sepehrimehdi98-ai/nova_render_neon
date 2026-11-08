@@ -6,6 +6,9 @@ const root=path.resolve(options.root||process.env.STATIC_DIRECTORY||path.join(__
 if(process.env.NODE_ENV==='production'&&!options.upstream&&!process.env.API_UPSTREAM)throw Error('API_UPSTREAM is required in production');
 const upstream=new URL(options.upstream||process.env.API_UPSTREAM||'http://127.0.0.1:3003');
 if(!['http:','https:'].includes(upstream.protocol)||upstream.username||upstream.password||upstream.pathname!=='/'||upstream.search||upstream.hash)throw Error('API_UPSTREAM must be an HTTP(S) origin without credentials');
+const publicOrigin=options.publicOrigin||process.env.RENDER_EXTERNAL_URL;
+const allowedOrigins=publicOrigin?[publicOrigin,...(process.env.PORTAL_ORIGINS||'').split(',').filter(Boolean)]:[];
+for(const origin of allowedOrigins){const parsed=new URL(origin);if(parsed.origin!==origin||parsed.protocol!=='https:')throw Error('Portal origins must be exact HTTPS origins');}
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.woff2':'font/woff2','.svg':'image/svg+xml','.wasm':'application/wasm','.json':'application/json','.zip':'application/zip'};
 const server=http.createServer((req,res)=>{
  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','DENY');res.setHeader('Permissions-Policy','camera=(), microphone=(), geolocation=()');
@@ -14,7 +17,12 @@ const server=http.createServer((req,res)=>{
  let pathname;try{pathname=decodeURIComponent(new URL(req.url,'http://local').pathname)}catch{res.writeHead(400);return res.end()}
  if(pathname.startsWith('/api/platform/')){
   let rest=pathname.slice('/api/platform'.length);const portal=rest.match(/^\/portal\/(student|teacher|admin)(?=\/)/);if(portal&&portal[1]!==role){res.writeHead(403);return res.end(JSON.stringify({error:'Wrong portal'}))}if(!portal)rest='/portal/'+role+rest;
-  const headers={...req.headers,host:upstream.host};delete headers['x-forwarded-for'];delete headers['x-forwarded-host'];delete headers['forwarded'];
+  // On Render, validate the browser's own portal origin before rewriting it
+  // for the backend. This avoids circular Blueprint dependencies.
+  if(publicOrigin&&!['GET','HEAD','OPTIONS'].includes(req.method)&&!allowedOrigins.includes(req.headers.origin)){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({error:'Origin not allowed'}));}
+  const headers={...req.headers,host:upstream.host};
+  if(publicOrigin&&req.headers.origin){if(!allowedOrigins.includes(req.headers.origin)){res.writeHead(403);return res.end();}headers.origin=upstream.origin;}
+delete headers['x-forwarded-for'];delete headers['x-forwarded-host'];delete headers['forwarded'];
   // The backend may trust this gateway address explicitly; never forward a client-supplied chain.
   headers['x-forwarded-for']=req.socket.remoteAddress;
   const transport=upstream.protocol==='https:'?https:http;

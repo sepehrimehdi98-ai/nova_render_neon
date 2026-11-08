@@ -1,3 +1,4 @@
+import LiveTickets from '../LiveTickets';
 import {api} from '../../src/live/api';
 import {useEffect,useRef} from 'react';
 import { FormEvent, useMemo, useState } from "react"
@@ -165,7 +166,7 @@ function StatusDot({ status = "good" }: { status?: "good" | "warn" | "bad" }) {
 export default function App() {
   const [page, setPage] = useState<Page>("dashboard")
   const [menuOpen, setMenuOpen] = useState(false)
-  const [tickets, setTickets] = useState(initialTickets)
+  const [tickets, setTickets] = useState<Ticket[]>([])
   const [selectedTicket, setSelectedTicket] = useState<Ticket>(
     initialTickets[0],
   )
@@ -175,8 +176,9 @@ export default function App() {
   const [showAddStudent, setShowAddStudent] = useState(false)
   const [notice, setNotice] = useState("")
 
+  useEffect(()=>{let live=true;const refresh=async()=>{try{const {tickets:rows}=await api('/tickets');if(live)setTickets(rows.map((t:any)=>({id:t.id,title:t.subject,sender:t.teacher_name,role:'معلم',time:new Date(t.updated_at).toLocaleString('fa-IR'),status:t.status==='open'?'باز':t.status==='resolved'?'پاسخ داده شده':'در حال بررسی',priority:t.priority==='high'?'فوری':'عادی',message:''})));}catch(e){if(live)setNotice(String(e));}};void refresh();const timer=setInterval(()=>{if(document.visibilityState==='visible')void refresh();},15000);return()=>{live=false;clearInterval(timer);};},[]);
   const revisions=useRef<Record<string,number>>({});
-  useEffect(()=>{Promise.all(['students','tickets'].map(async section=>{
+  useEffect(()=>{Promise.all(['students'].map(async section=>{
     const result=await api('/sample-state/'+section);
     revisions.current[section]=result.revision;
     if(result.value===null)return;
@@ -345,14 +347,7 @@ export default function App() {
           )}
           {page === "health" && <HealthPage />}
           {page === "tickets" && (
-            <TicketsPage
-              tickets={tickets}
-              selected={selectedTicket}
-              setSelected={setSelectedTicket}
-              reply={reply}
-              setReply={setReply}
-              onSubmit={submitReply}
-            />
+            <LiveTickets role="admin"/>
           )}
           {page === "students" && (
             <StudentsPage
