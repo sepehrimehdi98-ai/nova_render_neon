@@ -5,7 +5,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { openStore } = require('./lib/platform/store');
 const { createPlatform } = require('./lib/platform/service');
-async function start({ port = Number(process.env.PORT || 3003), host = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1'), store: providedStore, origin = process.env.APP_ORIGIN || (process.env.NODE_ENV === 'production' ? '' : 'http://127.0.0.1:3003'), demo = process.env.NOVA_DEMO_MODE === 'true' } = {}) {
+async function start({ onStartup = () => {}, port = Number(process.env.PORT || 3003), host = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1'), store: providedStore, origin = process.env.APP_ORIGIN || (process.env.NODE_ENV === 'production' ? '' : 'http://127.0.0.1:3003'), demo = process.env.NOVA_DEMO_MODE === 'true' } = {}) {
+    onStartup('configuration_validation');
     const parsed = new URL(origin);
     if (parsed.origin !== origin)
         throw new Error('APP_ORIGIN must be an exact origin without a trailing slash.');
@@ -13,7 +14,9 @@ async function start({ port = Number(process.env.PORT || 3003), host = process.e
         throw new Error('Production requires HTTPS APP_ORIGIN, PostgreSQL and demo mode disabled.');
     if (process.env.NODE_ENV === 'production' && (process.env.BOOTSTRAP_ADMIN_PASSWORD || process.env.BOOTSTRAP_ADMIN_USERNAME || process.env.BOOTSTRAP_ADMIN_NAME || process.env.ADMIN_RECOVERY_PASSWORD || process.env.ADMIN_RECOVERY_USERNAME)) throw new Error('Remove bootstrap environment variables before starting the server.');
     for(const allowed of (process.env.APP_ORIGINS||'').split(',').filter(Boolean)){const u=new URL(allowed);if(u.origin!==allowed||(process.env.NODE_ENV==='production'&&u.protocol!=='https:'))throw Error('APP_ORIGINS must contain exact HTTPS origins in production.');}
+    onStartup('database_connect_and_migrate');
     const store = providedStore || await openStore();
+    onStartup('platform_initialization');
     if (demo && store.postgres)
         throw new Error('Local role access cannot be enabled against PostgreSQL.');
     const platform = await createPlatform(store, { demo, origin });
@@ -51,6 +54,7 @@ async function start({ port = Number(process.env.PORT || 3003), host = process.e
         if(req.method==='HEAD')return res.end();fs.createReadStream(file).pipe(res);
     });
     server.requestTimeout=15000;server.headersTimeout=10000;server.keepAliveTimeout=5000;
+    onStartup('http_listen');
     await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, host, resolve); });
     return { server, store, platform, async close() { await new Promise(resolve => server.close(resolve)); await store.close(); } };
 }

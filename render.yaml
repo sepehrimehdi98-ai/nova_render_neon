@@ -6,6 +6,8 @@ services:
     dockerfilePath: ./Dockerfile.render
     healthCheckPath: /api/platform/health
     envVars:
+      - key: PORT
+        value: "10000"
       - key: NODE_ENV
         value: production
       - key: AI_PROVIDER
@@ -29,8 +31,10 @@ services:
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile.portal
-    healthCheckPath: /api/platform/health
+    healthCheckPath: /healthz
     envVars:
+      - key: PORT
+        value: "10000"
       - key: PORTAL_ROLE
         value: student
       - key: API_UPSTREAM
@@ -45,8 +49,10 @@ services:
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile.portal
-    healthCheckPath: /api/platform/health
+    healthCheckPath: /healthz
     envVars:
+      - key: PORT
+        value: "10000"
       - key: PORTAL_ROLE
         value: teacher
       - key: API_UPSTREAM
@@ -61,8 +67,10 @@ services:
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile.portal
-    healthCheckPath: /api/platform/health
+    healthCheckPath: /healthz
     envVars:
+      - key: PORT
+        value: "10000"
       - key: PORTAL_ROLE
         value: admin
       - key: API_UPSTREAM

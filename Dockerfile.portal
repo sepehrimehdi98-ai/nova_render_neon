@@ -11,10 +11,10 @@ RUN node scripts/python-assets.cjs /app/portals/${PORTAL_ROLE}/dist
 RUN cp -r /app/portals/${PORTAL_ROLE}/dist /app/site
 FROM node:24-bookworm-slim
 ARG PORTAL_ROLE
-ENV NODE_ENV=production PORTAL_ROLE=${PORTAL_ROLE} HOST=0.0.0.0 PORT=3003 STATIC_DIRECTORY=/app/site
+ENV NODE_ENV=production PORTAL_ROLE=${PORTAL_ROLE} HOST=0.0.0.0 PORT=10000 STATIC_DIRECTORY=/app/site
 WORKDIR /app
 COPY --from=build /app/site site
 COPY scripts/portal-server.cjs scripts/portal-server.cjs
 USER node
-EXPOSE 3003
+EXPOSE 10000
 CMD ["node","scripts/portal-server.cjs"]

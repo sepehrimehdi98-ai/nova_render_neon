@@ -33,6 +33,7 @@ function getPool() {
   pool = new Pool({
     connectionString: connection.toString(),
     statement_timeout: 15000,
+    query_timeout: 20000,
     idle_in_transaction_session_timeout: 20000,
     // Budget this limit across every web replica and background worker.
     max: poolMax,

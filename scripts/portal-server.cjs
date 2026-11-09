@@ -15,6 +15,11 @@ const server=http.createServer((req,res)=>{
  if(process.env.NODE_ENV==='production'){res.setHeader('Strict-Transport-Security','max-age=31536000');res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https:; font-src 'self'; connect-src 'self'; media-src 'self' blob: data:; frame-src https://stream.novextech.ir https://kavimo.com https://*.kavimo.com https://kavimo.ir https://*.kavimo.ir; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'");}
 
  let pathname;try{pathname=decodeURIComponent(new URL(req.url,'http://local').pathname)}catch{res.writeHead(400);return res.end()}
+ if(pathname==='/healthz'&&['GET','HEAD'].includes(req.method)){
+  const ready=fs.existsSync(path.join(root,'index.html'));
+  res.writeHead(ready?200:503,{'Content-Type':'application/json','Cache-Control':'no-store'});
+  return res.end(req.method==='HEAD'?undefined:JSON.stringify({ready,role}));
+ }
  if(pathname.startsWith('/api/platform/')){
   let rest=pathname.slice('/api/platform'.length);const portal=rest.match(/^\/portal\/(student|teacher|admin)(?=\/)/);if(portal&&portal[1]!==role){res.writeHead(403);return res.end(JSON.stringify({error:'Wrong portal'}))}if(!portal)rest='/portal/'+role+rest;
   // On Render, validate the browser's own portal origin before rewriting it
