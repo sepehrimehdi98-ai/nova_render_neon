@@ -298,7 +298,7 @@ function Sidebar({ page, setPage }: { page: Page; setPage: (page: Page) => void 
           >
             <Icon name={item.icon} />
             <span>{item.label}</span>
-            {item.label === "پیام‌ها" && <b>2</b>}
+            
           </button>
         ))}
       </nav>
@@ -665,6 +665,7 @@ function درس‌هاPage() {
   };
   function renderMedia(b:Block){
     const video=b.type==='ویدیو';
+    if(video&&/^\/api\/platform\/files\/[a-f0-9-]{36}$/.test(b.source||''))return <video controls preload="metadata" style={{width:'100%'}} src={b.source}/>;
     const src=mediaSource(b.source||'',video);
     if(!src&&video&&!b.source?.trim()){
       const sample=media.find(m=>m.course_id===course&&m.status==='approved'&&m.mime.startsWith('video/'));
@@ -693,13 +694,13 @@ function درس‌هاPage() {
             <input placeholder="جست‌وجوی درس‌ها..." />
           </label>
           <button className="filter active">
-            همه درس‌ها <b>12</b>
+            همه درس‌ها <b>{serverLessons.length}</b>
           </button>
           <button className="filter">
-            منتشرشده <b>8</b>
+            منتشرشده <b>{serverLessons.filter(l=>l.status==='published').length}</b>
           </button>
           <button className="filter">
-            پیش‌نویس‌ها <b>4</b>
+            پیش‌نویس‌ها <b>{serverLessons.filter(l=>l.status==='draft').length}</b>
           </button>
         </div>
         <section className="lesson-cards">{serverLessons.map(l=><article className="lesson-card" key={l.id}><div className="card-copy"><LessonCover cover={l.cover} title={l.title}/><h3>{l.title}</h3><small>{l.status}</small><button onClick={()=>void openSaved(l.id)}>ویرایش و پیش‌نمایش</button></div></article>)}
