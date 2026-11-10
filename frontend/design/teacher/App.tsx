@@ -1,3 +1,4 @@
+import CourseWorkspace from '../CourseWorkspace';
 import LiveTickets from '../LiveTickets';
 import {WebTopic,DocumentSources} from '../ResearchControls';
 import {consult} from '../consult';
@@ -1012,7 +1013,8 @@ function درس‌هاPage() {
   );
 }
 
-function آزمون‌هاPage() {
+function آزمون‌هاPage(){return <CourseWorkspace screen="exams"/>;}
+function SampleExamsPage() {
   const [creating, setCreating] = useState(false);
   const [questions, setQuestions] = useState([
     { id: 1, type: "چندگزینه‌ای", text: "HTML مخفف چیست؟", points: 2 },
@@ -1193,7 +1195,8 @@ function آزمون‌هاPage() {
   );
 }
 
-function تحلیل‌هاPage() {
+function تحلیل‌هاPage(){return <CourseWorkspace screen="analytics"/>;}
+function SampleAnalyticsPage() {
   const bars = [52, 68, 61, 77, 74, 88, 82];
   const [selectedStudent, setSelectedStudent] = useState<number | null>(null);
   const students = [

@@ -188,6 +188,7 @@ const nav = [
   { href: '/', label: 'خانه', icon: 'home' as const },
   { href: '/progress', label: 'مسیر پیشرفت', icon: 'chart' as const },
   { href: '/assistant', label: 'دستیار نوا', icon: 'bot' as const },
+  { href: '/exams', label: 'آزمون‌ها', icon: 'quiz' as const },
   { href: '/lessons', label: 'درس‌های من', icon: 'book' as const },
   { href: '/profile', label: 'پروفایل', icon: 'user' as const },
 ]
