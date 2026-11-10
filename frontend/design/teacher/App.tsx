@@ -711,7 +711,7 @@ function درس‌هاPage() {
             <strong>ساخت درس جدید</strong>
             <small>صفحه خالی یا همراه با هوش مصنوعی</small>
           </button>
-          {lessons.map((l, i) => (
+          {!serverLessons.length&&lessons.map((l, i) => (
             <article className="lesson-card" key={l.title}>
               <div className={"cover c" + i}>
                 <span>{i === 0 ? "</>" : i === 1 ? "JS" : "اتم"}</span>
