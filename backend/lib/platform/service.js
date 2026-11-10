@@ -26,6 +26,7 @@ const integer = (v, min, max) => {
 const publicUser = u => ({ id: u.id, username: u.username, name: u.name, role: u.role, active: Boolean(u.active) });
 async function audit(q, u, action, target) { await q.run('INSERT INTO nova_audit(id,actor_id,action,target_id,created_at) VALUES(?,?,?,?,?)', [randomUUID(), u.id, action, target, now()]); }
 function validateLesson(input, publishing = false) {
+    let cover;try{cover=require('./lesson-cover').validateCover(input.cover)}catch{fail(400,'جلد درس باید تصویر HTTPS یا عنصر معتبر باشد.')}
     const title = text(input.title);
     const blocks = input.blocks;
     if (!Array.isArray(blocks) || blocks.length > 80 || (publishing && !blocks.length))
@@ -87,7 +88,7 @@ function validateLesson(input, publishing = false) {
     });
     if (publishing && (!clean.some(b => b.kind === 'video') || !exercise.prompt || !questions.length))
         fail(400, 'برای انتشار، ویدیو، تمرین و حداقل یک سؤال کامل لازم است.');
-    return { title, blocks: clean, exercise, quiz: questions, passScore: integer(input.passScore ?? 70, 1, 100) };
+    return { title, cover, blocks: clean, exercise, quiz: questions, passScore: integer(input.passScore ?? 70, 1, 100) };
 }
 function studentContent(doc) { const { gradingTests, ...exercise } = doc.exercise; return { ...doc, exercise: { ...exercise, autoGradingEnabled: Boolean(gradingTests?.length) }, quiz: doc.quiz.map(({ correct, ...question }) => question) }; }
 async function scope(q, u, courseId, write = false) {
@@ -193,7 +194,9 @@ async function createPlatform(store, { demo = false, origin = 'http://127.0.0.1:
             if(route==='/public-info'&&req.method==='GET')return send(res,200,{localDemo:process.env.NODE_ENV!=='production'&&!store.postgres,app:'Nova'});
             if (route === '/health' && req.method === 'GET') {
                 await store.tx(q => q.one('SELECT 1 AS healthy'));
-                return send(res, 200, { ok: true, demoMode: demo, storage: store.postgres ? 'postgresql' : 'sqlite-local', aiReady: false });
+                const worker=await store.tx(q=>q.one("SELECT last_seen FROM nova_worker_health WHERE kind='ai'"));
+                const aiReady=Boolean(worker&&Date.now()-Date.parse(worker.last_seen)<900000&&(process.env.OPENROUTER_API_KEY||process.env.LIARA_AI_API_KEY));
+                return send(res, 200, { ok: true, demoMode: demo, storage: store.postgres ? 'postgresql' : 'sqlite-local', aiReady });
             }
             let data = {};
             if (req.method === 'POST') {
@@ -358,7 +361,7 @@ async function createPlatform(store, { demo = false, origin = 'http://127.0.0.1:
                         const list = [];
                         for (const l of lessons) {
                             let content = u.role === 'student' ? await published(q, l, l.published_version) : JSON.parse(l.draft_json);
-                            list.push({ id: l.id, title: content.title, position: l.position, status: l.status, draftRev: l.draft_rev, version: l.published_version, ...(u.role === 'student' ? { progress: await progress(q, u, l, l.published_version) } : {}) });
+                            list.push({ id: l.id, title: content.title, cover: content.cover || null, position: l.position, status: l.status, draftRev: l.draft_rev, version: l.published_version, ...(u.role === 'student' ? { progress: await progress(q, u, l, l.published_version) } : {}) });
                         }
                         return send(res, 200, { course: c, lessons: list });
                     }

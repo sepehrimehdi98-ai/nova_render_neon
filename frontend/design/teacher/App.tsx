@@ -1,3 +1,4 @@
+import {LessonCover,CoverPicker} from '../LessonCover';
 import CourseWorkspace from '../CourseWorkspace';
 import LiveTickets from '../LiveTickets';
 import {WebTopic,DocumentSources} from '../ResearchControls';
@@ -291,6 +292,7 @@ function Sidebar({ page, setPage }: { page: Page; setPage: (page: Page) => void 
         {nav.map((item) => (
           <button
             key={item.label}
+            aria-label={item.label}
             className={page === item.label ? "active" : ""}
             onClick={() => setPage(item.label)}
           >
@@ -533,6 +535,7 @@ function mediaSource(raw:string,video:boolean){
   }catch{return ''}
 }
 type Block = {
+  original?:Row;
   source?:string;
   id: number;
   type: "ویدیو" | "متن" | "کد" | "یادداشت" | "تصویر" | "تمرین";
@@ -593,6 +596,8 @@ function درس‌هاPage() {
   const [serverLessons,setServerLessons]=useState<Row[]>([]);
   const [title,setTitle]=useState("مقدمه‌ای بر توسعه وب");
   const [preview,setPreview]=useState(false);
+  const [cover,setCover]=useState<Row|null>(null);
+  const [loadedDoc,setLoadedDoc]=useState<Row|null>(null);
   const [media,setMedia]=useState<Row[]>([]);
   useEffect(()=>{api("/media").then(r=>setMedia(r.media)).catch(e=>setToast(e.message))},[]);
   const [question,setQuestion]=useState("HTML برای چه کاری استفاده می‌شود؟");
@@ -608,8 +613,10 @@ function درس‌هاPage() {
       if(!course)throw Error("ابتدا یک دوره انتخاب کنید.");
       const sampleVideo=media.find(m=>m.course_id===course&&m.status==='approved'&&m.mime.startsWith('video/'));
       const content=blocks.map(b=>{
-        const base={id:String(b.id),title:b.title,body:b.content};
+        const base={...b.original,id:String(b.id),title:b.title,body:b.content};
         if(b.type==="ویدیو"){
+          if(b.original?.sourceUrl===b.source)return {...base,kind:'video',sourceUrl:b.source};
+          if(!b.source?.trim()&&b.original?.mediaId)return {...base,kind:'video',mediaId:b.original.mediaId};
           if(!b.source?.trim()&&sampleVideo)return {...base,kind:'video',sourceUrl:'/api/platform/files/'+sampleVideo.id};
           const embedUrl=mediaSource(b.source||'',true);
           if(!embedUrl)throw Error('کد iframe کاویمو را در بلوک ویدیو وارد کنید.');
@@ -620,9 +627,9 @@ function درس‌هاPage() {
           if(!imageUrl)throw Error('نشانی HTTPS تصویر را در بلوک تصویر وارد کنید.');
           return {...base,kind:'image',imageUrl};
         }
-        return {...base,kind:b.type==='کد'?'code':b.type==='یادداشت'?'note':'text'};
+        return {...base,kind:b.type==='کد'?'code':b.type==='یادداشت'?'note':b.original?.kind==='heading'?'heading':'text'};
       });
-      const doc={title,blocks:content,exercise:{prompt:blocks.find(b=>b.type==="تمرین")?.content||"یک مثال از این درس بنویسید.",starter:blocks.find(b=>b.type==="کد")?.content||""},quiz:[{prompt:question,options:[right,wrong],correct:0}],passScore:70};
+      const doc={...loadedDoc,title,cover,blocks:content,exercise:{...loadedDoc?.exercise,prompt:blocks.find(b=>b.type==="تمرین")?.content||loadedDoc?.exercise?.prompt||"یک مثال از این درس بنویسید.",starter:blocks.find(b=>b.type==="کد")?.content||""},quiz:[{prompt:question,options:[right,wrong,...(loadedDoc?.quiz?.[0]?.options?.filter((o:string)=>o!==right&&o!==wrong)||[])],correct:0},...(loadedDoc?.quiz?.slice(1)||[])],passScore:loadedDoc?.passScore||70};
       const result=saved?await api('/lessons/'+saved.id,{...doc,draftRev:saved.rev}):await api('/courses/'+course+'/lessons',doc);
       const record={id:saved?.id||result.id,rev:result.draftRev||1};
       setSaved(record);
@@ -630,6 +637,7 @@ function درس‌هاPage() {
       setToast(publish?"درس منتشر شد":"پیش‌نویس ذخیره شد");
     }catch(error){setToast(String(error))}finally{setBusy(false)}
   }
+  async function openSaved(id:string){try{const record=await api('/lessons/'+id);const d=record.content;setLoadedDoc(d);setCover(d.cover||null);setTitle(d.title);setSaved({id,rev:record.draftRev});setBlocks(d.blocks.map((b:Row,i:number)=>({id:i+1,original:b,type:({video:'ویدیو',image:'تصویر',code:'کد',note:'یادداشت'} as Record<string,Block['type']>)[b.kind]||'متن',title:b.title,content:b.body,source:b.embedUrl||b.sourceUrl||b.imageUrl||''})));if(d.quiz?.[0]){setQuestion(d.quiz[0].prompt);setRight(d.quiz[0].options[d.quiz[0].correct]);setWrong(d.quiz[0].options.find((_:string,i:number)=>i!==d.quiz[0].correct)||'');}setBuilder(true);}catch(e){setToast(String(e));}}
   const move = (index: number, dir: number) => {
     const next = [...blocks];
     const target = index + dir;
@@ -665,7 +673,7 @@ function درس‌هاPage() {
     if(!src)return <small>{b.source?'نشانی معتبر نیست':'رسانه‌ای انتخاب نشده است'}</small>;
     return video?<iframe title={b.title} src={src} allowFullScreen style={{width:'100%',aspectRatio:'16/9',border:0}}/>:<img alt={b.title} src={src} style={{maxWidth:'100%'}}/>;
   }
-  if(preview)return <section className="page-stack"><div className="builder-top"><h2>{title}</h2><button className="outline-btn" onClick={()=>setPreview(false)}>بازگشت به ویرایش</button></div>{blocks.map(b=><article className="lesson-card" key={b.id}><div className="card-copy"><h3>{b.title}</h3>{(b.type==='ویدیو'||b.type==='تصویر')&&renderMedia(b)}{b.type==='کد'?<pre>{b.content}</pre>:<p>{b.content}</p>}</div></article>)}<section><h3>{question}</h3>{[right,wrong].map((option,i)=><label key={i}><input type="radio" name="preview-quiz"/>{option}</label>)}</section></section>;
+  if(preview)return <section className="page-stack"><div className="builder-top"><h2>{title}</h2><LessonCover cover={cover} title={title}/><button className="outline-btn" onClick={()=>setPreview(false)}>بازگشت به ویرایش</button></div>{blocks.map(b=><article className="lesson-card" key={b.id}><div className="card-copy"><h3>{b.title}</h3>{(b.type==='ویدیو'||b.type==='تصویر')&&renderMedia(b)}{b.type==='کد'?<pre>{b.content}</pre>:<p>{b.content}</p>}</div></article>)}<section><h3>{question}</h3>{[right,wrong].map((option,i)=><label key={i}><input type="radio" name="preview-quiz"/>{option}</label>)}</section></section>;
   if (!builder)
     return (
       <div className="page-stack">
@@ -675,7 +683,7 @@ function درس‌هاPage() {
             <h2>درس‌هایی بسازید که ماندگار شوند.</h2>
             <p>با کمک هوش مصنوعی نوا، درس‌هایی غنی و تعاملی بسازید.</p>
           </div>
-          <button className="primary-btn big" onClick={() => {setSaved(null);setBuilder(true)}}>
+          <button className="primary-btn big" onClick={() => {setSaved(null);setLoadedDoc(null);setCover(null);setBlocks(initialBlocks);setBuilder(true)}}>
             <Icon name="sparkle" size={19} /> ساخت با هوش مصنوعی
           </button>
         </section>
@@ -694,8 +702,8 @@ function درس‌هاPage() {
             پیش‌نویس‌ها <b>4</b>
           </button>
         </div>
-        <section className="lesson-cards">{serverLessons.map(l=><article className="lesson-card" key={l.id}><div className="card-copy"><h3>{l.title}</h3><small>{l.status}</small></div></article>)}
-          <button className="new-lesson" onClick={() => {setSaved(null);setBuilder(true)}}>
+        <section className="lesson-cards">{serverLessons.map(l=><article className="lesson-card" key={l.id}><div className="card-copy"><LessonCover cover={l.cover} title={l.title}/><h3>{l.title}</h3><small>{l.status}</small><button onClick={()=>void openSaved(l.id)}>ویرایش و پیش‌نمایش</button></div></article>)}
+          <button className="new-lesson" onClick={() => {setSaved(null);setLoadedDoc(null);setCover(null);setBlocks(initialBlocks);setBuilder(true)}}>
             <span>
               <Icon name="plus" size={24} />
             </span>
@@ -751,7 +759,7 @@ function درس‌هاPage() {
       </div>
       <div className="builder-layout">
         <aside className="builder-side">
-          <p className="eyebrow">طرح کلی درس</p>
+          <p className="eyebrow">طرح کلی درس</p><CoverPicker value={cover} onChange={setCover}/>
           <label>دوره<select disabled={!!saved} value={course} onChange={e=>setCourse(e.target.value)}>{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label>
           
           <label>پرسش آزمون<input value={question} onChange={e=>setQuestion(e.target.value)}/></label><label>پاسخ درست<input value={right} onChange={e=>setRight(e.target.value)}/></label><label>گزینه دیگر<input value={wrong} onChange={e=>setWrong(e.target.value)}/></label>

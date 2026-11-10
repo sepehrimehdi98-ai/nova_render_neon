@@ -1,3 +1,4 @@
+import {LessonCover} from '../LessonCover';
 import CourseWorkspace from '../CourseWorkspace';
 import {useEffect,useState} from 'react';
 import {api,type Row} from '../../src/live/api';
@@ -14,8 +15,4 @@ export default function App(){
  const Page=pages[location.pathname.replace(/\/$/,'')||'/']||pages['/'];
  return <DashboardShell>{location.pathname==="/lessons/view"?<StoredLesson/>:<Page/>}</DashboardShell>;
 }
-function StoredLesson(){
- const [doc,setDoc]=useState<Row|null>(null),[error,setError]=useState('');
- useEffect(()=>{api('/lessons/'+encodeURIComponent(new URLSearchParams(location.search).get('id')||'')).then(r=>setDoc(r.content)).catch(e=>setError(e.message))},[]);
- return <article className="rounded-2xl bg-white p-6"><h1>{doc?.title||error}</h1>{doc?.blocks.map((b:Row)=><section key={b.id}><h2>{b.title}</h2>{b.kind==='video'?(b.sourceUrl?<video controls src={b.sourceUrl}/>:<iframe title={b.title} src={b.embedUrl||'https://stream.novextech.ir/'+encodeURIComponent(b.mediaId)}/>):b.kind==='image'?<img src={b.imageUrl} alt={b.title}/>:b.kind==='code'?<pre>{b.body}</pre>:<p>{b.body}</p>}</section>)}</article>
-}
+function StoredLesson(){return <CourseWorkspace screen="lesson" lessonId={new URLSearchParams(location.search).get('id')||''}/>;}

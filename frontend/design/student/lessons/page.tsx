@@ -1,3 +1,4 @@
+import {LessonCover} from '../../LessonCover';
 import {useEffect,useState} from 'react';
 import {api,type Row} from '../../../src/live/api';
 import Link from '../navigation'
@@ -63,7 +64,7 @@ export default function LessonsPage() {
       </div>
       <div className="mt-7 grid gap-6 lg:grid-cols-[1fr_300px]">
         <div className="space-y-3">
-          {error&&<p role="alert">{error}</p>}{lessons.map(l=><a className="block rounded-xl bg-white p-4" key={l.id} href={"/lessons/view?id="+l.id}>{l.title}</a>)}{chapters.map((c, i) => (
+          {error&&<p role="alert">{error}</p>}{lessons.map(l=><a className="block rounded-xl bg-white p-4" key={l.id} href={"/lessons/view?id="+l.id}><LessonCover cover={l.cover} title={l.title}/>{l.title}</a>)}{chapters.map((c, i) => (
             <div
               key={c.n}
               className={`rounded-[24px] border bg-white p-5 ${c.active ? 'border-[#7453b9] shadow-[0_10px_28px_rgba(81,45,168,.08)]' : 'border-[#ebe7e2]'}`}

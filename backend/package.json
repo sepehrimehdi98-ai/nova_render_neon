@@ -7,7 +7,7 @@
   },
   "scripts": {
     "start": "node product-server.js",
-    "test": "node --test --test-isolation=none test/passwords.test.js test/platform-database.test.js test/platform-extensions.test.js test/platform-journey.test.js test/platform-learning.test.js test/ai-examples.test.js test/openrouter.test.js test/rag-pipeline.test.js",
+    "test": "node --test --test-isolation=none test/passwords.test.js test/platform-database.test.js test/platform-extensions.test.js test/platform-journey.test.js test/platform-learning.test.js test/ai-examples.test.js test/openrouter.test.js test/rag-pipeline.test.js test/lesson-cover.test.js",
     "db:migrate": "node scripts/platform-migrate.js",
     "db:check": "node scripts/database-check.js",
     "admin:create": "node scripts/platform-admin.js",
