@@ -703,7 +703,7 @@ function درس‌هاPage() {
             پیش‌نویس‌ها <b>{serverLessons.filter(l=>l.status==='draft').length}</b>
           </button>
         </div>
-        <section className="lesson-cards">{serverLessons.map(l=><article className="lesson-card" key={l.id}><div className="card-copy"><LessonCover cover={l.cover} title={l.title}/><h3>{l.title}</h3><small>{l.status}</small><button onClick={()=>void openSaved(l.id)}>ویرایش و پیش‌نمایش</button></div></article>)}
+        <label>دوره آموزشی<select aria-label="دوره درس‌ها" value={course} onChange={e=>{setCourse(e.target.value);setSaved(null);setLoadedDoc(null)}}>{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label><CourseWorkspace key={course} screen="structure" fixedCourseId={course}/><section className="lesson-cards">{serverLessons.map(l=><article className="lesson-card" key={l.id}><div className="card-copy"><LessonCover cover={l.cover} title={l.title}/><h3>{l.title}</h3><small>{l.status}</small><button onClick={()=>void openSaved(l.id)}>ویرایش و پیش‌نمایش</button></div></article>)}
           <button className="new-lesson" onClick={() => {setSaved(null);setLoadedDoc(null);setCover(null);setBlocks(initialBlocks);setBuilder(true)}}>
             <span>
               <Icon name="plus" size={24} />
