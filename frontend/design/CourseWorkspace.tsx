@@ -8,7 +8,7 @@ import {Analytics} from '../src/live/Management';
 import './course-workspace.css';
 
 export default function CourseWorkspace({screen,lessonId='',fixedCourseId=''}:{screen:'exams'|'analytics'|'lesson'|'structure';lessonId?:string;fixedCourseId?:string}){
- const [user,setUser]=useState<User|null>(null),[selected,setSelected]=useState(''),[notice,setNotice]=useState('');
+ const [user,setUser]=useState<User|null>(null),[selected,setSelected]=useState(()=>new URLSearchParams(location.search).get('course')||''),[notice,setNotice]=useState('');
  const courses=useResource('/courses');
  useEffect(()=>{const controller=new AbortController();api('/me',undefined,controller.signal).then(r=>setUser(r.user)).catch(e=>{if(e.name!=='AbortError')setNotice(e.message)});return()=>controller.abort()},[]);
  const list=courses.data?.courses||[];

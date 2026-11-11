@@ -139,6 +139,7 @@ async function extensions(ctx) {
             if (!Array.isArray(data.order) || data.order.length !== ids.length || new Set(data.order).size !== ids.length || data.order.some(x => !ids.includes(x)))
                 fail(400, 'ترتیب باید تمام درس‌های همین دوره را شامل شود.');
             const mods = await q.all('SELECT id FROM nova_modules WHERE course_id=?', [cid]);
+            if(data.chapterOrder!==undefined){const order=data.chapterOrder;if(!Array.isArray(order)||order.length!==mods.length||new Set(order).size!==mods.length||order.some(mid=>!mods.some(m=>m.id===mid)))fail(400,'ترتیب فصل‌ها معتبر نیست.');const highest=await q.one('SELECT MAX(position) AS n FROM nova_modules WHERE course_id=?',[cid]);await q.run('UPDATE nova_modules SET position=position+? WHERE course_id=?',[Number(highest?.n||0)+mods.length+1000,cid]);for(let i=0;i<order.length;i++)await q.run('UPDATE nova_modules SET position=? WHERE id=? AND course_id=?',[i,order[i],cid]);}
             const layout = data.layout || [];
             if (!Array.isArray(layout) || layout.length > ids.length || new Set(layout.filter(Boolean).map(x => x.lessonId)).size !== layout.length || layout.some(x => !x || typeof x !== 'object') || layout.some(x => !ids.includes(x.lessonId) || (x.moduleId && !mods.some(m => m.id === x.moduleId))))
                 fail(400, 'فصل‌بندی معتبر نیست.');

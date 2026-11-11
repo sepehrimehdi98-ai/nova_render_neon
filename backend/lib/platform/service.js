@@ -40,6 +40,9 @@ function validateLesson(input, publishing = false) {
             fail(400, 'شناسه بلوک تکراری است.');
         seen.add(key);
         const result = { id: key, kind: b.kind, title: text(b.title || ' ', 200, 0), body: text(b.body || ' ', 12000, 0) };
+        if(Array.isArray(b.textMarks)&&typeof b.body==='string')result.body=b.body;
+        if(b.variant!==undefined){if(!['quote','list','divider'].includes(b.variant))fail(400,'سبک بلوک معتبر نیست.');result.variant=b.variant;}
+        if(b.textMarks!==undefined){if(!Array.isArray(b.textMarks)||b.textMarks.length>100)fail(400,'قالب متن معتبر نیست.');let last=0;result.textMarks=b.textMarks.map(m=>{const start=integer(m.start,0,result.body.length),end=integer(m.end,1,result.body.length),fontSize=integer(m.fontSize,12,36);if(start<last||end<=start)fail(400,'بازه متن معتبر نیست.');last=end;return {start,end,fontSize};});}
         if (b.fontSize !== undefined) result.fontSize = integer(b.fontSize, 12, 36);
         if (b.textColor !== undefined) { if (typeof b.textColor !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(b.textColor)) fail(400, 'رنگ متن معتبر نیست.'); result.textColor = b.textColor.toLowerCase(); }
         if (b.kind === 'video') {
@@ -88,9 +91,11 @@ function validateLesson(input, publishing = false) {
     });
     if (publishing && (!clean.some(b => b.kind === 'video') || !exercise.prompt || !questions.length))
         fail(400, 'برای انتشار، ویدیو، تمرین و حداقل یک سؤال کامل لازم است.');
-    return { title, cover, blocks: clean, exercise, quiz: questions, passScore: integer(input.passScore ?? 70, 1, 100) };
+    const references=(input.references||[]);if(!Array.isArray(references)||references.length>8)fail(400,'حداکثر هشت مرجع مجاز است.');for(const link of references){let u;try{u=new URL(link)}catch{fail(400,'لینک مرجع معتبر نیست.')}if(u.protocol!=='https:'||u.username||u.password||link.length>2000)fail(400,'مرجع باید HTTPS باشد.');}
+    const examId=input.examId?id(input.examId):null;
+    return { title, cover, references, examId, blocks: clean, exercise, quiz: questions, passScore: integer(input.passScore ?? 70, 1, 100) };
 }
-function studentContent(doc) { const { gradingTests, ...exercise } = doc.exercise; return { ...doc, exercise: { ...exercise, autoGradingEnabled: Boolean(gradingTests?.length) }, quiz: doc.quiz.map(({ correct, ...question }) => question) }; }
+function studentContent(doc) { const { gradingTests, ...exercise } = doc.exercise; const {references,...publicDoc}=doc;return { ...publicDoc, exercise: { ...exercise, autoGradingEnabled: Boolean(gradingTests?.length) }, quiz: doc.quiz.map(({ correct, ...question }) => question) }; }
 async function scope(q, u, courseId, write = false) {
     const course = await q.lockCourse(id(courseId));
     if (!course)
@@ -401,6 +406,7 @@ async function createPlatform(store, { demo = false, origin = 'http://127.0.0.1:
                         if (!['teacher', 'admin'].includes(u.role))
                             fail(403, 'فقط مدرس یا مدیر درس می‌سازد.');
                         const doc = validateLesson(data), lid = randomUUID();
+                        if(doc.examId&&!await q.one('SELECT id FROM nova_exams WHERE id=? AND course_id=?',[doc.examId,cid]))fail(400,'آزمون باید متعلق به همین دوره باشد.');
                         const row = await q.one('SELECT MAX(position) AS last FROM nova_lessons WHERE course_id=?', [cid]);
                         await q.run("INSERT INTO nova_lessons(id,course_id,position,draft_json,draft_rev,published_version,status,created_by) VALUES(?,?,?,?,1,0,'draft',?)", [lid, cid, (row?.last ?? -1) + 1, JSON.stringify(doc), u.id]);
                         await audit(q, u, 'lesson.create', lid);
@@ -427,6 +433,7 @@ async function createPlatform(store, { demo = false, origin = 'http://127.0.0.1:
                         if (rev !== lesson.draft_rev)
                             fail(409, 'پیش‌نویس تغییر کرده است؛ دوباره دریافت کنید.');
                         const doc = validateLesson(data);
+                        if(doc.examId&&!await q.one('SELECT id FROM nova_exams WHERE id=? AND course_id=?',[doc.examId,lesson.course_id]))fail(400,'آزمون باید متعلق به همین دوره باشد.');
                         await q.run('UPDATE nova_lessons SET draft_json=?,draft_rev=draft_rev+1 WHERE id=?', [JSON.stringify(doc), lid]);
                         await audit(q, u, 'lesson.save', lid);
                         return send(res, 200, { draftRev: rev + 1 });

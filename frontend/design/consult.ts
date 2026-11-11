@@ -1,8 +1,8 @@
 import {api,type Row} from '../src/live/api';
 
-export async function consult(course:string,lessonId:string,question:string,publicTopic=''){
+export async function consult(course:string,lessonId:string,question:string,publicTopic='',focusBlockId=''){
   const base='/courses/'+course+'/ai/jobs';
-  const job=await api(base,{lessonId,question,publicTopic});
+  const job=await api(base,{lessonId,question,publicTopic,focusBlockId});
   for(let attempt=0;attempt<200;attempt++){
     const {jobs}=await api(base);
     const current=jobs.find((row:Row)=>row.id===job.id);

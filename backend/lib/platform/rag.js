@@ -7,7 +7,7 @@ async function ragRoutes({q,u,route,req,data,scope,lessonScope,send,res,fail,id,
   if(!teacher)fail(403,'فقط مدرس و مدیر');
   if(req.method==='GET')return send(res,200,{sources:await q.all('SELECT * FROM nova_ai_sources WHERE course_id=? ORDER BY created_at DESC LIMIT 100',[cid])});
   if(req.method==='POST'){
-   const sid=randomUUID(),title=text(data.title,200,1);let body;try{body=data.document?require('./document-index').extract(data.document):text(data.body,16000,20);}catch{fail(400,'فقط متن یا Markdown بین ۲۰ تا ۱۶۰۰۰ نویسه پذیرفته می‌شود.');}
+   const sid=randomUUID(),title=text(data.title,200,1);let body;try{body=data.referenceUrl?await require('./reference-document').fetchReference(data.referenceUrl):data.document?require('./document-index').extract(data.document):text(data.body,16000,20);}catch{fail(400,data.referenceUrl?'دریافت مرجع ممکن نشد؛ لینک HTTPS مستندات پشتیبانی‌شده یا فایل متنی وارد کنید.':'فقط متن یا Markdown بین ۲۰ تا ۱۶۰۰۰ نویسه پذیرفته می‌شود.');}
    await q.run('INSERT INTO nova_ai_sources VALUES(?,?,?,?,?,?,?,?)',[sid,cid,u.id,title,body,'pending','{}',new Date().toISOString()]);
    await q.run('INSERT INTO nova_ai_visibility VALUES(?,?)',[sid,0]);await enqueue('review',{sourceId:sid});return send(res,201,{id:sid});
   }
@@ -28,7 +28,8 @@ async function ragRoutes({q,u,route,req,data,scope,lessonScope,send,res,fail,id,
   if(req.method==='POST'){
    const question=text(data.question,4000,3),lessonId=id(data.lessonId);const lesson=await lessonScope(q,u,lessonId);if(lesson.course_id!==cid)fail(403,'درس متعلق به این دوره نیست.');
    const publicTopic=data.publicTopic?text(data.publicTopic,200,3):'';
-   const jid=await enqueue(teacher?'author':'tutor',{question,lessonId,publicTopic,...(teacher?{draft:JSON.parse(lesson.draft_json),draftRev:lesson.draft_rev}:{})});return send(res,202,{id:jid});
+   const focusBlockId=teacher&&data.focusBlockId?text(data.focusBlockId,80,1):'';if(focusBlockId&&!JSON.parse(lesson.draft_json).blocks.some(b=>b.id===focusBlockId))fail(400,'بلوک انتخاب‌شده در پیش‌نویس نیست.');
+   const jid=await enqueue(teacher?'author':'tutor',{question,lessonId,publicTopic,focusBlockId,...(teacher?{draft:JSON.parse(lesson.draft_json),draftRev:lesson.draft_rev}:{})});return send(res,202,{id:jid});
   }
  }
  fail(405,'روش مجاز نیست.');
