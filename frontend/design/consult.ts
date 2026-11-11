@@ -11,7 +11,7 @@ export async function consult(course:string,lessonId:string,question:string,publ
       const citations=(result.sources||[]).map((source:Row)=>source.url||source.id).join('\n');
       return String(result.answer)+(citations?'\n\nمنابع:\n'+citations:'')+(result.webStatus==='unavailable'?'\nجست‌وجوی وب در دسترس نبود؛ پاسخ از منابع درس تهیه شد.':'');
     }
-    if(current && ['failed','blocked'].includes(current.status))throw Error('پاسخ آماده نشد. تنظیمات سرویس هوش مصنوعی را بررسی کنید.');
+    if(current && ['failed','blocked'].includes(current.status)){const code=JSON.parse(current.result_json||'{}').error;const errors:Record<string,string>={AI_RATE_LIMITED:'سقف درخواست سرویس AI پر شده است؛ کمی بعد دوباره بفرستید.',AI_TIMEOUT:'زمان پاسخ سرویس تمام شد؛ پرسش کوتاه‌تر را دوباره بفرستید.',INVALID_AI_RESPONSE:'پاسخ سرویس ساختار معتبر نداشت؛ دوباره تلاش کنید.',AI_AUTHENTICATION_FAILED:'کلید سرویس AI معتبر نیست؛ مدیر تنظیمات را بررسی کند.',AI_CREDITS_REQUIRED:'اعتبار سرویس AI کافی نیست؛ مدیر حساب سرویس را بررسی کند.',AI_MODEL_UNAVAILABLE:'مدل انتخاب‌شده فعلاً در دسترس نیست.'};throw Error(errors[code]||'پاسخ آماده نشد؛ وضعیت سرویس را بررسی یا دوباره تلاش کنید.');}
     await new Promise(resolve=>setTimeout(resolve,1500));
   }
   return 'درخواست ثبت شد و در صف پردازش است.';

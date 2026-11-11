@@ -92,8 +92,9 @@ function validateLesson(input, publishing = false) {
     if (publishing && (!clean.some(b => b.kind === 'video') || !exercise.prompt || !questions.length))
         fail(400, 'برای انتشار، ویدیو، تمرین و حداقل یک سؤال کامل لازم است.');
     const references=(input.references||[]);if(!Array.isArray(references)||references.length>8)fail(400,'حداکثر هشت مرجع مجاز است.');for(const link of references){let u;try{u=new URL(link)}catch{fail(400,'لینک مرجع معتبر نیست.')}if(u.protocol!=='https:'||u.username||u.password||link.length>2000)fail(400,'مرجع باید HTTPS باشد.');}
+    const meta=input.metadata||{};if(typeof meta!=='object'||Array.isArray(meta))fail(400,'جزئیات درس معتبر نیست.');const metadata={summary:text(meta.summary||'',2000,0),keywords:text(meta.keywords||'',300,0),difficulty:meta.difficulty||'beginner',durationMinutes:integer(meta.durationMinutes??20,1,600)};if(!['beginner','intermediate','advanced'].includes(metadata.difficulty))fail(400,'سطح درس معتبر نیست.');
     const examId=input.examId?id(input.examId):null;
-    return { title, cover, references, examId, blocks: clean, exercise, quiz: questions, passScore: integer(input.passScore ?? 70, 1, 100) };
+    return { title, cover, references, examId, metadata, blocks: clean, exercise, quiz: questions, passScore: integer(input.passScore ?? 70, 1, 100) };
 }
 function studentContent(doc) { const { gradingTests, ...exercise } = doc.exercise; const {references,...publicDoc}=doc;return { ...publicDoc, exercise: { ...exercise, autoGradingEnabled: Boolean(gradingTests?.length) }, quiz: doc.quiz.map(({ correct, ...question }) => question) }; }
 async function scope(q, u, courseId, write = false) {

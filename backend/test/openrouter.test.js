@@ -8,7 +8,7 @@ test('OpenRouter routing, authentication, JSON and safe failures',async()=>{
  const client=provider(env);assert.equal((await client.json('Explain',{})).answer,'ok');
  assert.equal(requests[0].url,'https://openrouter.ai/api/v1/chat/completions');
  assert.equal(requests[0].headers.authorization,'Bearer test-secret');
- const body=JSON.parse(requests[0].body);assert.ok(body.model.endsWith(':free'));assert.equal(body.provider.allow_fallbacks,false);
+ const body=JSON.parse(requests[0].body);assert.ok(body.model.endsWith(':free'));assert.equal(body.provider.allow_fallbacks,false);assert.equal(body.reasoning.max_tokens,1024);
  await assert.rejects(client.json('',{},true),/WEB_NOT_CONFIGURED/);
  assert.throws(()=>provider({...env,OPENROUTER_CHAT_MODEL:'paid-model'}),/FREE_MODEL_REQUIRED/);
  assert.throws(()=>provider({...env,OPENROUTER_API_KEY:''}),/AI_NOT_CONFIGURED/);

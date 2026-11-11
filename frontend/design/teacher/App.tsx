@@ -602,6 +602,7 @@ function درس‌هاPage() {
   const [cover,setCover]=useState<Row|null>(null);
   const [references,setReferences]=useState<string[]>([]);
   const [examId,setExamId]=useState('');
+  const [summary,setSummary]=useState(''),[keywords,setKeywords]=useState(''),[difficulty,setDifficulty]=useState('beginner'),[duration,setDuration]=useState(20);
   const [exams,setExams]=useState<Row[]>([]);
   const [aiBusy,setAiBusy]=useState(false);
   const [hasAiAnswer,setHasAiAnswer]=useState(false);
@@ -623,7 +624,7 @@ function درس‌هاPage() {
       if(!course)throw Error("ابتدا یک دوره انتخاب کنید.");
       const sampleVideo=media.find(m=>m.course_id===course&&m.status==='approved'&&m.mime.startsWith('video/'));
       const content=blocks.map(b=>{
-        const base={...b.original,id:String(b.id),title:b.title,body:b.content,fontSize:b.fontSize,textMarks:b.textMarks,variant:b.type==='فهرست'?'list':b.type==='نقل‌قول'?'quote':b.type==='جداکننده'?'divider':undefined};
+        const base={...b.original,id:String(b.original?.id||b.id),title:b.title,body:b.content,fontSize:b.fontSize,textMarks:b.textMarks,variant:b.type==='فهرست'?'list':b.type==='نقل‌قول'?'quote':b.type==='جداکننده'?'divider':undefined};
         if(b.type==="ویدیو"){
           if(b.original?.sourceUrl===b.source)return {...base,kind:'video',sourceUrl:b.source};
           if(!b.source?.trim()&&b.original?.mediaId)return {...base,kind:'video',mediaId:b.original.mediaId};
@@ -639,7 +640,7 @@ function درس‌هاPage() {
         }
         return {...base,kind:b.type==='کد'?'code':b.type==='یادداشت'?'note':b.type==='عنوان'||b.original?.kind==='heading'?'heading':'text'};
       });
-      const doc={...loadedDoc,title,cover,references:references.map(r=>r.trim()).filter(Boolean),examId:examId||null,blocks:content,exercise:{...loadedDoc?.exercise,prompt:blocks.find(b=>b.type==="تمرین")?.content||loadedDoc?.exercise?.prompt||"یک مثال از این درس بنویسید.",starter:blocks.find(b=>b.type==="کد")?.content||""},quiz:[{prompt:question,options:[right,wrong,...(loadedDoc?.quiz?.[0]?.options?.filter((o:string)=>o!==right&&o!==wrong)||[])],correct:0},...(loadedDoc?.quiz?.slice(1)||[])],passScore:loadedDoc?.passScore||70};
+      const doc={...loadedDoc,title,cover,metadata:{summary,keywords,difficulty,durationMinutes:duration},references:references.map(r=>r.trim()).filter(Boolean),examId:examId||null,blocks:content,exercise:{...loadedDoc?.exercise,prompt:blocks.find(b=>b.type==="تمرین")?.content||loadedDoc?.exercise?.prompt||"یک مثال از این درس بنویسید.",starter:blocks.find(b=>b.type==="کد")?.content||""},quiz:[{prompt:question,options:[right,wrong,...(loadedDoc?.quiz?.[0]?.options?.filter((o:string)=>o!==right&&o!==wrong)||[])],correct:0},...(loadedDoc?.quiz?.slice(1)||[])],passScore:loadedDoc?.passScore||70};
       const result=saved?await api('/lessons/'+saved.id,{...doc,draftRev:saved.rev}):await api('/courses/'+course+'/lessons',doc);
       const record={id:saved?.id||result.id,rev:result.draftRev||1};
       setSaved(record);
@@ -647,7 +648,7 @@ function درس‌هاPage() {
       setToast(publish?"درس منتشر شد":"پیش‌نویس ذخیره شد");return record;
     }catch(error){setToast(String(error));return null}finally{setBusy(false)}
   }
-  async function openSaved(id:string){try{const record=await api('/lessons/'+id);const d=record.content;setMessages([]);setHasAiAnswer(false);setChat('');setLoadedDoc(d);setCover(d.cover||null);setReferences(d.references||[]);setExamId(d.examId||'');setTitle(d.title);setSaved({id,rev:record.draftRev});setBlocks(d.blocks.map((b:Row,i:number)=>({id:i+1,original:b,fontSize:b.fontSize,textMarks:b.textMarks,type:b.kind==='heading'?'عنوان':b.variant==='list'?'فهرست':b.variant==='quote'?'نقل‌قول':b.variant==='divider'?'جداکننده':({video:'ویدیو',image:'تصویر',code:'کد',note:'یادداشت'} as Record<string,Block['type']>)[b.kind]||'متن',title:b.title,content:b.body,source:b.embedUrl||b.sourceUrl||b.imageUrl||''})));if(d.quiz?.[0]){setQuestion(d.quiz[0].prompt);setRight(d.quiz[0].options[d.quiz[0].correct]);setWrong(d.quiz[0].options.find((_:string,i:number)=>i!==d.quiz[0].correct)||'');}setBuilder(true);}catch(e){setToast(String(e));}}
+  async function openSaved(id:string){try{const record=await api('/lessons/'+id);const d=record.content;setMessages([]);setHasAiAnswer(false);setChat('');setLoadedDoc(d);setCover(d.cover||null);setReferences(d.references||[]);setExamId(d.examId||'');setSummary(d.metadata?.summary||'');setKeywords(d.metadata?.keywords||'');setDifficulty(d.metadata?.difficulty||'beginner');setDuration(d.metadata?.durationMinutes||20);setTitle(d.title);setSaved({id,rev:record.draftRev});setBlocks(d.blocks.map((b:Row,i:number)=>({id:i+1,original:b,fontSize:b.fontSize,textMarks:b.textMarks,type:b.kind==='heading'?'عنوان':b.variant==='list'?'فهرست':b.variant==='quote'?'نقل‌قول':b.variant==='divider'?'جداکننده':({video:'ویدیو',image:'تصویر',code:'کد',note:'یادداشت'} as Record<string,Block['type']>)[b.kind]||'متن',title:b.title,content:b.body,source:b.embedUrl||b.sourceUrl||b.imageUrl||''})));if(d.quiz?.[0]){setQuestion(d.quiz[0].prompt);setRight(d.quiz[0].options[d.quiz[0].correct]);setWrong(d.quiz[0].options.find((_:string,i:number)=>i!==d.quiz[0].correct)||'');}setBuilder(true);}catch(e){setToast(String(e));}}
   function dropBlock(from:number,to:number){setBlocks(prev=>{const next=[...prev],i=next.findIndex(b=>b.id===from),j=next.findIndex(b=>b.id===to);if(i<0||j<0||i===j)return prev;const [item]=next.splice(i,1);next.splice(j,0,item);return next});setSelected(from)}
   const move = (index: number, dir: number) => {
     const next = [...blocks];
@@ -696,7 +697,7 @@ function درس‌هاPage() {
             <h2>درس‌هایی بسازید که ماندگار شوند.</h2>
             <p>با کمک هوش مصنوعی نوا، درس‌هایی غنی و تعاملی بسازید.</p>
           </div>
-          <button className="primary-btn big" onClick={() => {setSaved(null);setLoadedDoc(null);setCover(null);setReferences([]);setExamId('');setBlocks(initialBlocks);setBuilder(true)}}>
+          <button className="primary-btn big" onClick={() => {setSaved(null);setLoadedDoc(null);setCover(null);setReferences([]);setExamId('');setSummary('');setKeywords('');setDifficulty('beginner');setDuration(20);setBlocks(initialBlocks);setBuilder(true)}}>
             <Icon name="sparkle" size={19} /> ساخت با هوش مصنوعی
           </button>
         </section>
@@ -716,7 +717,7 @@ function درس‌هاPage() {
           </button>
         </div>
         <label>دوره آموزشی<select aria-label="دوره درس‌ها" value={course} onChange={e=>{setCourse(e.target.value);setSaved(null);setLoadedDoc(null)}}>{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label><CourseWorkspace key={course} screen="structure" fixedCourseId={course}/><section className="lesson-cards">{serverLessons.map(l=><article className="lesson-card" key={l.id}><div className="card-copy"><LessonCover cover={l.cover} title={l.title}/><h3>{l.title}</h3><small>{l.status}</small><button onClick={()=>void openSaved(l.id)}>ویرایش و پیش‌نمایش</button></div></article>)}
-          <button className="new-lesson" onClick={() => {setSaved(null);setLoadedDoc(null);setCover(null);setReferences([]);setExamId('');setBlocks(initialBlocks);setBuilder(true)}}>
+          <button className="new-lesson" onClick={() => {setSaved(null);setLoadedDoc(null);setCover(null);setReferences([]);setExamId('');setSummary('');setKeywords('');setDifficulty('beginner');setDuration(20);setBlocks(initialBlocks);setBuilder(true)}}>
             <span>
               <Icon name="plus" size={24} />
             </span>
@@ -776,39 +777,10 @@ function درس‌هاPage() {
           <label>دوره<select disabled={!!saved} value={course} onChange={e=>setCourse(e.target.value)}>{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label>
           
           <label>پرسش آزمون<input value={question} onChange={e=>setQuestion(e.target.value)}/></label><label>پاسخ درست<input value={right} onChange={e=>setRight(e.target.value)}/></label><label>گزینه دیگر<input value={wrong} onChange={e=>setWrong(e.target.value)}/></label>
-          <label>
-            اتصال به یک درس
-            <select>
-              <option>مقدمه‌ای بر توسعه وب</option>
-              <option>مبانی جاوااسکریپت</option>
-              <option>ساختار اتم</option>
-            </select>
-          </label>
-          <label>
-            توضیح کلی
-            <textarea defaultValue="دانش‌آموزان را با سازوکار وب و سه فناوری اصلی هر تجربه وب آشنا کنید." />
-          </label>
-          <label>
-            موضوعات کلیدی
-            <input defaultValue="HTML، CSS، جاوااسکریپت" />
-          </label>
-          <div className="lesson-meta-grid">
-            <label>
-              سطح دشواری
-              <select defaultValue="متوسط">
-                <option>مقدماتی</option>
-                <option>متوسط</option>
-                <option>پیشرفته</option>
-              </select>
-            </label>
-            <label>
-              زمان پیشنهادی
-              <input defaultValue="۴۵ دقیقه" />
-            </label>
-          </div>
-          <button className="ai-generate">
-            <Icon name="sparkle" size={18} /> تولید دوباره پیش‌نویس
-          </button>
+          <label className="platform-input">توضیح درس<textarea value={summary} maxLength={2000} onChange={e=>setSummary(e.target.value)}/><small className="helper">توضیح ذخیره‌شده در محتوای درس و زمینه دستیار استفاده می‌شود.</small></label>
+          <label className="platform-input">موضوعات کلیدی<input value={keywords} maxLength={300} onChange={e=>setKeywords(e.target.value)}/></label>
+          <label className="platform-input">سطح<select value={difficulty} onChange={e=>setDifficulty(e.target.value)}><option value="beginner">مقدماتی</option><option value="intermediate">متوسط</option><option value="advanced">پیشرفته</option></select></label>
+          <label className="platform-input">زمان پیشنهادی به دقیقه<input type="number" min={1} max={600} value={duration} onChange={e=>setDuration(Number(e.target.value))}/></label>
           <div className="add-blocks">
             <p className="eyebrow">افزودن بلوک</p>
             <div>
@@ -838,7 +810,7 @@ function درس‌هاPage() {
           <div className="canvas-head">
             <p className="eyebrow">علوم کامپیوتر · پایه دهم</p>
             <input value={title} onChange={e=>setTitle(e.target.value)} />
-            <textarea defaultValue="با سازوکار وب آشنا شوید و اولین صفحه خود را بسازید." />
+            <textarea value={summary} onChange={e=>setSummary(e.target.value)} placeholder="توضیح کوتاه درس"/>
           </div>
           <div className="blocks">
             {blocks.map((block, i) => (
@@ -872,7 +844,7 @@ function درس‌هاPage() {
                     </button>
                   </div>
                 </div>
-                {(block.type==='ویدیو'||block.type==='تصویر')&&<div>
+                {(block.type==='ویدیو'||block.type==='تصویر')&&<div className="platform-input">
                   <label>{block.type==='ویدیو'?'کد iframe یا نشانی پخش کاویمو':'نشانی HTTPS تصویر'}
                     <textarea dir="ltr" value={block.source||''} onChange={e=>setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,source:e.target.value}:b))}/>
                   </label>{block.source&&renderMedia(block)}
@@ -891,7 +863,7 @@ function درس‌هاPage() {
                     </span>
                   </div>
                 )}
-                {selected===block.id&&block.type==='متن'&&<div className="text-toolbar"><label>اندازه متن یا بخش انتخاب‌شده<select aria-label="اندازه فونت متن" value={block.fontSize||16} onChange={e=>{const fontSize=Number(e.target.value);setBlocks(bs=>bs.map(b=>{if(b.id!==block.id)return b;if(textSelection.blockId===b.id&&textSelection.end>textSelection.start){const mark={start:textSelection.start,end:textSelection.end,fontSize};return {...b,textMarks:[...(b.textMarks||[]).filter(m=>m.end<=mark.start||m.start>=mark.end),mark].sort((a,b)=>a.start-b.start)}}return {...b,fontSize}}))}}>{[12,14,16,18,20,24,28,32,36].map(n=><option key={n} value={n}>{n}</option>)}</select></label><small>متن را انتخاب کنید؛ بدون انتخاب، اندازه کل بلوک تغییر می‌کند. نتیجه در پیش‌نمایش دیده می‌شود.</small><BlockText block={{body:block.content,textMarks:block.textMarks}}/></div>}
+                {selected===block.id&&block.type==='متن'&&<div className="text-toolbar"><label>اندازه متن یا بخش انتخاب‌شده<select aria-label="اندازه فونت متن" value={(textSelection.blockId===block.id&&textSelection.end>textSelection.start?block.textMarks?.find(m=>m.start<=textSelection.start&&m.end>=textSelection.end)?.fontSize:undefined)||block.fontSize||16} onChange={e=>{const fontSize=Number(e.target.value);setBlocks(bs=>bs.map(b=>{if(b.id!==block.id)return b;if(textSelection.blockId===b.id&&textSelection.end>textSelection.start){const mark={start:textSelection.start,end:textSelection.end,fontSize};return {...b,textMarks:[...(b.textMarks||[]).flatMap(m=>m.end<=mark.start||m.start>=mark.end?[m]:[...(m.start<mark.start?[{...m,end:mark.start}]:[]),...(m.end>mark.end?[{...m,start:mark.end}]:[])]),mark].sort((a,b)=>a.start-b.start)}}return {...b,fontSize}}))}}>{[12,14,16,18,20,24,28,32,36].map(n=><option key={n} value={n}>{n}</option>)}</select></label><small>متن را انتخاب کنید؛ بدون انتخاب، اندازه کل بلوک تغییر می‌کند. نتیجه در پیش‌نمایش دیده می‌شود.</small><BlockText block={{body:block.content,textMarks:block.textMarks}}/></div>}
               </article>
             ))}
           </div>
@@ -909,7 +881,7 @@ function درس‌هاPage() {
           </div>
           <BuilderSources key={course} course={course} references={references} onReferences={setReferences}/>
           <div className="ai-chat"><p>تمرکز پاسخ: بلوک انتخاب‌شده و آخرین پیش‌نویس ذخیره‌شده</p><div className="ai-conversation" aria-live="polite">{messages.map((m,i)=><div key={i} className={'ai-message '+m.role}>{m.text}</div>)}</div></div>
-          <form onSubmit={async e=>{e.preventDefault();const question=chat.trim();if(!question||aiBusy)return;setAiBusy(true);try{const record=await save(false);if(!record)return;setMessages(m=>[...m,{role:'user',text:question}]);setChat('');const answer=await consult(course,record.id,question,'',selected?String(selected):'');setMessages(m=>[...m,{role:'ai',text:answer}]);setHasAiAnswer(true);}catch(error){setToast(String(error))}finally{setAiBusy(false)}}}>
+          <form onSubmit={async e=>{e.preventDefault();const question=chat.trim();if(!question||aiBusy)return;setAiBusy(true);try{const record=await save(false);if(!record)return;setMessages(m=>[...m,{role:'user',text:question}]);setChat('');const answer=await consult(course,record.id,question,'',selected?String(blocks.find(b=>b.id===selected)?.original?.id||selected):'');setMessages(m=>[...m,{role:'ai',text:answer}]);setHasAiAnswer(true);}catch(error){setToast(String(error))}finally{setAiBusy(false)}}}>
            <label className="platform-input">گفتگو با دستیار<textarea aria-label="پرسش درباره بلوک درس" value={chat} onChange={e=>setChat(e.target.value)} maxLength={4000} placeholder="درباره بلوک انتخاب‌شده بپرسید…"/></label><button disabled={aiBusy||busy||!chat.trim()}>{aiBusy?'در حال دریافت پاسخ…':'ذخیره و ارسال پرسش'}</button>
           </form><button type="button" disabled={!hasAiAnswer||aiBusy} onClick={()=>{const suggestion=[...messages].reverse().find(m=>m.role==='ai');if(suggestion)setBlocks(bs=>[...bs,{id:Date.now(),type:'یادداشت',title:'پیشنهاد دستیار — نیازمند بازبینی',content:suggestion.text}])}}>افزودن آخرین پاسخ به درس</button>
         </aside>

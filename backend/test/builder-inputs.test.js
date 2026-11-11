@@ -9,7 +9,8 @@ test('builder styles, scoped exams, chapter ordering and focused AI drafts persi
   const course=(await call('admin','/courses',{title:'Builder test'},201)).id,other=(await call('admin','/courses',{title:'Other course'},201)).id;
   await call('admin','/courses/'+course+'/members',{userId:users.find(u=>u.role==='teacher').id,active:true});
   const exam=(await call('teacher','/courses/'+course+'/exams',{title:'Linked exam',questions:[{prompt:'Pick',options:['A','B'],correct:0}],opensAt:new Date().toISOString(),closesAt:new Date(Date.now()+86400000).toISOString(),durationMinutes:20,status:'published'},201)).id;
-  const doc={title:'Styles',blocks:[{id:'text',kind:'text',title:'Text',body:'Python text',textMarks:[{start:0,end:6,fontSize:24}],fontSize:16},{id:'list',kind:'text',title:'List',body:'one\ntwo',variant:'list'}],exercise:{prompt:'Practice',starter:''},quiz:[],references:['https://docs.python.org/3/'],examId:exam};
+  const doc={title:'Styles',blocks:[{id:'text',kind:'text',title:'Text',body:'Python text',textMarks:[{start:0,end:6,fontSize:24}],fontSize:16},{id:'list',kind:'text',title:'List',body:'one\ntwo',variant:'list'}],exercise:{prompt:'Practice',starter:''},quiz:[],metadata:{summary:'Meaningful variable names',keywords:'Python',difficulty:'beginner',durationMinutes:20},references:['https://docs.python.org/3/'],examId:exam};
+  await call('teacher','/courses/'+course+'/lessons',{...doc,metadata:{difficulty:'invalid'}},400);
   const lesson=await call('teacher','/courses/'+course+'/lessons',doc,201);assert.deepEqual((await call('teacher','/lessons/'+lesson.id)).content.blocks[0].textMarks,doc.blocks[0].textMarks);
   await call('admin','/courses/'+other+'/lessons',doc,400);
   await call('teacher','/courses/'+course+'/lessons',{...doc,blocks:[{...doc.blocks[0],textMarks:[{start:4,end:99,fontSize:20}]}]},400);
