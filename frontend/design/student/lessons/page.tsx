@@ -1,9 +1,2 @@
-import {useEffect,useState} from 'react';
-import {api,type Row} from '../../../src/live/api';
-import {LessonCover} from '../../LessonCover';
-import {PageTitle} from '../nova-ui';
-export default function LessonsPage(){
- const [courses,setCourses]=useState<Row[]>([]),[error,setError]=useState(''),[loading,setLoading]=useState(true);
- useEffect(()=>{const c=new AbortController();(async()=>{const {courses}=await api('/courses',undefined,c.signal);setCourses(await Promise.all(courses.map(async(course:Row)=>{const [d,s]=await Promise.all([api('/courses/'+course.id,undefined,c.signal),api('/courses/'+course.id+'/structure',undefined,c.signal)]);return {...course,lessons:d.lessons,structure:s};})))})().catch(e=>{if(e.name!=='AbortError')setError(e.message)}).finally(()=>{if(!c.signal.aborted)setLoading(false)});return()=>c.abort()},[]);
- return <><PageTitle title="درس‌های من" subtitle="دوره، فصل و درس‌های منتشرشده شما"/>{loading&&<p role="status">در حال دریافت دوره‌ها…</p>}{error&&<p role="alert">{error}</p>}{courses.map(c=><section key={c.id} className="mb-8 rounded-[28px] border bg-white p-6"><h2 className="text-xl font-black">{c.title}</h2><p>{c.description}</p>{[...c.structure.modules,{id:'',title:'بدون فصل'}].map((m:Row)=>{const lessons=c.lessons.filter((l:Row)=>(c.structure.layout.find((x:Row)=>x.lesson_id===l.id)?.module_id||'')===m.id);return lessons.length?<div key={m.id} className="mt-6"><h3 className="mb-3 font-bold">{m.title}</h3><div className="grid gap-4 md:grid-cols-2">{lessons.map((l:Row)=><article key={l.id} className="rounded-2xl border p-4"><LessonCover cover={l.cover} title={l.title}/><h4 className="my-3 font-bold">{l.title}</h4><p>{l.progress?.completedAt?'تکمیل‌شده':l.progress?.bestScore!=null?'نمره '+l.progress.bestScore:'آماده یادگیری'}</p>{c.structure.locked.includes(l.id)?<p>ابتدا پیش‌نیاز را تکمیل کنید.</p>:<a className="mt-3 inline-block rounded-xl bg-[#6847b2] px-4 py-2 text-white" href={'/lessons/view?id='+l.id}>ورود به درس</a>}</article>)}</div></div>:null;})}</section>)}</>;
-}
+import CourseCatalog from '../../CourseCatalog';
+export default function LessonsPage(){return <CourseCatalog role="student"/>;}

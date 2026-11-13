@@ -1,0 +1,25 @@
+.platform-shell{min-height:100dvh;--platform-header-height:66px;direction:rtl;}
+.platform-header{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:17px;width:100%;min-height:var(--platform-header-height);padding:10px 22px;background:#fff;border-bottom:1px solid #dfe6f1;color:#25354e;font-family:Vazirmatn,Tahoma,sans-serif;}
+.platform-brand{display:flex;align-items:center;gap:9px;color:#142238;text-decoration:none;flex-shrink:0;}.platform-brand svg{color:#1859e8;}.platform-brand strong{font-size:27px;font-weight:850;letter-spacing:normal;}
+.platform-role{border-inline-end:1px solid #dce3ee;padding-inline-end:17px;color:#7184a1;font-size:11px;white-space:nowrap;}
+.platform-header>nav{display:flex;gap:4px;align-items:center;min-width:0;overflow:auto;scrollbar-width:thin;}
+.platform-header>nav>a{display:block;flex-shrink:0;text-decoration:none;color:#5e7392;padding:7px 12px;border-radius:6px;font-size:12px;white-space:nowrap;}.platform-header>nav>a:hover{background:#f1f5fc;}.platform-header>nav>a.active{background:#eaf1ff;color:#1559df;font-weight:750;}
+.platform-account{font-size:11px;color:#6c809e;margin-inline-start:auto;white-space:nowrap;}.platform-header>button{border:1px solid #e0e6f0;background:#fff;border-radius:7px;width:33px;height:33px;display:grid;place-items:center;color:#7589a6;flex-shrink:0;cursor:pointer;}
+.platform-header :is(a,button):focus-visible{outline:3px solid #7ea8ff;outline-offset:2px;}
+.platform-header-error{padding:8px 20px;background:#fff1f1;color:#a4424e;font-size:12px;}
+.platform-shell .main-shell>.topbar{display:none;}
+.platform-shell .sidebar{top:var(--platform-header-height)!important;height:calc(100dvh - var(--platform-header-height))!important;}
+.platform-shell .nova-student-shell>aside{top:var(--platform-header-height);height:calc(100dvh - var(--platform-header-height));}
+.platform-shell .nova-student-shell>div>header{display:none;}
+.platform-shell .nl-full-header,.platform-shell .studio-header{position:sticky;top:var(--platform-header-height);z-index:30;}
+.platform-shell .nl-full-header>.nl-brand,.platform-shell .studio-header>.studio-brand{display:none;}
+.platform-shell .nl-full-header>span{display:none;}
+.platform-shell .lesson-studio,.platform-shell .nova-exam-active,.platform-shell .nova-exam-builder,.platform-shell .nova-course-catalog{min-height:calc(100dvh - var(--platform-header-height));}
+@media(max-width:1000px){.platform-header{gap:10px;padding-inline:14px;}.platform-role{display:none;}.platform-account{font-size:10px;}.platform-header>nav>a{padding:7px 9px;font-size:11px;}}
+@media(max-width:640px){.platform-shell{--platform-header-height:60px;}.platform-header{min-height:60px;padding:8px 10px;gap:9px;}.platform-brand strong{font-size:23px;}.platform-brand svg{width:23px;}.platform-brand{gap:6px;}.platform-account{display:none;}.platform-header>nav{flex:1;}.platform-header>nav>a{padding:8px 9px;font-size:10px;}.platform-header>button{width:29px;height:31px;}}
+.platform-shell .nova-exam-active>.nl-full-header{min-height:42px;padding:6px 22px;}
+.platform-shell .nova-exam-active>.nl-full-header>span{display:block;}
+.platform-shell.platform-admin .app-shell>main>header{display:none;}
+/* Student navigation follows the green learning theme on every route. */
+.platform-student .platform-header{background:#fcfefb;border-color:#dce9df;color:#254c3a;}.platform-student .platform-brand svg{color:#167551;}.platform-student .platform-brand{color:#173f2d;}.platform-student .platform-header>nav>a{color:#496a57;font-size:13px;padding:9px 12px;}.platform-student .platform-header>nav>a.active{background:#e4f2e7;color:#14613e;}.platform-student .platform-header>nav>a:hover{background:#eff6ee;}.platform-student .platform-header :is(a,button):focus-visible{outline-color:#2a875d;}.platform-student .platform-role,.platform-student .platform-account{color:#567560;}.platform-student .platform-header>button{color:#3d7355;border-color:#cdded1;}.platform-student ::selection{background:#cce8d4;color:#173d2a;}
+@media(max-width:640px){.platform-student .platform-header>nav>a{font-size:12px;padding:9px 10px;}}

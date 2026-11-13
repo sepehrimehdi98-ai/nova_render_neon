@@ -61,6 +61,21 @@ CREATE TABLE IF NOT EXISTS nova_ticket_messages(id TEXT PRIMARY KEY,ticket_id TE
 CREATE TABLE IF NOT EXISTS nova_ticket_reads(ticket_id TEXT NOT NULL REFERENCES nova_tickets(id),user_id TEXT NOT NULL REFERENCES nova_users(id),last_read_at TEXT NOT NULL,PRIMARY KEY(ticket_id,user_id));
 CREATE INDEX IF NOT EXISTS nova_tickets_teacher ON nova_tickets(teacher_id,updated_at);
 CREATE INDEX IF NOT EXISTS nova_ticket_messages_thread ON nova_ticket_messages(ticket_id,created_at);
+
+CREATE TABLE IF NOT EXISTS nova_documents(id TEXT PRIMARY KEY,course_id TEXT NOT NULL REFERENCES nova_courses(id),user_id TEXT NOT NULL REFERENCES nova_users(id),name TEXT NOT NULL,mime TEXT NOT NULL,bytes INTEGER NOT NULL,pages_json TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_document_messages(id TEXT PRIMARY KEY,document_id TEXT NOT NULL REFERENCES nova_documents(id),user_id TEXT NOT NULL REFERENCES nova_users(id),role TEXT NOT NULL,body TEXT NOT NULL,sources_json TEXT NOT NULL,mode TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS nova_documents_owner ON nova_documents(user_id,course_id);
+CREATE TABLE IF NOT EXISTS nova_ticket_attachments(id TEXT PRIMARY KEY,ticket_id TEXT NOT NULL REFERENCES nova_tickets(id),message_id TEXT NOT NULL REFERENCES nova_ticket_messages(id),name TEXT NOT NULL,mime TEXT NOT NULL,bytes INTEGER NOT NULL,base64 TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_lesson_block_responses(user_id TEXT NOT NULL REFERENCES nova_users(id),lesson_id TEXT NOT NULL REFERENCES nova_lessons(id),version INTEGER NOT NULL,block_id TEXT NOT NULL,submission_id TEXT NOT NULL UNIQUE REFERENCES nova_practice(id),PRIMARY KEY(user_id,lesson_id,version,block_id));
+CREATE TABLE IF NOT EXISTS nova_lesson_block_state(user_id TEXT NOT NULL REFERENCES nova_users(id),lesson_id TEXT NOT NULL REFERENCES nova_lessons(id),version INTEGER NOT NULL,block_id TEXT NOT NULL,read_at TEXT NOT NULL,PRIMARY KEY(user_id,lesson_id,version,block_id));
+CREATE TABLE IF NOT EXISTS nova_class_events(id TEXT PRIMARY KEY,course_id TEXT NOT NULL REFERENCES nova_courses(id),title TEXT NOT NULL,kind TEXT NOT NULL,starts_at TEXT NOT NULL,ends_at TEXT NOT NULL,join_url TEXT,lesson_id TEXT REFERENCES nova_lessons(id),created_by TEXT NOT NULL REFERENCES nova_users(id));
+CREATE TABLE IF NOT EXISTS nova_profile_extended(user_id TEXT PRIMARY KEY REFERENCES nova_users(id),fields_json TEXT NOT NULL,avatar_data TEXT,revision INTEGER NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS nova_document_files(document_id TEXT PRIMARY KEY REFERENCES nova_documents(id),base64 TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_teacher_threads(id TEXT PRIMARY KEY,course_id TEXT NOT NULL REFERENCES nova_courses(id),user_id TEXT NOT NULL REFERENCES nova_users(id),title TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_teacher_messages(id TEXT PRIMARY KEY,thread_id TEXT NOT NULL REFERENCES nova_teacher_threads(id),user_id TEXT NOT NULL REFERENCES nova_users(id),role TEXT NOT NULL,body TEXT NOT NULL,context_json TEXT NOT NULL,mode TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_module_details(module_id TEXT PRIMARY KEY REFERENCES nova_modules(id),description TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_exam_settings(exam_id TEXT PRIMARY KEY REFERENCES nova_exams(id),module_id TEXT REFERENCES nova_modules(id),show_results INTEGER NOT NULL DEFAULT 1);
+CREATE TABLE IF NOT EXISTS nova_exam_attempt_state(attempt_id TEXT PRIMARY KEY REFERENCES nova_exam_attempts(id),revision INTEGER NOT NULL DEFAULT 0,bookmarks_json TEXT NOT NULL DEFAULT '[]');
 `;
 async function openStore(options = {}) {
     const postgres = Boolean(options.url ?? process.env.DATABASE_URL);

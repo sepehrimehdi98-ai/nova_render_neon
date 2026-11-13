@@ -42,7 +42,7 @@ export function AppShell({
         <div className="brand">
           <span className="brand-mark">N</span>
           <div>
-            <strong>نُوا</strong>
+            <strong>نووا</strong>
             <small>یادگیری، روشن‌تر</small>
           </div>
         </div>
@@ -95,7 +95,7 @@ export function AppShell({
         <header className="topbar">
           <div className="mobile-brand">
             <span className="brand-mark">N</span>
-            <strong>نُوا</strong>
+            <strong>نووا</strong>
           </div>
           <div className="page-heading">
             <p>{subtitle}</p>

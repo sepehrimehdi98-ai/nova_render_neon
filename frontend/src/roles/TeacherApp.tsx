@@ -426,7 +426,7 @@ function Media() {
             <article>یک مثال کد</article>
           </div>
           <div>
-            <b>پیشنهاد نُوا</b>
+            <b>پیشنهاد نووا</b>
             <article className="suggested">
               مثال تعاملی حلقه{" "}
               <span>

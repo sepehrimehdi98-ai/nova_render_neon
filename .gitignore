@@ -6,3 +6,5 @@
 **/*.log
 **/*.backup
 backups/
+.neon
+node_modules/

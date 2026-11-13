@@ -1,0 +1,4 @@
+import {Sparkles,Link2} from 'lucide-react';
+import './chat-purpose.css';
+export const chatPurposes=[['auto','خودکار'],['explanation','توضیح مفهوم'],['example','مثال'],['practice','تمرین'],['debug','رفع اشکال'],['summary','خلاصه']] as const;
+export default function ChatPurpose({value,onChange,text='',disabled=false}:{value:string;onChange:(value:string)=>void;text?:string;disabled?:boolean}){const links=(text.match(/https?:\/\/[^\s<>]+/g)||[]).length;return <div className="nova-chat-purpose"><label><Sparkles size={15}/><span>نوع پاسخ</span><select aria-label="هدف پاسخ دستیار" value={value} onChange={e=>onChange(e.target.value)} disabled={disabled}>{chatPurposes.map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>{links>0&&<span className="chat-inline-link-hint"><Link2 size={14}/>{Math.min(links,3).toLocaleString('fa-IR')} لینک در پیام</span>}</div>}

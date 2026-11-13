@@ -1,0 +1,22 @@
+'use strict';
+const {randomUUID}=require('node:crypto');
+async function catalogRoutes(c){
+ const {q,u,route,req,data,scope,send,res,fail,id,text,integer,audit}=c;
+ const m=route.match(/^\/courses\/([^/]+)\/catalog(?:\/modules(?:\/([^/]+))?)?$/);const placement=route.match(/^\/exams\/([^/]+)\/placement$/);if(!m&&!placement)return null;
+ if(placement){if(req.method!=='POST'||u.role==='student')fail(403,'فقط مدرس و مدیر');const e=await q.one('SELECT * FROM nova_exams WHERE id=?',[id(placement[1])]);if(!e)fail(404,'آزمون پیدا نشد.');await scope(q,u,e.course_id,true);const mid=data.moduleId?id(data.moduleId):null;if(mid&&!await q.one('SELECT id FROM nova_modules WHERE id=? AND course_id=?',[mid,e.course_id]))fail(400,'فصل متعلق به این دوره نیست.');await q.run('INSERT INTO nova_exam_settings VALUES(?,?,1) ON CONFLICT(exam_id) DO UPDATE SET module_id=excluded.module_id',[e.id,mid]);return send(res,200,{ok:true});}
+ const cid=id(m[1]);const course=await scope(q,u,cid,req.method==='POST');const reply=(v,status=200)=>send(res,status,v);
+ if(req.method==='GET'){
+  const lessons=await q.all("SELECT l.*,v.content_json FROM nova_lessons l LEFT JOIN nova_versions v ON v.lesson_id=l.id AND v.version=l.published_version WHERE l.course_id=? "+(u.role==='student'?"AND l.status='published' AND l.published_version>0 ":'')+'ORDER BY l.position',[cid]);
+  const rows=lessons.map(l=>{const doc=JSON.parse(u.role==='student'?l.content_json:l.draft_json);return {id:l.id,title:doc.title,status:l.status,position:Number(l.position),version:l.published_version,kinds:[...new Set(doc.blocks.map(b=>b.kind))],duration:doc.metadata?.durationMinutes||null,examId:doc.examId||null};});
+  const mods=await q.all('SELECT m.*,COALESCE(d.description,\'\') AS description FROM nova_modules m LEFT JOIN nova_module_details d ON d.module_id=m.id WHERE m.course_id=? ORDER BY m.position',[cid]);const layout=await q.all('SELECT x.lesson_id,x.module_id FROM nova_lesson_layout x JOIN nova_lessons l ON l.id=x.lesson_id WHERE l.course_id=?',[cid]);
+  const exams=await q.all("SELECT e.id,e.title,e.status,e.duration_minutes,e.questions_json,s.module_id FROM nova_exams e LEFT JOIN nova_exam_settings s ON s.exam_id=e.id WHERE e.course_id=? "+(u.role==='student'?"AND e.status='published' ":'')+'ORDER BY e.opens_at',[cid]);
+  const clean=exams.map(({questions_json,...e})=>({...e,questionCount:JSON.parse(questions_json).length,totalPoints:JSON.parse(questions_json).reduce((n,x)=>n+(x.points||1),0)}));
+  return reply({course:{id:course.id,title:course.title,description:course.description,status:course.status},lessons:rows,modules:mods.filter(mod=>u.role!=='student'||rows.some(l=>layout.some(x=>x.lesson_id===l.id&&x.module_id===mod.id))||clean.some(e=>e.module_id===mod.id)),layout:layout.filter(x=>rows.some(l=>l.id===x.lesson_id)),exams:clean,revision:(await q.one('SELECT revision FROM nova_course_revisions WHERE course_id=?',[cid]))?.revision||0});
+ }
+ if(req.method!=='POST'||u.role==='student')fail(403,'فقط مدرس و مدیر');
+ if(!route.includes('/modules')){await q.run('UPDATE nova_courses SET title=?,description=? WHERE id=?',[text(data.title,200),text(data.description||'',4000,0),cid]);await audit(q,u,'course.edit',cid);return reply({ok:true});}
+ const mid=m[2]?id(m[2]):randomUUID();if(m[2]&&!await q.one('SELECT id FROM nova_modules WHERE id=? AND course_id=?',[mid,cid]))fail(404,'فصل پیدا نشد.');
+ if(m[2])await q.run('UPDATE nova_modules SET title=? WHERE id=?',[text(data.title,200),mid]);else{const last=await q.one('SELECT MAX(position) AS n FROM nova_modules WHERE course_id=?',[cid]);await q.run('INSERT INTO nova_modules VALUES(?,?,?,?)',[mid,cid,text(data.title,200),Number(last.n??-1)+1]);}
+ await q.run('INSERT INTO nova_module_details VALUES(?,?) ON CONFLICT(module_id) DO UPDATE SET description=excluded.description',[mid,text(data.description||'',4000,0)]);await q.run('INSERT INTO nova_course_revisions VALUES(?,1) ON CONFLICT(course_id) DO UPDATE SET revision=nova_course_revisions.revision+1',[cid]);if(data.examId!==undefined){if(data.examId&&!await q.one('SELECT id FROM nova_exams WHERE id=? AND course_id=?',[id(data.examId),cid]))fail(400,'آزمون متعلق به همین دوره نیست.');await q.run('UPDATE nova_exam_settings SET module_id=NULL WHERE module_id=?',[mid]);if(data.examId)await q.run('INSERT INTO nova_exam_settings VALUES(?,?,1) ON CONFLICT(exam_id) DO UPDATE SET module_id=excluded.module_id',[data.examId,mid]);}await audit(q,u,'module.edit',mid);return reply({id:mid},m[2]?200:201);
+}
+module.exports={catalogRoutes};

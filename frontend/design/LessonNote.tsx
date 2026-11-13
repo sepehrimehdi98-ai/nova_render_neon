@@ -1,0 +1,7 @@
+import {Check,StickyNote,CloudUpload} from 'lucide-react';
+import {useState} from 'react';
+import './lesson-reading.css';
+export default function LessonNote({body,onChange,onSync,dirty,localError}:{body:string;onChange:(v:string)=>void;onSync:()=>Promise<void>;dirty:boolean;localError:boolean}){
+ const [busy,setBusy]=useState(false),[error,setError]=useState('');
+ return <section className="lesson-note" aria-label="یادداشت خصوصی درس"><div className="note-saving-pill" role="status"><Check size={14}/>{localError?'ذخیره محلی ممکن نیست':dirty?'روی این مرورگر ذخیره شد':'با سرور همگام است'}</div><div className="floating-lesson-note"><header><span><StickyNote size={18}/>یادداشت من</span><small>خصوصی</small></header><textarea aria-label="یادداشت خصوصی" placeholder="نکته مهم این درس را اینجا بنویسید…" value={body} rows={7} maxLength={10000} onChange={e=>onChange(e.target.value)}/><footer><span>برای همین درس</span><span>{body.length.toLocaleString('fa-IR')} نویسه</span></footer></div><button className="note-sync" disabled={busy||!dirty} onClick={async()=>{setBusy(true);setError('');try{await onSync()}catch(e){setError(e instanceof Error?e.message:String(e))}finally{setBusy(false)}}}><CloudUpload size={16}/>{busy?'در حال همگام‌سازی…':dirty?'همگام‌سازی با حساب':'ذخیره‌شده در حساب'}</button>{error&&<p role="alert">{error}</p>}<p className="note-help">هنگام تایپ روی همین مرورگر ذخیره می‌شود. برای دسترسی در دستگاه دیگر، آن را با حساب همگام کنید.</p></section>
+}

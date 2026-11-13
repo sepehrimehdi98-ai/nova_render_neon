@@ -1,7 +1,9 @@
+import StudentHomeAdditions from './StudentHomeAdditions';
+import {api} from '../../src/live/api';
 'use client'
 
 import Link from './navigation'
-import { useState, type PointerEvent } from 'react'
+import { useEffect, useState, type PointerEvent } from 'react'
 import { Icon, ProgressRing, SectionHead } from './nova-ui'
 
 const courses = [
@@ -32,6 +34,7 @@ const courses = [
 ]
 
 export default function HomePage() {
+  const [userName,setUserName]=useState('');useEffect(()=>{api('/me').then(r=>setUserName(r.user.name.split(' ')[0])).catch(()=>{})},[]);
   const [pointer, setPointer] = useState({ x: 70, y: 35 })
   const move = (e: PointerEvent<HTMLElement>) => {
     const r = e.currentTarget.getBoundingClientRect()
@@ -53,7 +56,7 @@ export default function HomePage() {
             مسیر امروزت آماده‌ست
           </span>
           <h1 className="text-[29px] font-black leading-[1.5] md:text-[39px]">
-            سلام آرین، آماده‌ای کد بزنی؟
+            سلام {userName}، آماده‌ای کد بزنی؟
           </h1>
           <p className="mt-2 max-w-[460px] text-xs leading-7 text-[#c9bbe8]">
             امروز قراره حلقه‌های پایتون رو کامل کنی. فقط ۲۵ دقیقه تا رسیدن به هدف روزانه‌ات فاصله
@@ -188,7 +191,7 @@ export default function HomePage() {
                 key={a[0]}
                 className={`flex items-center gap-3 py-3 ${i < 2 ? 'border-b border-[#f0ede9]' : ''}`}
               >
-                <span className="grid size-9 place-items-center rounded-xl bg-[#f1edfa] text-[#6342ad]">
+                <span className="grid size-9 place-items-center rounded-xl" style={{background:a[2]==='code'?'#e1f3e9':a[2]==='quiz'?'#eee4fa':'#fff0dd',color:a[2]==='code'?'#197954':a[2]==='quiz'?'#7443aa':'#b87627'}}>
                   <Icon name={a[2] as 'code'} className="size-4" />
                 </span>
                 <div className="flex-1">
@@ -203,6 +206,7 @@ export default function HomePage() {
           </div>
         </aside>
       </div>
+      <div className="mt-8"><StudentHomeAdditions/></div>
     </>
   )
 }

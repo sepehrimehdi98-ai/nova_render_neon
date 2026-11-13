@@ -20,7 +20,7 @@ export default function AdminApp(props: Props) {
   const [page, setPage] = useState("overview"),
     [toast, setToast] = useState("")
   const names: Record<string, string> = {
-    overview: "مرکز فرمان نُوا",
+    overview: "مرکز فرمان نووا",
     accounts: "مدیریت حساب‌ها",
     courses: "مدیریت دوره‌ها",
     media: "تأیید رسانه",
@@ -359,7 +359,7 @@ function AdminProfile() {
     <div className="profile-grid">
       <section className="card profile-card">
         <span className="mini-avatar a3 large">م</span>
-        <h2>مدیر نُوا</h2>
+        <h2>مدیر نووا</h2>
         <p>مدیر ارشد سامانه</p>
         <span className="chip green">
           <Icon name="shield" /> احراز هویت دومرحله‌ای فعال

@@ -465,7 +465,7 @@ function Assistant() {
             <Icon name="sparkle" />
           </span>
           <div>
-            <h2>یارِ درس نُوا</h2>
+            <h2>یارِ درس نووا</h2>
             <p>فقط از منابع همین درس پاسخ می‌دهم.</p>
           </div>
           <span className="chip green">آماده</span>

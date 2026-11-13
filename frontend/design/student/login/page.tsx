@@ -98,7 +98,7 @@ export default function LoginPage() {
           </span>
           <h1 className="text-[28px] font-black tracking-tight md:text-[34px]">دوباره سلام!</h1>
           <p className="mt-2 text-[11px] leading-6 text-[#8d8693]">
-            وارد حساب نوا شو و یادگیری را از همان‌جایی که بودی ادامه بده.
+            وارد حساب نووا شو و یادگیری را از همان‌جایی که بودی ادامه بده.
           </p>
 
           <form onSubmit={submit} className="mt-8 space-y-5">
@@ -165,7 +165,7 @@ export default function LoginPage() {
                 <span className="size-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               ) : (
                 <>
-                  ورود به نوا <Icon name="arrow" className="size-4 rotate-180" />
+                  ورود به نووا <Icon name="arrow" className="size-4 rotate-180" />
                 </>
               )}
             </button>
@@ -177,12 +177,12 @@ export default function LoginPage() {
             <i className="h-px flex-1 bg-[#e9e5e0]" />
           </div>
           <p className="mt-5 text-center text-[10px] text-[#817a87]">
-            هنوز عضو نوا نیستی؟{' '}
+            هنوز عضو نووا نیستی؟{' '}
             <button className="font-extrabold text-[#5c3aa5]">ساخت حساب کاربری</button>
           </p>
         </div>
         <div className="flex justify-between text-[8px] text-[#aaa4ad]">
-          <span>© ۱۴۰۴ آکادمی نوا</span>
+          <span>© ۱۴۰۴ آکادمی نووا</span>
           <span>حریم خصوصی • قوانین</span>
         </div>
       </section>
@@ -207,7 +207,7 @@ export default function LoginPage() {
               آینده با یک خط کد شروع می‌شود.
             </h2>
             <p className="mt-3 max-w-[470px] text-[11px] leading-7 text-[#bdaed9]">
-              در نوا، برنامه‌نویسی را با تمرین‌های واقعی و همراهی یک دستیار هوشمند یاد می‌گیری.
+              در نووا، برنامه‌نویسی را با تمرین‌های واقعی و همراهی یک دستیار هوشمند یاد می‌گیری.
             </p>
           </div>
           <div

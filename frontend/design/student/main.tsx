@@ -1,3 +1,4 @@
+import PlatformShell from '../PlatformShell';
 import {createRoot} from 'react-dom/client';
 import App from './App';
 import './styles.css';
@@ -8,7 +9,7 @@ async function start(){
  try{
  const session=await api('/me').catch(e=>{if(e.status===401)return null;throw e});
  if(!session&&location.pathname!=='/login'){location.replace('/login');return}
- root.render(<App/>);
+ root.render(location.pathname==='/login'?<App/>:<PlatformShell role="student"><App/></PlatformShell>);
  }catch(e){root.render(<p role="alert">{String(e)}</p>)}
 }
 void start();

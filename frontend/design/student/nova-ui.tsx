@@ -1,4 +1,6 @@
 'use client'
+import {useEffect,useState} from 'react'
+import {api} from '../../src/live/api'
 
 import Link from './navigation'
 import { usePathname } from './navigation'
@@ -187,7 +189,7 @@ export function Icon({ name, ...props }: { name: IconName } & SVGProps<SVGSVGEle
 const nav = [
   { href: '/', label: 'خانه', icon: 'home' as const },
   { href: '/progress', label: 'مسیر پیشرفت', icon: 'chart' as const },
-  { href: '/assistant', label: 'دستیار نوا', icon: 'bot' as const },
+  { href: '/assistant', label: 'دستیار نووا', icon: 'bot' as const },
   { href: '/exams', label: 'آزمون‌ها', icon: 'quiz' as const },
   { href: '/lessons', label: 'درس‌های من', icon: 'book' as const },
   { href: '/profile', label: 'پروفایل', icon: 'user' as const },
@@ -195,8 +197,8 @@ const nav = [
 
 export function Logo() {
   return (
-    <Link href="/" className="flex items-center gap-3" aria-label="نوا، خانه">
-      <span className="grid size-10 place-items-center rounded-[14px] bg-[#512DA8] text-white shadow-[0_8px_20px_rgba(81,45,168,.22)]">
+    <Link href="/" className="flex items-center gap-3" aria-label="نووا، خانه">
+      <span className="grid size-10 place-items-center rounded-[14px] bg-[#157659] text-white shadow-[0_8px_20px_rgba(21,118,89,.15)]">
         <svg viewBox="0 0 34 34" className="size-7" fill="none">
           <path
             d="M7 24V10l10 7 10-7v14"
@@ -209,7 +211,7 @@ export function Logo() {
         </svg>
       </span>
       <span>
-        <b className="block text-[18px] leading-5 text-[#1d1633]">نــوا</b>
+        <b className="block text-[18px] leading-5 text-[#1d1633]">نووا</b>
         <small className="text-[10px] text-[#8c869a]">آکادمی برنامه‌نویسی</small>
       </span>
     </Link>
@@ -218,11 +220,12 @@ export function Logo() {
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  const [userName,setUserName]=useState('');useEffect(()=>{api('/me').then(r=>setUserName(r.user.name)).catch(()=>{})},[]);
   if (pathname === '/login' || pathname === '/assistant') {
     return <>{children}</>
   }
   return (
-    <div className="min-h-screen bg-[#f7f6f2] text-[#211a37]" dir="rtl">
+    <div className="nova-student-shell min-h-screen bg-[#f7f6f2] text-[#211a37]" dir="rtl">
       <aside className="fixed inset-y-0 right-0 z-30 hidden w-[238px] flex-col border-l border-[#e9e5df] bg-white px-5 py-7 lg:flex">
         <Logo />
         <nav className="mt-12 space-y-1.5">
@@ -232,7 +235,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-2xl px-4 py-3.5 text-[13px] font-semibold transition ${active ? 'bg-[#512DA8] text-white shadow-[0_10px_24px_rgba(81,45,168,.22)]' : 'text-[#777181] hover:bg-[#f4f1fa] hover:text-[#512DA8]'}`}
+                className={`flex items-center gap-3 rounded-2xl px-4 py-3.5 text-[13px] font-semibold transition ${active ? 'bg-[#157659] text-white shadow-[0_10px_24px_rgba(21,118,89,.15)]' : 'text-[#777181] hover:bg-[#edf6ee] hover:text-[#157659]'}`}
               >
                 <Icon name={item.icon} className="size-[19px]" />
                 {item.label}
@@ -280,7 +283,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                 👨🏻‍💻
               </span>
               <span className="hidden text-right sm:block">
-                <b className="block text-[11px]">آرین محمدی</b>
+                <b className="block text-[11px]">{userName||'دانش‌آموز'}</b>
                 <small className="text-[9px] text-[#9a94a4]">دانش‌آموز پایتون</small>
               </span>
             </Link>
@@ -298,7 +301,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               key={item.href}
               href={item.href}
               aria-label={item.label}
-              className={`grid min-w-12 place-items-center rounded-2xl px-3 py-2 ${active ? 'bg-[#512DA8] text-white' : 'text-[#8d8797]'}`}
+              className={`grid min-w-12 place-items-center rounded-2xl px-3 py-2 ${active ? 'bg-[#157659] text-white' : 'text-[#8d8797]'}`}
             >
               <Icon name={item.icon} className="size-5" />
             </Link>
@@ -332,7 +335,7 @@ export function PageTitle({
 export function ProgressRing({
   value,
   size = 76,
-  color = '#512DA8',
+  color = '#157659',
 }: {
   value: number
   size?: number
@@ -374,7 +377,7 @@ export function SectionHead({
     <div className="mb-4 flex items-center justify-between">
       <h2 className="text-[17px] font-extrabold">{title}</h2>
       {link && (
-        <Link href={href} className="flex items-center gap-1 text-[11px] font-bold text-[#6847b2]">
+        <Link href={href} className="flex items-center gap-1 text-[11px] font-bold text-[#157659]">
           {link}
           <Icon name="arrow" className="size-3 rotate-180" />
         </Link>

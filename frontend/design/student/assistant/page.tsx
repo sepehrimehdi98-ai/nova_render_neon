@@ -1,4 +1,4 @@
-import {WebTopic} from '../../ResearchControls';
+import ChatPurpose from '../../ChatPurpose';
 import {api} from '../../../src/live/api';
 import {consult} from '../../consult';
 'use client'
@@ -57,7 +57,7 @@ function getAnswer(question: string): Message {
 
 export default function AssistantPage() {
   const [input, setInput] = useState('')
-  const [publicTopic,setPublicTopic]=useState('')
+  const [purpose,setPurpose]=useState('auto')
   const [messages, setMessages] = useState<Message[]>([])
   const [typing, setTyping] = useState(false)
   const [sidebar, setSidebar] = useState(false)
@@ -85,7 +85,7 @@ export default function AssistantPage() {
         const {lessons}=await api('/courses/'+course.id);
         if(!lessons.length)continue;
         const lesson=lessons[0],cap=await api('/capabilities');
-        answer=cap.ai?await consult(course.id,lesson.id,text,publicTopic):'جست‌وجوی محلی · '+lesson.title+'\n'+(await api('/lessons/'+lesson.id+'/local-chat',{question:text})).answer;
+        answer=cap.ai?await consult(course.id,lesson.id,text,'','',purpose):'جست‌وجوی محلی · '+lesson.title+'\n'+(await api('/lessons/'+lesson.id+'/local-chat',{question:text,purpose})).answer;
         break;
       }
       setMessages(current=>[...current,{role:'bot',text:answer}]);
@@ -94,7 +94,7 @@ export default function AssistantPage() {
   }
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-white text-[#211a37]" dir="rtl">
+    <div className="student-conversation-layout flex h-dvh overflow-hidden bg-white text-[#211a37]" dir="rtl">
       {sidebar && (
         <button
           aria-label="بستن منو"
@@ -171,7 +171,7 @@ export default function AssistantPage() {
             <Icon name="menu" className="size-5" />
           </button>
           <button className="flex items-center gap-2 rounded-xl px-2 py-2 text-sm font-black hover:bg-[#f7f5f2]">
-            دستیار نوا
+            دستیار نووا
             <span className="rounded-md bg-[#eef8dc] px-2 py-1 text-[8px] font-bold text-[#638421]">
               آموزشی
             </span>
@@ -234,7 +234,7 @@ export default function AssistantPage() {
                   </span>
                   <div className="min-w-0 flex-1 pt-1">
                     <b className="mb-2 block text-[10px]">
-                      {message.role === 'bot' ? 'دستیار نوا' : 'شما'}
+                      {message.role === 'bot' ? 'دستیار نووا' : 'شما'}
                     </b>
                     <p className="text-xs leading-8 text-[#504957]">{message.text}</p>
                     {message.code && (
@@ -301,8 +301,10 @@ export default function AssistantPage() {
         <div className="shrink-0 bg-gradient-to-t from-white via-white to-white/0 px-4 pb-4 pt-4">
           <div className="mx-auto max-w-[780px]">
             <div className="rounded-[22px] border border-[#dcd6df] bg-white p-2 shadow-[0_12px_38px_rgba(41,30,58,.11)] focus-within:border-[#8065bb]">
-              <WebTopic value={publicTopic} onChange={setPublicTopic}/>
+              <ChatPurpose value={purpose} onChange={setPurpose} text={input} disabled={typing}/>
               <textarea
+                aria-label="پیام دستیار"
+                maxLength={4000}
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={(event) => {
@@ -312,14 +314,13 @@ export default function AssistantPage() {
                   }
                 }}
                 rows={2}
-                placeholder="پیامت را برای دستیار نوا بنویس..."
+                placeholder="پیام یا لینک مرجع را اینجا بنویس…"
                 className="max-h-32 w-full resize-none bg-transparent px-3 py-2 text-xs leading-6 outline-none"
               />
               <div className="flex items-center justify-between px-1">
-                <button className="grid size-8 place-items-center rounded-xl text-lg text-[#8a8390] hover:bg-[#f4f1ee]">
-                  +
-                </button>
+                <small className="text-[10px] text-[#77877e]">لینک را داخل پیام بنویسید</small>
                 <button
+                  aria-label="ارسال پیام دستیار"
                   onClick={() => send()}
                   disabled={!input.trim() || typing}
                   className="grid size-9 place-items-center rounded-[12px] bg-[#512DA8] text-white transition disabled:bg-[#ddd8e2]"
@@ -329,7 +330,7 @@ export default function AssistantPage() {
               </div>
             </div>
             <p className="mt-2 text-center text-[8px] text-[#aaa4ae]">
-              دستیار نوا ممکن است اشتباه کند؛ پاسخ‌های مهم را با محتوای درس بررسی کن.
+              دستیار نووا ممکن است اشتباه کند؛ پاسخ‌های مهم را با محتوای درس بررسی کن.
             </p>
           </div>
         </div>

@@ -26,10 +26,10 @@ async function ragRoutes({q,u,route,req,data,scope,lessonScope,send,res,fail,id,
  if(m[2]==='jobs'){
   if(req.method==='GET')return send(res,200,{jobs:await q.all('SELECT id,kind,lesson_id,input_json,status,result_json,created_at FROM nova_ai_jobs WHERE course_id=? AND user_id=? ORDER BY created_at DESC LIMIT 30',[cid,u.id])});
   if(req.method==='POST'){
-   const question=text(data.question,4000,3),lessonId=id(data.lessonId);const lesson=await lessonScope(q,u,lessonId);if(lesson.course_id!==cid)fail(403,'درس متعلق به این دوره نیست.');
+   const question=text(data.question,4000,3),lessonId=id(data.lessonId);const {purpose}=require('./chat-input').parseChatInput(question,data.purpose||'auto');const lesson=await lessonScope(q,u,lessonId);if(lesson.course_id!==cid)fail(403,'درس متعلق به این دوره نیست.');
    const publicTopic=data.publicTopic?text(data.publicTopic,200,3):'';
    const focusBlockId=teacher&&data.focusBlockId?text(data.focusBlockId,80,1):'';if(focusBlockId&&!JSON.parse(lesson.draft_json).blocks.some(b=>b.id===focusBlockId))fail(400,'بلوک انتخاب‌شده در پیش‌نویس نیست.');
-   const jid=await enqueue(teacher?'author':'tutor',{question,lessonId,publicTopic,focusBlockId,...(teacher?{draft:JSON.parse(lesson.draft_json),draftRev:lesson.draft_rev}:{})});return send(res,202,{id:jid});
+   const jid=await enqueue(teacher?'author':'tutor',{question,lessonId,publicTopic,focusBlockId,purpose,...(teacher?{draft:JSON.parse(lesson.draft_json),draftRev:lesson.draft_rev}:{})});return send(res,202,{id:jid});
   }
  }
  fail(405,'روش مجاز نیست.');

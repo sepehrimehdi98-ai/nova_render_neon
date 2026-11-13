@@ -1,14 +1,24 @@
-import BuilderSources from '../BuilderSources';
+import CodeEditor from '../../src/live/CodeEditor';
+import TeacherConversation from '../TeacherConversation';
+import ClassEventEditor from '../ClassEventEditor';
+import StudioBlockFields from '../StudioBlockFields';
+import LessonExperience from '../LessonExperience';
+import LessonCode from '../LessonCode';
+import PlatformShell from '../PlatformShell';
+import CourseCatalog from '../CourseCatalog';
+import TeacherDocumentChat from '../TeacherDocumentChat';
+import TeacherProgress from '../TeacherProgress';
+import {BookOpen, Box, Video, FileText, Code2, Image as ImageIcon, ListChecks, Trash2, Pencil, Settings, Save, Upload, Sparkles, Send, Bot, Info, Plus, ArrowUp, ArrowDown, Home, GripVertical, Link as LinkIcon, Play, Heading2, Quote, Minus, List, ChevronLeft} from 'lucide-react';
+import './lesson-studio.css';
 import {BlockText} from '../BlockText';
 import {LessonCover,CoverPicker} from '../LessonCover';
 import CourseWorkspace from '../CourseWorkspace';
 import LiveTickets from '../LiveTickets';
-import {consult} from '../consult';
 import {api,type Row} from '../../src/live/api';
 import {useEffect} from 'react';
 import { useMemo, useState } from "react";
 
-type Page = "خانه" | "درس‌ها" | "آزمون‌ها" | "تحلیل‌ها" | "پیام‌ها";
+type Page = "خانه" | "درس‌ها" | "آزمون‌ها" | "تحلیل‌ها" | "پیام‌ها" | "دستیار";
 type IconName =
   | "home"
   | "book"
@@ -210,7 +220,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
       <section className="login-story">
         <div className="brand brand-light">
           <span className="brand-mark">ن</span>
-          <span>نــوا</span>
+          <span>نووا</span>
         </div>
         <div className="story-copy">
           <p className="eyebrow light">آموزش با وضوح و اطمینان</p>
@@ -229,7 +239,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
         <div className="login-quote">
           <div className="quote-avatar">م‌س</div>
           <div>
-            <strong>«نوا زمان بیشتری برای تدریس به من می‌دهد.»</strong>
+            <strong>«نووا زمان بیشتری برای تدریس به من می‌دهد.»</strong>
             <span>مریم سانتوس · دبیر زیست‌شناسی</span>
           </div>
         </div>
@@ -244,7 +254,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
         >
           <div className="mobile-brand brand">
             <span className="brand-mark">ن</span>
-            <span>نــوا</span>
+            <span>نووا</span>
           </div>
           <p className="eyebrow">پنل ویژه معلمان</p>
           <h2>خوش آمدید.</h2>
@@ -263,7 +273,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
             />
           </label>
           <button className="primary-btn login-btn">
-            ورود به نوا <Icon name="arrow" size={18} />
+            ورود به نووا <Icon name="arrow" size={18} />
           </button>
           <p className="login-help">
             به کمک نیاز دارید؟ <button type="button">با مدیر سامانه تماس بگیرید</button>
@@ -275,30 +285,29 @@ function Login({ onLogin }: { onLogin: () => void }) {
 }
 
 function Sidebar({ page, setPage }: { page: Page; setPage: (page: Page) => void }) {
+  const [profile,setProfile]=useState('');useEffect(()=>{api('/me').then(r=>setProfile(r.user.name)).catch(()=>{})},[]);
   const nav: { label: Page; icon: IconName }[] = [
     { label: "خانه", icon: "home" },
     { label: "درس‌ها", icon: "book" },
     { label: "آزمون‌ها", icon: "exam" },
     { label: "تحلیل‌ها", icon: "chart" },
     { label: "پیام‌ها", icon: "inbox" },
+    { label: "دستیار", icon: "sparkle" },
   ];
   return (
     <aside className="sidebar">
-      <div className="brand">
-        <span className="brand-mark">ن</span>
-        <span>نــوا</span>
-      </div>
+
       <nav>
         <span className="nav-label">فضای کاری</span>
         {nav.map((item) => (
           <button
             key={item.label}
-            aria-label={item.label}
+            aria-label={item.label==='تحلیل‌ها'?'پیشرفت دانش‌آموزان':item.label==='پیام‌ها'?'تیکت‌ها':item.label}
             className={page === item.label ? "active" : ""}
             onClick={() => setPage(item.label)}
           >
             <Icon name={item.icon} />
-            <span>{item.label}</span>
+            <span>{item.label==='تحلیل‌ها'?'پیشرفت دانش‌آموزان':item.label==='پیام‌ها'?'تیکت‌ها':item.label}</span>
             
           </button>
         ))}
@@ -308,16 +317,16 @@ function Sidebar({ page, setPage }: { page: Page; setPage: (page: Page) => void 
           <span className="spark">
             <Icon name="sparkle" size={17} />
           </span>
-          <strong>هوش مصنوعی نوا</strong>
+          <strong>دستیار آموزشی</strong>
           <p>۱۲ تولید محتوا باقی مانده</p>
           <div>
             <i style={{ width: "68%" }} />
           </div>
         </div>
         <button className="profile">
-          <span className="avatar">ع‌م</span>
+          <span className="avatar">{profile.slice(0,1)||'م'}</span>
           <span>
-            <strong>علی مرادی</strong>
+            <strong>{profile||'مدرس'}</strong>
             <small>معلم</small>
           </span>
           <Icon name="more" size={18} />
@@ -537,86 +546,63 @@ function mediaSource(raw:string,video:boolean){
 }
 type Block = {
   original?:Row;
-  source?:string;
+  source?:string;requiresUrl?:boolean;description?:string;
+  starter?:string;sampleAnswer?:string;feedback?:string;options?:string[];correct?:number;explanation?:string;
   id: number;
-  type: "ویدیو" | "متن" | "کد" | "یادداشت" | "تصویر" | "تمرین" | "عنوان" | "فهرست" | "نقل‌قول" | "جداکننده";
+  type: "ویدیو" | "متن" | "کد" | "یادداشت" | "تصویر" | "تمرین" | "عنوان" | "فهرست" | "نقل‌قول" | "جداکننده" | "توضیح تکمیلی" | "جمع‌بندی" | "سؤال";
   fontSize?:number;
   textMarks?:Row[];
   title: string;
   content: string;
 };
 const initialBlocks: Block[] = [
-  {
-    id: 1,
-    type: "ویدیو",
-    title: "تماشا کنید: وب چگونه کار می‌کند",
-    content: "ویدیوی آموزشی · ۰۶:۴۲",
-  },
-  {
-    id: 2,
-    type: "متن",
-    title: "اجزای سازنده وب",
-    content:
-      "هر وب‌سایتی که می‌بینید با سه فناوری اصلی ساخته شده است: HTML ساختار، CSS ظاهر و جاوااسکریپت پویایی آن را می‌سازد.",
-  },
-  {
-    id: 3,
-    type: "کد",
-    title: "خودتان امتحان کنید",
-    content: "<h1>سلام دنیا!</h1>\\n<p>اولین صفحه وب من.</p>",
-  },
-  {
-    id: 4,
-    type: "یادداشت",
-    title: "به یاد داشته باشید",
-    content: "HTML محتوای صفحه را تعریف می‌کند و CSS ظاهر آن را شکل می‌دهد.",
-  },
-  {
-    id: 5,
-    type: "تمرین",
-    title: "یک صفحه معرفی ساده بسازید",
-    content: "با استفاده از عنوان، پاراگراف و یک پیوند، صفحه معرفی خودتان را طراحی کنید.",
-  },
+ {id:1,type:'ویدیو',title:'آشنایی با متغیرها',content:'ویدیوی آموزشی آشنایی با متغیرها'},
+ {id:2,type:'متن',title:'متغیر چیست؟',content:'متغیر محلی برای نگهداری داده‌ها در برنامه است.'},
+ {id:3,type:'کد',title:'مثال ساده از متغیر',content:'name = "Nova"\nprint(name)'},
 ];
+const libraryBlocks = [
+ {type:'ویدیو',label:'ویدیو',description:'افزودن ویدیوی آموزشی به درس',icon:Video},
+ {type:'متن',label:'متن و یادداشت',description:'نوشتن توضیحات، نکات و آموزش‌ها',icon:FileText},
+ {type:'کد',label:'کد',description:'نمایش و ویرایش کد برنامه‌نویسی',icon:Code2},
+ {type:'تصویر',label:'تصویر',description:'افزودن تصویر و نمودار آموزشی',icon:ImageIcon},
+ {type:'سؤال',label:'سوال چهار گزینه',description:'تعریف سؤال، گزینه‌ها، پاسخ صحیح و توضیح پاسخ',icon:ListChecks},
+] as const;
 
 function درس‌هاPage() {
-  const [builder, setBuilder] = useState(false);
+  const [builder, setBuilder] = useState(()=>new URLSearchParams(location.search).get('newLesson')==='1');
   const [blocks, setBlocks] = useState(initialBlocks);
   const [selected, setSelected] = useState(2);
-  const [chat, setChat] = useState("");
-  const [publicTopic,setPublicTopic]=useState("");
+  const [chapter,setChapter]=useState('');
+  const [chapters,setChapters]=useState<Row[]>([]);
+  const [playing,setPlaying]=useState<number|null>(null);
+  const [dropActive,setDropActive]=useState(false);
   const [toast, setToast] = useState("");
-  const [aiMode, setAiMode] = useState<"chat" | "review">("chat");
-  const [messages, setMessages] = useState([
-    {
-      role: "ai",
-      text: "بلوک موردنظر را انتخاب کنید و پرسش خود را بفرستید؛ منابع تأییدشده به پاسخ کمک می‌کنند.",
-    },
-  ]);
+  
   const [courses,setCourses]=useState<Row[]>([]);
   const [course,setCourse]=useState("");
   const [saved,setSaved]=useState<Row|null>(null);
   const [serverLessons,setServerLessons]=useState<Row[]>([]);
-  const [title,setTitle]=useState("مقدمه‌ای بر توسعه وب");
-  const [preview,setPreview]=useState(false);
+  const [title,setTitle]=useState("آشنایی با متغیرها");
+  const [preview,setPreview]=useState(false);const [aiTarget,setAiTarget]=useState<Row|null>(null);const [completion,setCompletion]=useState({video:true,practice:true,quiz:true,gateNext:true});const [passScore,setPassScore]=useState(70);
   const [cover,setCover]=useState<Row|null>(null);
-  const [references,setReferences]=useState<string[]>([]);
+  const [references,setReferences]=useState<string[]>(['']);
   const [examId,setExamId]=useState('');
-  const [summary,setSummary]=useState(''),[keywords,setKeywords]=useState(''),[difficulty,setDifficulty]=useState('beginner'),[duration,setDuration]=useState(20);
+  const [summary,setSummary]=useState('در این درس با تعریف و کاربرد متغیرها آشنا می‌شوید.'),[keywords,setKeywords]=useState(''),[difficulty,setDifficulty]=useState('beginner'),[duration,setDuration]=useState(20);
   const [exams,setExams]=useState<Row[]>([]);
-  const [aiBusy,setAiBusy]=useState(false);
-  const [hasAiAnswer,setHasAiAnswer]=useState(false);
   const [textSelection,setTextSelection]=useState({blockId:0,start:0,end:0});
   const [loadedDoc,setLoadedDoc]=useState<Row|null>(null);
   const [media,setMedia]=useState<Row[]>([]);
   useEffect(()=>{api("/media").then(r=>setMedia(r.media)).catch(e=>setToast(e.message))},[]);
-  const [question,setQuestion]=useState("HTML برای چه کاری استفاده می‌شود؟");
-  const [right,setRight]=useState("ساختار صفحه");
-  const [wrong,setWrong]=useState("مدیریت پایگاه داده");
+  const [question,setQuestion]=useState("متغیر در پایتون چه کاربردی دارد؟");
+  const [right,setRight]=useState("نگهداری داده‌ها");
+  const [wrong,setWrong]=useState("تنها نمایش تصویر");
   const [busy,setBusy]=useState(false);
   useEffect(()=>{api("/courses").then(r=>{setCourses(r.courses);setCourse(r.courses[0]?.id||"")}).catch(e=>setToast(e.message))},[]);
   useEffect(()=>{if(!course)return;let active=true;api("/courses/"+course).then(r=>{if(active)setServerLessons(r.lessons)}).catch(e=>setToast(e.message));return()=>{active=false}},[course,builder]);
   useEffect(()=>{setExams([]);setExamId('');if(!course)return;const c=new AbortController();api('/courses/'+course+'/exams',undefined,c.signal).then(r=>setExams(r.exams)).catch(e=>{if(e.name!=='AbortError')setToast(e.message)});return()=>c.abort()},[course]);
+  useEffect(()=>{if(!course)return;let active=true;api('/courses/'+course+'/structure').then(r=>{if(active){setChapters(r.modules);setChapter(r.modules[0]?.id||'')}}).catch(e=>{if(active)setToast(e.message)});return()=>{active=false}},[course]);
+  function resetBuilder(){setSaved(null);setLoadedDoc(null);setCompletion({video:true,practice:true,quiz:true,gateNext:true});setPassScore(70);setCover(null);setReferences(['']);setExamId('');setSummary('در این درس با تعریف و کاربرد متغیرها آشنا می‌شوید.');setKeywords('');setDifficulty('beginner');setDuration(20);setTitle('آشنایی با متغیرها');setBlocks(initialBlocks.map(b=>({...b})));setSelected(2);setChapter(chapters[0]?.id||'');setPlaying(null);setBuilder(true)}
+  function applyTextSize(fontSize:number){setBlocks(bs=>bs.map(b=>{if(b.id!==selected)return b;if(textSelection.blockId===b.id&&textSelection.end>textSelection.start){const mark={start:textSelection.start,end:textSelection.end,fontSize};return {...b,textMarks:[...(b.textMarks||[]).flatMap(m=>m.end<=mark.start||m.start>=mark.end?[m]:[...(m.start<mark.start?[{...m,end:mark.start}]:[]),...(m.end>mark.end?[{...m,start:mark.end}]:[])]),mark].sort((a,b)=>a.start-b.start)}}return {...b,fontSize}}))}
   async function save(publish:boolean){
     if(busy)return;
     setBusy(true);
@@ -624,9 +610,9 @@ function درس‌هاPage() {
       if(!course)throw Error("ابتدا یک دوره انتخاب کنید.");
       const sampleVideo=media.find(m=>m.course_id===course&&m.status==='approved'&&m.mime.startsWith('video/'));
       const content=blocks.map(b=>{
-        const base={...b.original,id:String(b.original?.id||b.id),title:b.title,body:b.content,fontSize:b.fontSize,textMarks:b.textMarks,variant:b.type==='فهرست'?'list':b.type==='نقل‌قول'?'quote':b.type==='جداکننده'?'divider':undefined};
-        if(b.type==="ویدیو"){
-          if(b.original?.sourceUrl===b.source)return {...base,kind:'video',sourceUrl:b.source};
+        const base={...b.original,pendingMedia:b.requiresUrl&&!b.source?true:undefined,description:b.description,starter:b.starter,sampleAnswer:b.sampleAnswer,feedback:b.feedback,options:b.options,correct:b.correct,explanation:b.explanation,id:String(b.original?.id||b.id),title:b.title,body:b.content,fontSize:b.fontSize,textMarks:b.textMarks,variant:b.type==='فهرست'?'list':b.type==='نقل‌قول'?'quote':b.type==='جداکننده'?'divider':undefined};
+        if(b.type==="ویدیو"){if(b.requiresUrl&&!b.source?.trim())return {...base,kind:'video',pendingMedia:true};
+          if(b.original?.sourceUrl&&b.original.sourceUrl===b.source)return {...base,kind:'video',sourceUrl:b.source};
           if(!b.source?.trim()&&b.original?.mediaId)return {...base,kind:'video',mediaId:b.original.mediaId};
           if(!b.source?.trim()&&sampleVideo)return {...base,kind:'video',sourceUrl:'/api/platform/files/'+sampleVideo.id};
           const embedUrl=mediaSource(b.source||'',true);
@@ -638,17 +624,19 @@ function درس‌هاPage() {
           if(!imageUrl)throw Error('نشانی HTTPS تصویر را در بلوک تصویر وارد کنید.');
           return {...base,kind:'image',imageUrl};
         }
-        return {...base,kind:b.type==='کد'?'code':b.type==='یادداشت'?'note':b.type==='عنوان'||b.original?.kind==='heading'?'heading':'text'};
+        return {...base,kind:b.type==='تمرین'?'exercise':b.type==='سؤال'?'mcq':b.type==='توضیح تکمیلی'?'explanation':b.type==='جمع‌بندی'?'summary':b.type==='کد'?'code':b.type==='یادداشت'?'note':b.type==='عنوان'||b.original?.kind==='heading'?'heading':'text'};
       });
-      const doc={...loadedDoc,title,cover,metadata:{summary,keywords,difficulty,durationMinutes:duration},references:references.map(r=>r.trim()).filter(Boolean),examId:examId||null,blocks:content,exercise:{...loadedDoc?.exercise,prompt:blocks.find(b=>b.type==="تمرین")?.content||loadedDoc?.exercise?.prompt||"یک مثال از این درس بنویسید.",starter:blocks.find(b=>b.type==="کد")?.content||""},quiz:[{prompt:question,options:[right,wrong,...(loadedDoc?.quiz?.[0]?.options?.filter((o:string)=>o!==right&&o!==wrong)||[])],correct:0},...(loadedDoc?.quiz?.slice(1)||[])],passScore:loadedDoc?.passScore||70};
+      const doc={...loadedDoc,title,cover,completion,metadata:{summary,keywords,difficulty,durationMinutes:duration},references:references.map(r=>r.trim()).filter(Boolean),examId:examId||null,blocks:content,exercise:{...loadedDoc?.exercise,prompt:blocks.find(b=>b.type==="تمرین")?.content||loadedDoc?.exercise?.prompt||"یک مثال از این درس بنویسید.",starter:blocks.find(b=>b.type==="تمرین")?.starter||blocks.find(b=>b.type==="کد")?.content||""},quiz:[{prompt:question,options:[right,wrong,...(loadedDoc?.quiz?.[0]?.options?.filter((o:string)=>o!==right&&o!==wrong)||[])],correct:0},...(loadedDoc?.quiz?.slice(1)||[])],passScore};
       const result=saved?await api('/lessons/'+saved.id,{...doc,draftRev:saved.rev}):await api('/courses/'+course+'/lessons',doc);
       const record={id:saved?.id||result.id,rev:result.draftRev||1};
       setSaved(record);
+      const structure=await api('/courses/'+course+'/structure');
+      if((structure.layout.find((x:Row)=>x.lesson_id===record.id)?.module_id||'')!==chapter){await api('/courses/'+course+'/organize',{revision:structure.revision,order:structure.order,chapterOrder:structure.modules.map((m:Row)=>m.id),layout:[...structure.layout.filter((x:Row)=>x.lesson_id!==record.id).map((x:Row)=>({lessonId:x.lesson_id,moduleId:x.module_id})),{lessonId:record.id,moduleId:chapter||null}],prerequisites:structure.prerequisites.map((x:Row)=>({lessonId:x.lesson_id,requires:x.required_id}))});}
       if(publish)await api('/lessons/'+record.id+'/publish',{draftRev:record.rev});
       setToast(publish?"درس منتشر شد":"پیش‌نویس ذخیره شد");return record;
     }catch(error){setToast(String(error));return null}finally{setBusy(false)}
   }
-  async function openSaved(id:string){try{const record=await api('/lessons/'+id);const d=record.content;setMessages([]);setHasAiAnswer(false);setChat('');setLoadedDoc(d);setCover(d.cover||null);setReferences(d.references||[]);setExamId(d.examId||'');setSummary(d.metadata?.summary||'');setKeywords(d.metadata?.keywords||'');setDifficulty(d.metadata?.difficulty||'beginner');setDuration(d.metadata?.durationMinutes||20);setTitle(d.title);setSaved({id,rev:record.draftRev});setBlocks(d.blocks.map((b:Row,i:number)=>({id:i+1,original:b,fontSize:b.fontSize,textMarks:b.textMarks,type:b.kind==='heading'?'عنوان':b.variant==='list'?'فهرست':b.variant==='quote'?'نقل‌قول':b.variant==='divider'?'جداکننده':({video:'ویدیو',image:'تصویر',code:'کد',note:'یادداشت'} as Record<string,Block['type']>)[b.kind]||'متن',title:b.title,content:b.body,source:b.embedUrl||b.sourceUrl||b.imageUrl||''})));if(d.quiz?.[0]){setQuestion(d.quiz[0].prompt);setRight(d.quiz[0].options[d.quiz[0].correct]);setWrong(d.quiz[0].options.find((_:string,i:number)=>i!==d.quiz[0].correct)||'');}setBuilder(true);}catch(e){setToast(String(e));}}
+  async function openSaved(id:string){try{const record=await api('/lessons/'+id);const d=record.content;setLoadedDoc(d);setCompletion(d.completion||{video:true,practice:true,quiz:true,gateNext:true});setPassScore(d.passScore||70);setCover(d.cover||null);setReferences(d.references||[]);setExamId(d.examId||'');setSummary(d.metadata?.summary||'');setKeywords(d.metadata?.keywords||'');setDifficulty(d.metadata?.difficulty||'beginner');setDuration(d.metadata?.durationMinutes||20);setTitle(d.title);setSaved({id,rev:record.draftRev});const layout=await api('/courses/'+course+'/structure');setChapter(layout.layout.find((x:Row)=>x.lesson_id===id)?.module_id||'');setBlocks(d.blocks.map((b:Row,i:number)=>({id:i+1,original:b,requiresUrl:b.pendingMedia===true,description:b.description,starter:b.starter,sampleAnswer:b.sampleAnswer,feedback:b.feedback,options:b.options,correct:b.correct,explanation:b.explanation,fontSize:b.fontSize,textMarks:b.textMarks,type:b.kind==='heading'?'عنوان':b.variant==='list'?'فهرست':b.variant==='quote'?'نقل‌قول':b.variant==='divider'?'جداکننده':({video:'ویدیو',image:'تصویر',code:'کد',note:'یادداشت',exercise:'تمرین',mcq:'سؤال',explanation:'توضیح تکمیلی',summary:'جمع‌بندی'} as Record<string,Block['type']>)[b.kind]||'متن',title:b.title,content:b.body,source:b.embedUrl||b.sourceUrl||b.imageUrl||''})));if(d.quiz?.[0]){setQuestion(d.quiz[0].prompt);setRight(d.quiz[0].options[d.quiz[0].correct]);setWrong(d.quiz[0].options.find((_:string,i:number)=>i!==d.quiz[0].correct)||'');}setBuilder(true);}catch(e){setToast(String(e));}}
   function dropBlock(from:number,to:number){setBlocks(prev=>{const next=[...prev],i=next.findIndex(b=>b.id===from),j=next.findIndex(b=>b.id===to);if(i<0||j<0||i===j)return prev;const [item]=next.splice(i,1);next.splice(j,0,item);return next});setSelected(from)}
   const move = (index: number, dir: number) => {
     const next = [...blocks];
@@ -661,232 +649,84 @@ function درس‌هاPage() {
     const map = {
       ویدیو: ["ویدیوی آموزشی جدید", "کد ویدیو را در تنظیمات بلوک وارد کنید"],
       متن: ["بلوک متنی جدید", "نوشتن محتوای درس را شروع کنید..."],
-      کد: ["تمرین کدنویسی", "// کد خود را اینجا وارد کنید"],
+      کد: ["مثال کدنویسی", "# کد پایتون خود را اینجا بنویسید"],
       یادداشت: ["نکته کوتاه", "یک یادآوری مفید اضافه کنید..."],
       تصویر: ["تصویر آموزشی", "برای تصویر، عنوان و توضیح جایگزین بنویسید."],
       تمرین: ["تمرین کلاسی", "دستورالعمل تمرین را برای دانش‌آموزان بنویسید."],
+      "توضیح تکمیلی":["توضیح تکمیلی","مفهوم را با یک مثال روشن توضیح دهید."],"جمع‌بندی":["جمع‌بندی هوشمند","نکات کلیدی و ارتباط مفاهیم این درس را بنویسید."],"سؤال":["سؤال چهارگزینه‌ای","کدام گزینه صحیح است؟"],
       عنوان:["عنوان بخش",""],فهرست:["فهرست نکات","نکته اول\nنکته دوم"],"نقل‌قول":["نقل‌قول","متن نقل‌قول"],جداکننده:["جداکننده",""],
     };
     const block = {
       id: Date.now(),
       type,
       title: map[type][0],
-      content: map[type][1],
+      content: map[type][1],starter:type==='تمرین'?'# کد پاسخ را اینجا بنویسید':undefined,sampleAnswer:type==='تمرین'?'':undefined,feedback:type==='تمرین'?'پس از اجرا، نتیجه را با خواسته تمرین مقایسه کنید.':undefined,options:type==='سؤال'?['گزینه اول','گزینه دوم','گزینه سوم','گزینه چهارم']:undefined,correct:0,explanation:'',
     };
     setBlocks([...blocks, block]);
     setSelected(block.id);
   };
+  const typeKinds:Record<string,string>={'ویدیو':'video','تصویر':'image','کد':'code','یادداشت':'note','عنوان':'heading','تمرین':'exercise','سؤال':'mcq','توضیح تکمیلی':'explanation','جمع‌بندی':'summary'};
+  function draftBlocks(){return blocks.map(b=>({...b.original,pendingMedia:b.requiresUrl&&!b.source?true:undefined,id:String(b.original?.id||b.id),kind:typeKinds[b.type]||'text',title:b.title,body:b.content,fontSize:b.fontSize,textMarks:b.textMarks,description:b.description,starter:b.starter,sampleAnswer:b.sampleAnswer,feedback:b.feedback,options:b.options,correct:b.correct,explanation:b.explanation,...(b.type==='ویدیو'?{sourceUrl:b.source?.startsWith('/api/')?b.source:!b.requiresUrl&&!b.source&&!b.original?.mediaId&&media.find(m=>m.course_id===course&&m.status==='approved'&&m.mime.startsWith('video/'))?'/api/platform/files/'+media.find(m=>m.course_id===course&&m.status==='approved'&&m.mime.startsWith('video/'))!.id:undefined,embedUrl:mediaSource(b.source||'',true)||undefined}:b.type==='تصویر'?{imageUrl:mediaSource(b.source||'',false)||undefined}:{}),variant:b.type==='فهرست'?'list':b.type==='نقل‌قول'?'quote':b.type==='جداکننده'?'divider':undefined}));}
+  function applyProposal(operations:Row[],snapshot:Row[]){const now=draftBlocks();if(JSON.stringify(now)!==JSON.stringify(snapshot))throw Error('محتوا پس از درخواست تغییر کرده است؛ دوباره پیشنهاد بگیرید.');setBlocks(previous=>{let next=[...previous];for(const op of operations){const b=op.block;const type=Object.keys(typeKinds).find(k=>typeKinds[k]===b.kind)||'متن';if(op.action==='update'){const index=next.findIndex(x=>String(x.original?.id||x.id)===op.target);if(index<0)continue;next[index]={...next[index],title:b.title,content:b.body,textMarks:undefined,description:b.description,starter:b.starter,sampleAnswer:b.sampleAnswer,feedback:b.feedback,options:b.options,correct:b.correct,explanation:b.explanation};}else next.push({id:Date.now()+next.length,requiresUrl:b.pendingMedia===true,type:type as Block['type'],title:b.title,content:b.body,textMarks:undefined,description:b.description,starter:b.starter,sampleAnswer:b.sampleAnswer,feedback:b.feedback,options:b.options,correct:b.correct,explanation:b.explanation});}return next});setToast('پیشنهاد با تأیید شما در پیش‌نویس اعمال شد؛ برای انتشار ذخیره کنید.');}
   function renderMedia(b:Block){
     const video=b.type==='ویدیو';
     if(video&&/^\/api\/platform\/files\/[a-f0-9-]{36}$/.test(b.source||''))return <video controls preload="metadata" style={{width:'100%'}} src={b.source}/>;
     const src=mediaSource(b.source||'',video);
-    if(!src&&video&&!b.source?.trim()){
+    if(!src&&video&&!b.source?.trim()&&!b.requiresUrl){
       const sample=media.find(m=>m.course_id===course&&m.status==='approved'&&m.mime.startsWith('video/'));
       if(sample)return <video controls preload="metadata" style={{width:'100%'}} src={'/api/platform/files/'+sample.id}/>;
     }
     if(!src)return <small>{b.source?'نشانی معتبر نیست':'رسانه‌ای انتخاب نشده است'}</small>;
     return video?<iframe title={b.title} src={src} allowFullScreen style={{width:'100%',aspectRatio:'16/9',border:0}}/>:<img alt={b.title} src={src} style={{maxWidth:'100%'}}/>;
   }
-  if(preview)return <section className="page-stack"><div className="builder-top"><h2>{title}</h2><LessonCover cover={cover} title={title}/><button className="outline-btn" onClick={()=>setPreview(false)}>بازگشت به ویرایش</button></div>{blocks.map(b=><article className="lesson-card" key={b.id}><div className="card-copy"><h3>{b.title}</h3>{(b.type==='ویدیو'||b.type==='تصویر')&&renderMedia(b)}{b.type==='کد'?<pre>{b.content}</pre>:<div style={{fontSize:(b.fontSize||16)+'px'}}><BlockText block={{body:b.content,textMarks:b.textMarks,variant:b.type==='فهرست'?'list':b.type==='نقل‌قول'?'quote':b.type==='جداکننده'?'divider':undefined}}/></div>}</div></article>)}<section><h3>{question}</h3>{[right,wrong].map((option,i)=><label key={i}><input type="radio" name="preview-quiz"/>{option}</label>)}</section></section>;
-  if (!builder)
-    return (
-      <div className="page-stack">
-        <section className="lessons-title">
-          <div>
-            <p className="eyebrow">کتابخانه محتوا</p>
-            <h2>درس‌هایی بسازید که ماندگار شوند.</h2>
-            <p>با کمک هوش مصنوعی نوا، درس‌هایی غنی و تعاملی بسازید.</p>
-          </div>
-          <button className="primary-btn big" onClick={() => {setSaved(null);setLoadedDoc(null);setCover(null);setReferences([]);setExamId('');setSummary('');setKeywords('');setDifficulty('beginner');setDuration(20);setBlocks(initialBlocks);setBuilder(true)}}>
-            <Icon name="sparkle" size={19} /> ساخت با هوش مصنوعی
-          </button>
-        </section>
-        <div className="filter-row">
-          <label className="search wide">
-            <Icon name="search" size={17} />
-            <input placeholder="جست‌وجوی درس‌ها..." />
-          </label>
-          <button className="filter active">
-            همه درس‌ها <b>{serverLessons.length}</b>
-          </button>
-          <button className="filter">
-            منتشرشده <b>{serverLessons.filter(l=>l.status==='published').length}</b>
-          </button>
-          <button className="filter">
-            پیش‌نویس‌ها <b>{serverLessons.filter(l=>l.status==='draft').length}</b>
-          </button>
-        </div>
-        <label>دوره آموزشی<select aria-label="دوره درس‌ها" value={course} onChange={e=>{setCourse(e.target.value);setSaved(null);setLoadedDoc(null)}}>{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label><CourseWorkspace key={course} screen="structure" fixedCourseId={course}/><section className="lesson-cards">{serverLessons.map(l=><article className="lesson-card" key={l.id}><div className="card-copy"><LessonCover cover={l.cover} title={l.title}/><h3>{l.title}</h3><small>{l.status}</small><button onClick={()=>void openSaved(l.id)}>ویرایش و پیش‌نمایش</button></div></article>)}
-          <button className="new-lesson" onClick={() => {setSaved(null);setLoadedDoc(null);setCover(null);setReferences([]);setExamId('');setSummary('');setKeywords('');setDifficulty('beginner');setDuration(20);setBlocks(initialBlocks);setBuilder(true)}}>
-            <span>
-              <Icon name="plus" size={24} />
-            </span>
-            <strong>ساخت درس جدید</strong>
-            <small>صفحه خالی یا همراه با هوش مصنوعی</small>
-          </button>
-          {!serverLessons.length&&lessons.map((l, i) => (
-            <article className="lesson-card" key={l.title}>
-              <div className={"cover c" + i}>
-                <span>{i === 0 ? "</>" : i === 1 ? "JS" : "اتم"}</span>
-                <b className={"status " + l.status.toLowerCase()}>{l.status}</b>
-              </div>
-              <div className="card-copy">
-                <p>{l.class}</p>
-                <h3>{l.title}</h3>
-                <div>
-                  <span>
-                    <Icon name="users" size={15} />
-                    {l.دانش‌آموز} دانش‌آموز
-                  </span>
-                  <span>به‌روزرسانی ۲ روز پیش</span>
-                </div>
-              </div>
-            </article>
-          ))}
-        </section>
-      </div>
-    );
+  if(preview){const bs=draftBlocks();const qs=bs.filter(b=>b.kind==='mcq').map(b=>({prompt:b.body||b.title,options:b.options,correct:b.correct,explanation:b.explanation}));const doc={title,cover,metadata:{summary,durationMinutes:duration},blocks:bs,exercise:{prompt:bs.some(b=>b.kind==='exercise')?'':loadedDoc?.exercise?.prompt||'یک مثال از این درس بنویسید.',starter:loadedDoc?.exercise?.starter||''},quiz:qs.length?qs:loadedDoc?.quiz||[{prompt:question,options:[right,wrong],correct:0}],passScore};return <section className="lesson-studio studio-preview" dir="rtl"><header className="studio-header"><h1>پیش‌نمایش درس</h1><button className="studio-button" onClick={()=>setPreview(false)}>بازگشت به ویرایش</button></header><main className="studio-preview-content"><LessonExperience doc={doc} preview/></main></section>;}
+  if(!builder)return <CourseCatalog role="teacher" courseId={course} onCourseChange={setCourse} onEditLesson={id=>void openSaved(id)} onCreateLesson={mid=>{resetBuilder();setChapter(mid)}}/>;
   return (
-    <div className="builder">
-      {toast && (
-        <div className="toast">
-          <Icon name="check" size={18} />
-          {toast}
-        </div>
-      )}
-      <div className="builder-top">
-        <button className="back-btn" onClick={() => setBuilder(false)}>
-          ← همه درس‌ها
-        </button>
-        <div>
-          <button disabled={busy} onClick={()=>save(false)}>ذخیره پیش‌نویس</button>
-        </div>
-        <button className="outline-btn" onClick={()=>setPreview(true)}>
-          <Icon name="eye" size={17} /> پیش‌نمایش
-        </button>
-        <button
-          className="primary-btn"
-          disabled={busy} onClick={()=>save(true)}
-        >
-          انتشار درس
-        </button>
-      </div>
-      <div className="builder-layout">
-        <aside className="builder-side">
-          <p className="eyebrow">طرح کلی درس</p><CoverPicker value={cover} onChange={setCover}/><label>آزمون مرتبط<select aria-label="آزمون مرتبط درس" value={examId} onChange={e=>setExamId(e.target.value)}><option value="">بدون آزمون مرتبط</option>{exams.map(e=><option key={e.id} value={e.id}>{e.title}</option>)}</select></label><button type="button" onClick={()=>window.open('/?page=exams&course='+encodeURIComponent(course),'_blank','noopener')}>ساخت یا ویرایش آزمون‌ها در تب جدید</button><button type="button" onClick={()=>api('/courses/'+course+'/exams').then(r=>setExams(r.exams)).catch(e=>setToast(e.message))}>تازه‌سازی آزمون‌ها</button>
-          <label>دوره<select disabled={!!saved} value={course} onChange={e=>setCourse(e.target.value)}>{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label>
-          
-          <label>پرسش آزمون<input value={question} onChange={e=>setQuestion(e.target.value)}/></label><label>پاسخ درست<input value={right} onChange={e=>setRight(e.target.value)}/></label><label>گزینه دیگر<input value={wrong} onChange={e=>setWrong(e.target.value)}/></label>
-          <label className="platform-input">توضیح درس<textarea value={summary} maxLength={2000} onChange={e=>setSummary(e.target.value)}/><small className="helper">توضیح ذخیره‌شده در محتوای درس و زمینه دستیار استفاده می‌شود.</small></label>
-          <label className="platform-input">موضوعات کلیدی<input value={keywords} maxLength={300} onChange={e=>setKeywords(e.target.value)}/></label>
-          <label className="platform-input">سطح<select value={difficulty} onChange={e=>setDifficulty(e.target.value)}><option value="beginner">مقدماتی</option><option value="intermediate">متوسط</option><option value="advanced">پیشرفته</option></select></label>
-          <label className="platform-input">زمان پیشنهادی به دقیقه<input type="number" min={1} max={600} value={duration} onChange={e=>setDuration(Number(e.target.value))}/></label>
-          <div className="add-blocks">
-            <p className="eyebrow">افزودن بلوک</p>
-            <div>
-              {(["ویدیو", "متن", "تصویر", "تمرین", "کد", "یادداشت", "عنوان", "فهرست", "نقل‌قول", "جداکننده"] as const).map((t) => (
-                <button key={t} onClick={() => addBlock(t)}>
-                  <Icon
-                    name={
-                      t === "ویدیو"
-                        ? "play"
-                        : t === "متن"
-                          ? "متن"
-                          : t === "کد"
-                            ? "کد"
-                            : t === "تمرین"
-                              ? "check"
-                              : "یادداشت"
-                    }
-                    size={17}
-                  />
-                  <span>{t}</span>
-                </button>
-              ))}
-            </div>
+    <section className="lesson-studio" dir="rtl" aria-label="سازنده درس">
+      <header className="studio-header">
+        <button className="studio-brand" onClick={()=>setBuilder(false)} aria-label="بازگشت به مدیریت درس‌ها"><BookOpen size={38}/><strong>نووا</strong></button>
+        <nav className="studio-breadcrumb" aria-label="مسیر صفحه"><Home size={17}/><span>‹</span><span>{courses.find(c=>c.id===course)?.title||'دوره پایتون'}</span><span>/</span><button onClick={()=>setBuilder(false)}>مدیریت درس‌ها</button></nav>
+        <h1>{saved?'ویرایش درس':'ساخت درس جدید'}</h1>
+        <div className="studio-header-actions"><button className="studio-button" onClick={()=>setPreview(true)}><Icon name="eye" size={20}/>پیش‌نمایش</button><button className="studio-button studio-primary" disabled={busy} onClick={()=>void save(false)}><Upload size={19}/>{busy?'در حال ذخیره…':'ذخیره پیش‌نویس'}</button></div>
+      </header>
+      {toast&&<div className="studio-notice" role="status">{toast}<button aria-label="بستن پیام" onClick={()=>setToast('')}>×</button></div>}
+      <div className="studio-workspace">
+        <aside className="studio-panel studio-library" aria-label="کتابخانه بلوک‌ها">
+          <div className="studio-panel-heading"><span className="studio-heading-icon"><Box size={25}/></span><div><h2>بلوک‌های محتوا</h2><p>بکشید و به درس اضافه کنید</p></div></div>
+          <div className="studio-library-list">
+            {libraryBlocks.map(({type,label,description,icon:ItemIcon})=><button key={type} className="studio-library-item" draggable onDragStart={e=>{e.dataTransfer.effectAllowed='copy';e.dataTransfer.setData('application/x-nova-library',type)}} onClick={()=>addBlock(type)}><span className="studio-library-icon"><ItemIcon size={29}/></span><span><strong>{label}</strong><small>{description}</small></span><GripVertical size={23} className="studio-grip"/></button>)}
+            <button className="studio-library-item" onClick={()=>document.getElementById('studio-exam')?.focus()}><span className="studio-library-icon"><ListChecks size={29}/></span><span><strong>آزمون</strong><small>افزودن آزمون و ارزیابی یادگیری</small></span><GripVertical size={23} className="studio-grip"/></button>
           </div>
+          <div className="studio-library-help"><Info size={21}/><p>برای افزودن هر بلوک، آن را با موس بکشید و در بخش محتوای درس رها کنید. با کلیک هم می‌توانید اضافه کنید.</p></div>
+          <details className="studio-more-blocks"><summary>بلوک‌های بیشتر <Plus size={16}/></summary><div>{([{type:'یادداشت',icon:FileText},{type:'تمرین',icon:ListChecks},{type:'عنوان',icon:Heading2},{type:'فهرست',icon:List},{type:'نقل‌قول',icon:Quote},{type:'جداکننده',icon:Minus},{type:'توضیح تکمیلی',icon:BookOpen},{type:'جمع‌بندی',icon:Sparkles}] as const).map(({type,icon:MoreIcon})=><button key={type} onClick={()=>addBlock(type)}><MoreIcon size={17}/>{type}</button>)}</div></details>
         </aside>
-        <main className="canvas">
-          <div className="canvas-head">
-            <p className="eyebrow">علوم کامپیوتر · پایه دهم</p>
-            <input value={title} onChange={e=>setTitle(e.target.value)} />
-            <textarea value={summary} onChange={e=>setSummary(e.target.value)} placeholder="توضیح کوتاه درس"/>
-          </div>
-          <div className="blocks">
-            {blocks.map((block, i) => (
-              <article
-                onClick={() => setSelected(block.id)}
-                className={`content-block ${block.type} ${selected === block.id ? "selected" : ""}`}
-                key={block.id}
-                data-block-id={block.id}
-                onDragOver={e=>{if(e.dataTransfer.types.includes('application/x-nova-block'))e.preventDefault()}}
-                onDrop={e=>{const id=Number(e.dataTransfer.getData('application/x-nova-block'));if(id){e.preventDefault();dropBlock(id,block.id)}}}
-              >
-                <div className="block-handle">
-                  <button type="button" className="block-drag" aria-label={'کشیدن بلوک '+block.title} draggable onDragStart={e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('application/x-nova-block',String(block.id))}} onPointerDown={e=>{if(e.pointerType==='touch')e.currentTarget.setPointerCapture(e.pointerId)}} onPointerMove={e=>{if(e.pointerType==='touch'&&e.currentTarget.hasPointerCapture(e.pointerId)){if(e.clientY>window.innerHeight-60)window.scrollBy(0,12);else if(e.clientY<80)window.scrollBy(0,-12)}}} onPointerUp={e=>{if(e.pointerType!=='touch')return;const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-block-id]');if(target)dropBlock(block.id,Number(target.getAttribute('data-block-id')))}}><Icon name="grip" size={17}/></button>
-                  <span>{block.type}</span><button type="button" aria-label={'حذف بلوک '+block.title} onClick={e=>{e.stopPropagation();setBlocks(bs=>bs.filter(b=>b.id!==block.id));setSelected(0)}}>حذف</button>
-                  <div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        move(i, -1);
-                      }}
-                    >
-                      ↑
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        move(i, 1);
-                      }}
-                    >
-                      ↓
-                    </button>
-                  </div>
-                </div>
-                {(block.type==='ویدیو'||block.type==='تصویر')&&<div className="platform-input">
-                  <label>{block.type==='ویدیو'?'کد iframe یا نشانی پخش کاویمو':'نشانی HTTPS تصویر'}
-                    <textarea dir="ltr" value={block.source||''} onChange={e=>setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,source:e.target.value}:b))}/>
-                  </label>{block.source&&renderMedia(block)}
-                </div>}
-                <h3 contentEditable suppressContentEditableWarning onBlur={e=>{const title=e.currentTarget.textContent||"";setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,title}:b))}}>
-                  {block.title}
-                </h3>
-                {block.type==='جداکننده'?<hr/>:<textarea className="block-editor" aria-label={'متن بلوک '+block.title} dir={block.type==='کد'?'ltr':'rtl'} style={{fontSize:(block.fontSize||16)+'px'}} value={block.content} onSelect={e=>setTextSelection({blockId:block.id,start:e.currentTarget.selectionStart,end:e.currentTarget.selectionEnd})} onChange={e=>{const content=e.target.value;setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,content,textMarks:[]}:b))}}/>}
-                {block.type === "تمرین" && (
-                  <div className="exercise-meta">
-                    <span>
-                      <Icon name="clock" size={14} /> ۱۲ دقیقه
-                    </span>
-                    <span>
-                      <Icon name="check" size={14} /> تحویل در کلاس
-                    </span>
-                  </div>
-                )}
-                {selected===block.id&&block.type==='متن'&&<div className="text-toolbar"><label>اندازه متن یا بخش انتخاب‌شده<select aria-label="اندازه فونت متن" value={(textSelection.blockId===block.id&&textSelection.end>textSelection.start?block.textMarks?.find(m=>m.start<=textSelection.start&&m.end>=textSelection.end)?.fontSize:undefined)||block.fontSize||16} onChange={e=>{const fontSize=Number(e.target.value);setBlocks(bs=>bs.map(b=>{if(b.id!==block.id)return b;if(textSelection.blockId===b.id&&textSelection.end>textSelection.start){const mark={start:textSelection.start,end:textSelection.end,fontSize};return {...b,textMarks:[...(b.textMarks||[]).flatMap(m=>m.end<=mark.start||m.start>=mark.end?[m]:[...(m.start<mark.start?[{...m,end:mark.start}]:[]),...(m.end>mark.end?[{...m,start:mark.end}]:[])]),mark].sort((a,b)=>a.start-b.start)}}return {...b,fontSize}}))}}>{[12,14,16,18,20,24,28,32,36].map(n=><option key={n} value={n}>{n}</option>)}</select></label><small>متن را انتخاب کنید؛ بدون انتخاب، اندازه کل بلوک تغییر می‌کند. نتیجه در پیش‌نمایش دیده می‌شود.</small><BlockText block={{body:block.content,textMarks:block.textMarks}}/></div>}
-              </article>
-            ))}
+        <main className="studio-panel studio-canvas" aria-label="محتوای درس">
+          <div className="studio-canvas-heading"><h2>محتوای درس</h2><span>{blocks.length.toLocaleString('fa-IR')} بلوک</span></div>
+          <div className={'studio-blocks'+(dropActive?' is-dropping':'')} onDragOver={e=>{if(e.dataTransfer.types.includes('application/x-nova-library')){e.preventDefault();setDropActive(true)}}} onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget as Node))setDropActive(false)}} onDrop={e=>{const type=e.dataTransfer.getData('application/x-nova-library');if(libraryBlocks.some(b=>b.type===type)){e.preventDefault();addBlock(type as Block['type'])}setDropActive(false)}}>
+          {blocks.map((block,i)=>{
+            const BlockIcon=block.type==='ویدیو'?Video:block.type==='کد'?Code2:block.type==='تصویر'?ImageIcon:block.type==='تمرین'?ListChecks:FileText;
+            const isText=!['ویدیو','کد','تصویر','جداکننده'].includes(block.type);
+            return <article key={block.id} data-block-id={block.id} className={'studio-block'+(selected===block.id?' is-selected':'')} onClick={()=>setSelected(block.id)} onDragOver={e=>{if(e.dataTransfer.types.includes('application/x-nova-block')){e.preventDefault();e.dataTransfer.dropEffect='move'}}} onDrop={e=>{const id=Number(e.dataTransfer.getData('application/x-nova-block'));if(id){e.preventDefault();e.stopPropagation();dropBlock(id,block.id)}}}>
+              <div className="studio-block-heading"><button className="studio-icon-button studio-drag" aria-label={'کشیدن بلوک '+block.title} draggable onDragStart={e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('application/x-nova-block',String(block.id))}} onPointerDown={e=>{if(e.pointerType==='touch')e.currentTarget.setPointerCapture(e.pointerId)}} onPointerMove={e=>{if(e.pointerType==='touch'&&e.currentTarget.hasPointerCapture(e.pointerId)){if(e.clientY>window.innerHeight-60)window.scrollBy(0,12);else if(e.clientY<80)window.scrollBy(0,-12)}}} onPointerUp={e=>{if(e.pointerType==='touch'){const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-block-id]');if(target)dropBlock(block.id,Number(target.getAttribute('data-block-id')))}}}><GripVertical size={21}/></button><BlockIcon size={23}/><strong>{block.type==='متن'||block.type==='یادداشت'?'متن و یادداشت':block.type==='ویدیو'?'ویدیو آموزشی':block.type}</strong><div className="studio-block-actions"><button className="studio-icon-button" aria-label={'ویرایش با هوش مصنوعی '+block.title} title="ویرایش با هوش مصنوعی" onClick={e=>{e.stopPropagation();setAiTarget({id:String(block.original?.id||block.id),title:block.title,kind:typeKinds[block.type]||'text',nonce:Date.now()});document.getElementById('document-question-compact')?.focus()}}><Sparkles size={18}/></button><button className="studio-icon-button studio-move" disabled={i===0} aria-label={'انتقال '+block.title+' به بالا'} onClick={e=>{e.stopPropagation();move(i,-1)}}><ArrowUp size={16}/></button><button className="studio-icon-button studio-move" disabled={i===blocks.length-1} aria-label={'انتقال '+block.title+' به پایین'} onClick={e=>{e.stopPropagation();move(i,1)}}><ArrowDown size={16}/></button><button className="studio-icon-button" aria-label={'ویرایش '+block.title} onClick={e=>{setSelected(block.id);const details=e.currentTarget.closest('article')?.querySelector('details');if(details)details.open=true;document.getElementById('studio-title-'+block.id)?.focus()}}><Pencil size={20}/></button><button className="studio-icon-button studio-delete" aria-label={'حذف بلوک '+block.title} onClick={e=>{e.stopPropagation();setBlocks(bs=>bs.filter(b=>b.id!==block.id));setSelected(0)}}><Trash2 size={19}/></button></div></div>
+              {block.type==='ویدیو'?<div className="studio-video-block">{playing===block.id?<div className="studio-playing">{renderMedia(block)}<button className="studio-button" onClick={()=>setPlaying(null)}>بازگشت به جلد ویدیو</button></div>:<button className="studio-video-poster" aria-label={'پخش '+block.title} onClick={()=>setPlaying(block.id)}><div className="studio-python-logo"><img src="/assets/python-logo.svg" alt="پایتون"/></div><span className="studio-play"><Play size={30} fill="currentColor"/></span><code dir="ltr">name = <em>"Nova"</em><br/><b>print</b>(name)</code><strong>{block.title}</strong></button>}<details className="studio-media-settings"><summary>تنظیم ویدیو و کد کاویمو</summary><label>عنوان ویدیو<input id={'studio-title-'+block.id} value={block.title} onChange={e=>setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,title:e.target.value}:b))}/></label><label>کد iframe یا نشانی پخش کاویمو<textarea dir="ltr" value={block.source||''} onChange={e=>setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,source:e.target.value}:b))}/></label><label>توضیح ویدیو<input value={block.content} onChange={e=>setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,content:e.target.value}:b))}/></label></details></div>:block.type==='تصویر'?<div className="studio-image-block"><label>عنوان تصویر<input id={'studio-title-'+block.id} value={block.title} onChange={e=>setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,title:e.target.value}:b))}/></label><label>نشانی HTTPS تصویر<input dir="ltr" type="url" value={block.source||''} onChange={e=>setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,source:e.target.value}:b))}/></label>{block.source&&renderMedia(block)}<label>توضیح جایگزین<textarea value={block.content} onChange={e=>setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,content:e.target.value}:b))}/></label></div>:block.type==='جداکننده'?<hr className="studio-divider"/>:<>
+              {isText&&<div className="studio-text-toolbar"><label>اندازه متن<select aria-label={'اندازه فونت '+block.title} value={block.fontSize||16} onFocus={()=>setSelected(block.id)} onChange={e=>applyTextSize(Number(e.target.value))}>{[12,14,16,18,20,24,28,32,36].map(n=><option key={n} value={n}>{n.toLocaleString('fa-IR')}</option>)}</select></label><span>پاراگراف</span><button className="studio-icon-button" aria-label="تبدیل متن به فهرست" aria-pressed={block.type==='فهرست'} onClick={()=>setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,type:b.type==='فهرست'?'متن':'فهرست'}:b))}><List size={19}/></button><small>متن را انتخاب و اندازه را تنظیم کنید</small></div>}
+              <div className={block.type==='کد'?'studio-code-body':'studio-text-body'}>{block.type==='کد'?<div className="studio-sample-code"><label>عنوان مثال<input id={'studio-title-'+block.id} value={block.title} onChange={e=>setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,title:e.target.value}:b))}/></label><label>توضیح مثال<textarea aria-label={'توضیح مثال '+block.title} value={block.description||''} maxLength={4000} placeholder="هدف مثال و نکته‌ای که دانش‌آموز باید یاد بگیرد…" onChange={e=>setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,description:e.target.value}:b))}/></label><div className="nova-compact-runner"><div className="nova-code-toolbar"><div className="nova-window-dots" aria-hidden="true"><i/><i/><i/></div><span>example.py</span><small>Python</small></div><CodeEditor value={block.content} label={'کد نمونه '+block.title} onChange={value=>setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,content:value}:b))}/></div></div>:<><input className="studio-block-title" id={'studio-title-'+block.id} aria-label={'عنوان بلوک '+block.title} value={block.title} onChange={e=>setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,title:e.target.value}:b))}/><textarea className="studio-body-editor" aria-label={(block.type==='تمرین'?'صورت تمرین ':'متن بلوک ')+block.title} placeholder={block.type==='تمرین'?'درخواست تمرین را توضیح دهید؛ کد اولیه را در ویرایشگر پایین وارد کنید.':undefined} value={block.content} style={{fontSize:(block.fontSize||16)+'px'}} onSelect={e=>setTextSelection({blockId:block.id,start:e.currentTarget.selectionStart,end:e.currentTarget.selectionEnd})} onChange={e=>setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,content:e.target.value,textMarks:[]}:b))}/>{!!block.textMarks?.length&&<div className="studio-formatted-text"><BlockText block={{body:block.content,textMarks:block.textMarks,variant:block.type==='فهرست'?'list':undefined}}/></div>}</>}</div></>}
+            <StudioBlockFields block={block} change={patch=>setBlocks(bs=>bs.map(b=>b.id===block.id?{...b,...patch}:b))}/>
+            </article>
+          })}
+          <button className="studio-dropzone" onClick={()=>addBlock('متن')} onDragOver={e=>{if(e.dataTransfer.types.includes('application/x-nova-block'))e.preventDefault()}} onDrop={e=>{const id=Number(e.dataTransfer.getData('application/x-nova-block'));if(id&&blocks.length){e.preventDefault();e.stopPropagation();dropBlock(id,blocks[blocks.length-1].id)}}}><Plus size={23}/>بلوک جدید را اینجا رها کنید</button>
           </div>
         </main>
-        <aside className="ai-panel">
-          <div className="ai-title">
-            <span>
-              <Icon name="sparkle" size={17} />
-            </span>
-            <div>
-              <strong>دستیار نوا</strong>
-              <small>همراه ساخت درس</small>
-            </div>
-            <i />
-          </div>
-          <BuilderSources key={course} course={course} references={references} onReferences={setReferences}/>
-          <div className="ai-chat"><p>تمرکز پاسخ: بلوک انتخاب‌شده و آخرین پیش‌نویس ذخیره‌شده</p><div className="ai-conversation" aria-live="polite">{messages.map((m,i)=><div key={i} className={'ai-message '+m.role}>{m.text}</div>)}</div></div>
-          <form onSubmit={async e=>{e.preventDefault();const question=chat.trim();if(!question||aiBusy)return;setAiBusy(true);try{const record=await save(false);if(!record)return;setMessages(m=>[...m,{role:'user',text:question}]);setChat('');const answer=await consult(course,record.id,question,'',selected?String(blocks.find(b=>b.id===selected)?.original?.id||selected):'');setMessages(m=>[...m,{role:'ai',text:answer}]);setHasAiAnswer(true);}catch(error){setToast(String(error))}finally{setAiBusy(false)}}}>
-           <label className="platform-input">گفتگو با دستیار<textarea aria-label="پرسش درباره بلوک درس" value={chat} onChange={e=>setChat(e.target.value)} maxLength={4000} placeholder="درباره بلوک انتخاب‌شده بپرسید…"/></label><button disabled={aiBusy||busy||!chat.trim()}>{aiBusy?'در حال دریافت پاسخ…':'ذخیره و ارسال پرسش'}</button>
-          </form><button type="button" disabled={!hasAiAnswer||aiBusy} onClick={()=>{const suggestion=[...messages].reverse().find(m=>m.role==='ai');if(suggestion)setBlocks(bs=>[...bs,{id:Date.now(),type:'یادداشت',title:'پیشنهاد دستیار — نیازمند بازبینی',content:suggestion.text}])}}>افزودن آخرین پاسخ به درس</button>
-        </aside>
+        <aside className="studio-panel studio-assistant"><TeacherDocumentChat key={course} blocks={draftBlocks()} editTarget={aiTarget} onApplyProposal={applyProposal} course={course} compact onApply={text=>{const id=Date.now();setBlocks(bs=>[...bs,{id,type:'یادداشت',title:'گزیده سند — نیازمند بازبینی',content:text}]);setSelected(id)}}/></aside>
       </div>
-    </div>
+      <section className="studio-panel studio-settings" aria-labelledby="studio-settings-title"><h2 id="studio-settings-title"><Settings size={27}/>تنظیمات و ثبت درس</h2>
+        <div className="studio-exam-row"><span>آزمون مرتبط</span><div className="studio-exam-actions"><label className="studio-exam-choice"><input type="radio" checked readOnly/>انتخاب آزمون آماده</label><button className="studio-button" onClick={()=>window.open('/?page=exams&course='+encodeURIComponent(course),'_blank','noopener')}><Plus size={18}/>ساخت آزمون جدید</button></div><div className="studio-exam-select"><select id="studio-exam" aria-label="آزمون مرتبط درس" value={examId} onChange={e=>setExamId(e.target.value)}><option value="">بدون آزمون مرتبط</option>{exams.map(e=><option key={e.id} value={e.id}>{e.title}</option>)}</select><button className="studio-refresh" onClick={()=>api('/courses/'+course+'/exams').then(r=>setExams(r.exams)).catch(e=>setToast(e.message))}>تازه‌سازی</button></div></div>
+        <div className="studio-settings-row"><label className="studio-setting-field"><span>نام درس</span><input value={title} onChange={e=>setTitle(e.target.value)} maxLength={200}/></label><label className="studio-setting-field"><span>فصل</span><select aria-label="فصل درس" value={chapter} onChange={e=>setChapter(e.target.value)}><option value="">بدون فصل</option>{chapters.map(m=><option key={m.id} value={m.id}>{m.title}</option>)}</select></label></div>
+        <label className="studio-description"><span>توضیحات درس</span><textarea value={summary} maxLength={2000} onChange={e=>setSummary(e.target.value)} placeholder="توضیح کوتاهی درباره آنچه دانش‌آموز یاد می‌گیرد…"/></label>
+        <details className="studio-advanced"><summary>تنظیمات بیشتر: دوره، جلد و پرسش درس</summary><div className="studio-advanced-grid"><label>دوره<select disabled={!!saved} value={course} onChange={e=>setCourse(e.target.value)}>{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label><label>لینک‌های مرجع درس<textarea value={references.join('\n')} onChange={e=>setReferences(e.target.value.split('\n'))} placeholder="هر لینک HTTPS در یک خط"/></label><label>موضوعات کلیدی<input value={keywords} maxLength={300} onChange={e=>setKeywords(e.target.value)}/></label><label>سطح<select value={difficulty} onChange={e=>setDifficulty(e.target.value)}><option value="beginner">مقدماتی</option><option value="intermediate">متوسط</option><option value="advanced">پیشرفته</option></select></label><label>زمان پیشنهادی به دقیقه<input type="number" min={1} max={600} value={duration} onChange={e=>setDuration(Number(e.target.value))}/></label><CoverPicker value={cover} onChange={setCover}/><div className="studio-quiz-fields"><label>پرسش آزمون درس<input value={question} onChange={e=>setQuestion(e.target.value)}/></label><label>پاسخ درست<input value={right} onChange={e=>setRight(e.target.value)}/></label><label>گزینه دیگر<input value={wrong} onChange={e=>setWrong(e.target.value)}/></label></div></div></details>
+        <ClassEventEditor course={course} lesson={saved?.id}/><div className="studio-completion"><strong>شرایط تکمیل و ورود به جلسه بعد</strong>{(['video','practice','quiz','gateNext'] as const).map((k,i)=><label key={k}><input type="checkbox" checked={completion[k]} onChange={e=>setCompletion(c=>({...c,[k]:e.target.checked}))}/>{['تأیید مشاهده ویدیو','ارسال تمرین','قبولی آزمون','قفل جلسه بعد تا تکمیل این درس'][i]}</label>)}<label>حداقل قبولی<input type="number" min={1} max={100} value={passScore} onChange={e=>setPassScore(Number(e.target.value))}/></label></div><footer className="studio-bottom-actions"><span>{saved?'آخرین پیش‌نویس در حساب شما ذخیره شده است.':'پیش از انتشار، محتوا را در پیش‌نمایش بررسی کنید.'}</span><button className="studio-button" disabled={busy} onClick={()=>void save(false)}><Save size={20}/>ذخیره پیش‌نویس</button><button className="studio-button studio-primary" disabled={busy} onClick={()=>void save(true)}><Send size={20}/>{busy?'در حال ذخیره…':'ثبت و انتشار درس'}</button></footer>
+      </section>
+    </section>
   );
 }
 
@@ -1228,7 +1068,7 @@ function SampleAnalyticsPage() {
               <Icon name="sparkle" size={19} />
             </span>
             <div>
-              <p className="eyebrow">تحلیل هوشمند نوا</p>
+              <p className="eyebrow">تحلیل هوشمند نووا</p>
               <h3>پیشنهاد آموزشی شخصی</h3>
               <p>
                 این دانش‌آموز در ساختار HTML عملکرد بسیار خوبی دارد؛ برای تقویت جاوااسکریپت، تمرین‌های
@@ -1400,8 +1240,11 @@ function SampleAnalyticsPage() {
 
 function پیام‌هاPage() { return <LiveTickets role="teacher"/>; }
 
+function TeacherAssistantPage(){const [courses,setCourses]=useState<Row[]>([]),[cid,setCid]=useState('');useEffect(()=>{api('/courses').then(r=>{setCourses(r.courses);const preferred=new URLSearchParams(location.search).get('course');setCid(r.courses.some((c:Row)=>c.id===preferred)?preferred:r.courses[0]?.id||'')})},[]);return <div className="teacher-modern-view teacher-assistant-full"><label className="document-course-select">دوره<select aria-label="دوره گفت‌وگو" value={cid} onChange={e=>setCid(e.target.value)}>{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label><TeacherConversation key={cid} course={cid}/></div>}
+
 function Dashboard() {
-  const [page, setPage] = useState<Page>(()=>new URLSearchParams(location.search).get('page')==='exams'?'آزمون‌ها':'خانه');
+  const [page, setPage] = useState<Page>(()=>new URLSearchParams(location.search).get('page')==='exams'?'آزمون‌ها':new URLSearchParams(location.search).get('page')==='lessons'?'درس‌ها':new URLSearchParams(location.search).get('page')==='assistant'?'دستیار':new URLSearchParams(location.search).get('page')==='progress'?'تحلیل‌ها':new URLSearchParams(location.search).get('page')==='tickets'?'پیام‌ها':'خانه');
+  useEffect(()=>{const pages:Record<string,string>={'خانه':'','درس‌ها':'lessons','آزمون‌ها':'exams','تحلیل‌ها':'progress','پیام‌ها':'tickets','دستیار':'assistant'};const url=new URL(location.href);if(pages[page])url.searchParams.set('page',pages[page]);else url.searchParams.delete('page');if(page!=='درس‌ها')url.searchParams.delete('newLesson');if(page!=='آزمون‌ها')url.searchParams.delete('exam');history.replaceState(null,'',url);window.dispatchEvent(new Event('nova:navigation'))},[page]);
   useEffect(()=>{const open=()=>setPage('آزمون‌ها');window.addEventListener('nova:teacher-exams',open);return()=>window.removeEventListener('nova:teacher-exams',open)},[]);
   const titles = useMemo(
     () => ({
@@ -1409,20 +1252,22 @@ function Dashboard() {
       درس‌ها: "درس‌ها",
       آزمون‌ها: "آزمون‌ها",
       تحلیل‌ها: "تحلیل‌ها",
-      پیام‌ها: "پیام‌ها",
+      پیام‌ها: "تیکت‌ها",
+      دستیار: "گفت‌وگو با دستیار",
     }),
     [],
   );
   return (
-    <div className="app-shell">
-      <Sidebar page={page} setPage={setPage} />
+    <div className={"app-shell"+(page==="دستیار"?" teacher-chat-shell":"")}>
+      {page!=="دستیار"&&<Sidebar page={page} setPage={setPage} />}
       <div className="main-shell">
-        <Topbar title={titles[page]} onNew={() => setPage("درس‌ها")} />
-        <div className="page">
+        {page!=="دستیار"&&<Topbar title={titles[page]} onNew={() => setPage("درس‌ها")} />}
+        <div className={page==="دستیار"?"teacher-chat-page":"page"}>
           {page === "خانه" && <خانه goدرس‌ها={() => setPage("درس‌ها")} />}
           {page === "درس‌ها" && <درس‌هاPage />}
           {page === "آزمون‌ها" && <آزمون‌هاPage />}
-          {page === "تحلیل‌ها" && <تحلیل‌هاPage />}
+          {page === "تحلیل‌ها" && <TeacherProgress/>}
+          {page === "دستیار" && <TeacherAssistantPage/>}
           {page === "پیام‌ها" && <پیام‌هاPage />}
         </div>
       </div>
@@ -1431,9 +1276,9 @@ function Dashboard() {
 }
 
 export default function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
-  useEffect(()=>{api("/me").then(()=>setLoggedIn(true)).catch(()=>{})},[]);
+  const [loggedIn, setLoggedIn] = useState<boolean|null>(null);
+  useEffect(()=>{api("/me").then(()=>setLoggedIn(true)).catch(()=>setLoggedIn(false))},[]);
   return (
-    <div dir="rtl">{loggedIn ? <Dashboard /> : <Login onLogin={() => setLoggedIn(true)} />}</div>
+    <div dir="rtl">{loggedIn===null ? <p role="status" style={{padding:24}}>در حال بررسی حساب…</p> : loggedIn ? <PlatformShell role="teacher"><Dashboard /></PlatformShell> : <Login onLogin={() => setLoggedIn(true)} />}</div>
   );
 }

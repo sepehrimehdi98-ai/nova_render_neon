@@ -33,7 +33,7 @@ function validateLesson(input, publishing = false) {
         fail(400, 'بلوک‌های درس معتبر نیستند.');
     const seen = new Set();
     const clean = blocks.map(b => {
-        if (!b || !['heading', 'text', 'code', 'image', 'video', 'note'].includes(b.kind))
+        if (!b || !['heading', 'text', 'code', 'image', 'video', 'note','explanation','summary','exercise','mcq'].includes(b.kind))
             fail(400, 'نوع بلوک معتبر نیست.');
         const key = text(b.id, 80);
         if (seen.has(key))
@@ -43,8 +43,10 @@ function validateLesson(input, publishing = false) {
         if(Array.isArray(b.textMarks)&&typeof b.body==='string')result.body=b.body;
         if(b.variant!==undefined){if(!['quote','list','divider'].includes(b.variant))fail(400,'سبک بلوک معتبر نیست.');result.variant=b.variant;}
         if(b.textMarks!==undefined){if(!Array.isArray(b.textMarks)||b.textMarks.length>100)fail(400,'قالب متن معتبر نیست.');let last=0;result.textMarks=b.textMarks.map(m=>{const start=integer(m.start,0,result.body.length),end=integer(m.end,1,result.body.length),fontSize=integer(m.fontSize,12,36);if(start<last||end<=start)fail(400,'بازه متن معتبر نیست.');last=end;return {start,end,fontSize};});}
+        if (b.kind === 'code' && b.description !== undefined) result.description = text(b.description,4000,0);
         if (b.fontSize !== undefined) result.fontSize = integer(b.fontSize, 12, 36);
         if (b.textColor !== undefined) { if (typeof b.textColor !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(b.textColor)) fail(400, 'رنگ متن معتبر نیست.'); result.textColor = b.textColor.toLowerCase(); }
+        if(['video','image'].includes(b.kind)&&b.pendingMedia===true&&!b.sourceUrl&&!b.embedUrl&&!b.mediaId&&!b.imageUrl){if(publishing)fail(400,'نشانی رسانهٔ بلوک پیشنهادی را پیش از انتشار وارد کنید.');result.pendingMedia=true;return result;}
         if (b.kind === 'video') {
             if (b.sourceUrl && /^\/api\/platform\/files\/[a-f0-9-]{36}$/.test(b.sourceUrl)) { result.sourceUrl=b.sourceUrl; }
             else if (b.embedUrl) {
@@ -73,6 +75,8 @@ function validateLesson(input, publishing = false) {
             if (!result.title)
                 fail(400, 'متن جایگزین تصویر لازم است.');
         }
+        if(b.kind==='exercise'){result.starter=text(b.starter||'',4000,0);result.sampleAnswer=text(b.sampleAnswer||'',4000,0);result.feedback=text(b.feedback||'',2000,0);}
+        if(b.kind==='mcq'){if(!Array.isArray(b.options)||b.options.length<2||b.options.length>6)fail(400,'گزینه‌های بلوک سؤال معتبر نیست.');result.options=b.options.map(o=>text(o,500));result.correct=integer(b.correct,0,result.options.length-1);result.explanation=text(b.explanation||'',2000,0);}
         return result;
     });
     const exercise = { prompt: text(input.exercise?.prompt || ' ', 4000, 0), starter: text(input.exercise?.starter || ' ', 4000, 0) };
@@ -84,19 +88,22 @@ function validateLesson(input, publishing = false) {
     const quiz = input.quiz || [];
     if (!Array.isArray(quiz) || quiz.length > 20)
         fail(400, 'آزمون معتبر نیست.');
-    const questions = quiz.map(question => {
+    const questions = (clean.some(b=>b.kind==='mcq')?clean.filter(b=>b.kind==='mcq').map(b=>({prompt:b.body||b.title,options:b.options,correct:b.correct,explanation:b.explanation})):quiz).map(question => {
         if (!question || !Array.isArray(question.options) || question.options.length < 2 || question.options.length > 6)
             fail(400, 'گزینه‌های سؤال معتبر نیستند.');
-        return { prompt: text(question.prompt, 1000), options: question.options.map(x => text(x, 500)), correct: integer(question.correct, 0, question.options.length - 1) };
+        return { prompt: text(question.prompt, 1000), options: question.options.map(x => text(x, 500)), correct: integer(question.correct, 0, question.options.length - 1),explanation:text(question.explanation||'',2000,0) };
     });
     if (publishing && (!clean.some(b => b.kind === 'video') || !exercise.prompt || !questions.length))
         fail(400, 'برای انتشار، ویدیو، تمرین و حداقل یک سؤال کامل لازم است.');
     const references=(input.references||[]);if(!Array.isArray(references)||references.length>8)fail(400,'حداکثر هشت مرجع مجاز است.');for(const link of references){let u;try{u=new URL(link)}catch{fail(400,'لینک مرجع معتبر نیست.')}if(u.protocol!=='https:'||u.username||u.password||link.length>2000)fail(400,'مرجع باید HTTPS باشد.');}
     const meta=input.metadata||{};if(typeof meta!=='object'||Array.isArray(meta))fail(400,'جزئیات درس معتبر نیست.');const metadata={summary:text(meta.summary||'',2000,0),keywords:text(meta.keywords||'',300,0),difficulty:meta.difficulty||'beginner',durationMinutes:integer(meta.durationMinutes??20,1,600)};if(!['beginner','intermediate','advanced'].includes(metadata.difficulty))fail(400,'سطح درس معتبر نیست.');
     const examId=input.examId?id(input.examId):null;
-    return { title, cover, references, examId, metadata, blocks: clean, exercise, quiz: questions, passScore: integer(input.passScore ?? 70, 1, 100) };
+    if(input.completion!==undefined){if(!input.completion||typeof input.completion!=='object'||Array.isArray(input.completion))fail(400,'شرایط تکمیل معتبر نیست.');for(const k of ['video','practice','quiz','gateNext'])if(input.completion[k]!==undefined&&typeof input.completion[k]!=='boolean')fail(400,'شرط تکمیل باید منطقی باشد.');}
+    const completion={video:input.completion?.video!==false,practice:input.completion?.practice!==false,quiz:input.completion?.quiz!==false,gateNext:input.completion?.gateNext===true};
+    return { title, cover, references, examId, metadata, completion, blocks: clean, exercise, quiz: questions, passScore: integer(input.passScore ?? 70, 1, 100) };
 }
-function studentContent(doc) { const { gradingTests, ...exercise } = doc.exercise; const {references,...publicDoc}=doc;return { ...publicDoc, exercise: { ...exercise, autoGradingEnabled: Boolean(gradingTests?.length) }, quiz: doc.quiz.map(({ correct, ...question }) => question) }; }
+function studentContent(doc) { const { gradingTests, ...exercise } = doc.exercise; const {references,...publicDoc}=doc;return { ...publicDoc,blocks:doc.blocks.map(({correct,sampleAnswer,explanation,feedback,...b})=>b),exercise: { ...exercise, autoGradingEnabled: Boolean(gradingTests?.length) }, quiz: doc.quiz.map(({ correct,explanation, ...question }) => question) }; }
+
 async function scope(q, u, courseId, write = false) {
     const course = await q.lockCourse(id(courseId));
     if (!course)
@@ -167,7 +174,7 @@ async function createPlatform(store, { demo = false, origin = 'http://127.0.0.1:
         const chunks = []; let size = 0;
         for await (const chunk of req) {
             chunks.push(Buffer.from(chunk)); size += chunk.length;
-            if (size > (new URL(req.url,'http://local').pathname.match(/^\/api\/platform(?:\/portal\/(?:student|teacher|admin))?\/media$/) ? 8500000 : 131072))
+            if (size > (new URL(req.url,'http://local').pathname.match(/^\/api\/platform(?:\/portal\/(?:student|teacher|admin))?\/media$/) ? 8500000 : /\/(?:documents|tickets)(?:\/|$)/.test(req.url) ? 3100000 : 131072))
                 fail(413, 'درخواست بیش از حد بزرگ است.');
         }
         let data;
@@ -271,6 +278,11 @@ async function createPlatform(store, { demo = false, origin = 'http://127.0.0.1:
  const workers=await q.all('SELECT * FROM nova_worker_health');
  return send(res,200,{workers:workers.map(w=>({...w,stale:Date.now()-Date.parse(w.last_seen)>900000})),ai:await q.all('SELECT status,COUNT(*) AS count FROM nova_ai_jobs GROUP BY status'),grading:await q.all('SELECT status,COUNT(*) AS count FROM nova_grading_jobs GROUP BY status')});
  }
+ const profileResult=await require('./student-profile').profileRoutes({q,u,route,req,data,url,send,res,fail,text,integer,audit});if(profileResult)return profileResult;
+ const conversationResult=await require('./teacher-conversation').conversationRoutes({q,u,route,req,data,url,scope,send,res,fail,id,text});if(conversationResult)return conversationResult;
+ const studioResult=await require('./lesson-studio').studioRoutes({q,u,route,req,data,url,scope,lessonScope,send,res,fail,id,text,integer,audit});if(studioResult)return studioResult;
+ const catalogResult=await require('./course-catalog').catalogRoutes({q,u,route,req,data,url,scope,send,res,fail,id,text,integer,audit});if(catalogResult)return catalogResult;
+ const workspaceResult=await require('./teacher-workspace').teacherWorkspace({q,u,route,req,data,url,scope,send,res,fail,id,text});if(workspaceResult)return workspaceResult;
  const ticketResult=await require('./tickets').tickets({q,u,route,req,data,url,scope,send,res,fail,id,text,audit});if(ticketResult)return ticketResult;
                 const feature = await demoRoutes({q,u,route,req,data,url,scope,lessonScope,send,res,fail,id,text,integer,audit,store,demo});
                 if(feature)return feature;
@@ -367,7 +379,7 @@ async function createPlatform(store, { demo = false, origin = 'http://127.0.0.1:
                         const list = [];
                         for (const l of lessons) {
                             let content = u.role === 'student' ? await published(q, l, l.published_version) : JSON.parse(l.draft_json);
-                            list.push({ id: l.id, title: content.title, cover: content.cover || null, position: l.position, status: l.status, draftRev: l.draft_rev, version: l.published_version, ...(u.role === 'student' ? { progress: await progress(q, u, l, l.published_version) } : {}) });
+                            list.push({ publishedAt:(await q.one('SELECT published_at FROM nova_versions WHERE lesson_id=? AND version=?',[l.id,l.published_version]))?.published_at||null,id: l.id, title: content.title, cover: content.cover || null, position: l.position, status: l.status, draftRev: l.draft_rev, version: l.published_version, ...(u.role === 'student' ? { progress: await progress(q, u, l, l.published_version) } : {}) });
                         }
                         return send(res, 200, { course: c, lessons: list });
                     }
@@ -493,7 +505,8 @@ async function createPlatform(store, { demo = false, origin = 'http://127.0.0.1:
                                 fail(429, 'حداکثر ۲۰ تلاش برای این نسخه مجاز است.');
                             const score = Math.round(100 * answers.filter((x, i) => x === doc.quiz[i].correct).length / doc.quiz.length);
                             await q.run('INSERT INTO nova_attempts(id,user_id,lesson_id,version,answers_json,score,created_at) VALUES(?,?,?,?,?,?,?)', [attempt, u.id, lid, version, encoded, score, now()]);
-                            return send(res, 200, { score, passed: score >= doc.passScore });
+                            for(const block of doc.blocks.filter(b=>b.kind==='mcq'))await q.run('INSERT INTO nova_lesson_block_state VALUES(?,?,?,?,?) ON CONFLICT(user_id,lesson_id,version,block_id) DO NOTHING',[u.id,lid,version,block.id,now()]);
+                            return send(res, 200, { score, passed: score >= doc.passScore,explanations:doc.quiz.map(q=>q.explanation||'') });
                         }
                         if (action === 'progress') {
                             if (data.videoAcknowledged !== true)
@@ -501,15 +514,18 @@ async function createPlatform(store, { demo = false, origin = 'http://127.0.0.1:
                             await q.run('INSERT INTO nova_progress(user_id,lesson_id,version,video_ack,updated_at) VALUES(?,?,?,1,?) ON CONFLICT(user_id,lesson_id,version) DO UPDATE SET video_ack=1,updated_at=excluded.updated_at', [u.id, lid, version, now()]);
                             return send(res, 200, await progress(q, u, lesson, version));
                         }
-                        if (doc.exercise.gradingTests?.length) {
+                        const alreadyCompleted=await progress(q,u,lesson,version);if(alreadyCompleted.completedAt)return send(res,200,alreadyCompleted);
+                        if (doc.completion?.practice!==false && doc.exercise.gradingTests?.length) {
                             const scores = await q.one('SELECT MAX(g.score) AS score FROM nova_grading_jobs g JOIN nova_practice p ON p.id=g.submission_id WHERE p.user_id=? AND p.lesson_id=? AND p.version=? AND g.status=?', [u.id, lid, version, 'completed']);
                             const manual = await q.one('SELECT MAX(r.grade) AS score FROM nova_reviews r JOIN nova_practice p ON p.id=r.submission_id WHERE p.user_id=? AND p.lesson_id=? AND p.version=?', [u.id, lid, version]);
                             if (Math.max(scores?.score ?? -1, manual?.score ?? -1) < doc.passScore)
                                 fail(409, 'ابتدا ارزیابی خودکار موفق یا نمره تأییدشده مدرس لازم است.');
                         }
+                        if(doc.completion?.practice!==false)for(const block of doc.blocks.filter(b=>b.kind==='exercise'))if(!await q.one('SELECT block_id FROM nova_lesson_block_responses WHERE user_id=? AND lesson_id=? AND version=? AND block_id=?',[u.id,lid,version,block.id]))fail(409,'ابتدا تمام تمرین‌های این جلسه را ارسال کنید.');
                         const p = await progress(q, u, lesson, version);
-                        if (!p.videoAcknowledged || !p.practiceSubmitted || p.bestScore === null || p.bestScore < doc.passScore)
+                        if ((doc.completion?.video!==false&&!p.videoAcknowledged) || (doc.completion?.practice!==false&&!p.practiceSubmitted) || (doc.completion?.quiz!==false&&(p.bestScore === null || p.bestScore < doc.passScore)))
                             fail(409, 'تأیید ویدیو، ارسال تمرین و قبولی آزمون لازم است.');
+                        await q.run('INSERT INTO nova_progress(user_id,lesson_id,version,video_ack,updated_at) VALUES(?,?,?,0,?) ON CONFLICT(user_id,lesson_id,version) DO NOTHING',[u.id,lid,version,now()]);
                         await q.run('UPDATE nova_progress SET completed_at=COALESCE(completed_at,?),updated_at=? WHERE user_id=? AND lesson_id=? AND version=?', [now(), now(), u.id, lid, version]);
                         return send(res, 200, await progress(q, u, lesson, version));
                     }

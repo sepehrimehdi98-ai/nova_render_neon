@@ -1,3 +1,4 @@
+import PlatformShell from '../PlatformShell';
 import {createRoot} from 'react-dom/client';
 import App from './App';
 import './index.css';
@@ -8,7 +9,7 @@ async function start(){
  try{
  const session=await api('/me').catch(e=>{if(e.status===401)return null;throw e});
  if(!session){const {Login}=await import('../../src/App');await import('../../src/index.css');root.render(<Login onEnter={()=>location.reload()}/>);return}
- root.render(<App/>);
+ root.render(<PlatformShell role="admin"><App/></PlatformShell>);
  }catch(e){root.render(<p role="alert">{String(e)}</p>)}
 }
 void start();

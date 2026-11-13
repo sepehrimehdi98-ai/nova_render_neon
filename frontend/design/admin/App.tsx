@@ -134,12 +134,12 @@ const initialStudents: Student[] = [
 
 const pageMeta: Record<Page, { title: string; subtitle: string }> = {
   dashboard: {
-    title: "صبح بخیر، سرپرست نوا",
+    title: "صبح بخیر، سرپرست نووا",
     subtitle: "همه‌چیز تحت کنترل است؛ این هم نمای امروز پلتفرم.",
   },
   health: {
     title: "سلامت پلتفرم",
-    subtitle: "وضعیت لحظه‌ای سرویس‌ها، مصرف منابع و رخدادهای نوا.",
+    subtitle: "وضعیت لحظه‌ای سرویس‌ها، مصرف منابع و رخدادهای نووا.",
   },
   tickets: {
     title: "مرکز پشتیبانی",
@@ -164,7 +164,8 @@ function StatusDot({ status = "good" }: { status?: "good" | "warn" | "bad" }) {
 }
 
 export default function App() {
-  const [page, setPage] = useState<Page>("dashboard")
+  const [page, setPage] = useState<Page>(()=>{const p=new URLSearchParams(location.search).get('page');return ['tickets','students','health'].includes(p||'')?p as Page:'dashboard'})
+  useEffect(()=>{const url=new URL(location.href);if(page==='dashboard')url.searchParams.delete('page');else url.searchParams.set('page',page);history.replaceState(null,'',url);window.dispatchEvent(new Event('nova:navigation'))},[page]);
   const [menuOpen, setMenuOpen] = useState(false)
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [selectedTicket, setSelectedTicket] = useState<Ticket>(
@@ -239,7 +240,7 @@ export default function App() {
             <Sparkles size={21} />
           </div>
           <div>
-            <strong>نوا</strong>
+            <strong>نووا</strong>
             <span>مرکز فرماندهی</span>
           </div>
         </div>
@@ -490,7 +491,7 @@ function Dashboard({
         <div className="panel health-summary">
           <div className="panel-heading">
             <div>
-              <span className="eyebrow">نبض نوا</span>
+              <span className="eyebrow">نبض نووا</span>
               <h2>سلامت سامانه</h2>
             </div>
             <button onClick={() => navigate("health")}>
@@ -573,7 +574,7 @@ function Dashboard({
             <Activity />
           </span>
           <div>
-            <b>امروز در نوا</b>
+            <b>امروز در نووا</b>
             <small>تا این لحظه</small>
           </div>
         </div>
@@ -664,7 +665,7 @@ function HealthPage() {
           <span className="live-label">
             <StatusDot /> به‌روزرسانی همین حالا
           </span>
-          <h2>نوا سرحال و آماده است</h2>
+          <h2>نووا سرحال و آماده است</h2>
           <p>
             تمام سرویس‌های حیاتی فعال‌اند. یک افت جزئی در صف پردازش تکالیف دیده
             می‌شود.
@@ -688,7 +689,7 @@ function HealthPage() {
         />
         <HealthService
           icon={<Bot />}
-          title="هوش مصنوعی نوا"
+          title="هوش مصنوعی نووا"
           value="۹۸.۷٪"
           detail="۱,۲۰۸ درخواست در ساعت"
           color="blue"
@@ -886,7 +887,7 @@ function TicketsPage({
           <div className="helper-note">
             <Sparkles size={16} />
             <span>
-              پیشنهاد نوا: پیش از پاسخ، وضعیت حساب کاربر را بررسی کنید.
+              پیشنهاد نووا: پیش از پاسخ، وضعیت حساب کاربر را بررسی کنید.
             </span>
           </div>
         </div>
@@ -897,7 +898,7 @@ function TicketsPage({
             placeholder="پاسخ خود را اینجا بنویسید..."
           />
           <div>
-            <span>پاسخ به عنوان «سرپرست نوا» ارسال می‌شود</span>
+            <span>پاسخ به عنوان «سرپرست نووا» ارسال می‌شود</span>
             <button type="submit">
               <Send size={17} /> ارسال پاسخ
             </button>
