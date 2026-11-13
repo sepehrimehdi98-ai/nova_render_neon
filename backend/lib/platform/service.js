@@ -62,18 +62,11 @@ function validateLesson(input, publishing = false) {
             if(b.mediaId)result.mediaId = b.mediaId;
         }
         if (b.kind === 'image') {
-            let url;
-            try {
-                url = new URL(b.imageUrl, 'http://nova.local');
-            }
-            catch {
-                fail(400, 'نشانی تصویر معتبر نیست.');
-            }
-            if ((url.protocol !== 'https:' && url.origin !== 'http://nova.local') || url.username || url.password)
-                fail(400, 'تصویر باید نشانی HTTPS داشته باشد.');
-            result.imageUrl = url.origin === 'http://nova.local' ? url.pathname : url.href;
-            if (!result.title)
-                fail(400, 'متن جایگزین تصویر لازم است.');
+            const value=typeof b.imageUrl==='string'?b.imageUrl.trim():'';
+            if(/^\/api\/platform\/files\/[a-f0-9-]{36}$/.test(value)||/^\/assets\/[a-zA-Z0-9_./-]+$/.test(value)&&!value.includes('..'))result.imageUrl=value;
+            else {let url;try{url=new URL(value)}catch{fail(400,'نشانی کامل HTTPS تصویر لازم است.');}
+             if(url.protocol!=='https:'||url.username||url.password||url.port)fail(400,'تصویر باید نشانی HTTPS بدون اطلاعات ورود یا پورت سفارشی داشته باشد.');result.imageUrl=url.href;}
+            if (!result.title) fail(400,'متن جایگزین تصویر لازم است.');
         }
         if(b.kind==='exercise'){result.starter=text(b.starter||'',4000,0);result.sampleAnswer=text(b.sampleAnswer||'',4000,0);result.feedback=text(b.feedback||'',2000,0);}
         if(b.kind==='mcq'){if(!Array.isArray(b.options)||b.options.length<2||b.options.length>6)fail(400,'گزینه‌های بلوک سؤال معتبر نیست.');result.options=b.options.map(o=>text(o,500));result.correct=integer(b.correct,0,result.options.length-1);result.explanation=text(b.explanation||'',2000,0);}

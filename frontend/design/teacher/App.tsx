@@ -529,7 +529,7 @@ function Agenda({
 }
 
 function mediaSource(raw:string,video:boolean){
-  let value=raw.trim();
+  let value=raw.trim();if(!video&&/^\/api\/platform\/files\/[a-f0-9-]{36}$/.test(value))return value;
   if(video && value.startsWith('<')){
     const template=document.createElement('template');
     template.innerHTML=value;

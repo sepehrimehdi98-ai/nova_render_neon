@@ -1,3 +1,4 @@
+import StudentActivitySummary from './StudentActivitySummary';
 import StudentHomeAdditions from './StudentHomeAdditions';
 import {api} from '../../src/live/api';
 'use client'
@@ -7,6 +8,7 @@ import { useEffect, useState, type PointerEvent } from 'react'
 import { Icon, SectionHead } from './nova-ui'
 
 export default function HomePage() {
+  const [learning,setLearning]=useState<any>(null);useEffect(()=>{api('/profile/account').then(r=>setLearning(r.learning)).catch(()=>{})},[]);
   const [userName,setUserName]=useState('');useEffect(()=>{api('/me').then(r=>setUserName(r.user.name.split(' ')[0])).catch(()=>{})},[]);
   const [pointer, setPointer] = useState({ x: 70, y: 35 })
   const move = (e: PointerEvent<HTMLElement>) => {
@@ -80,55 +82,24 @@ export default function HomePage() {
 
       <div className="mt-7 grid gap-7 xl:grid-cols-[1fr_340px]">
         <div>
-          <div>
-            <SectionHead title="حضور و فعالیت این ماه" link="تحلیل کامل" href="/progress" />
-            <div className="rounded-[26px] border border-[#ebe7e2] bg-white p-5 md:p-6">
-              <div className="mb-6 flex flex-wrap gap-5 text-[10px] text-[#837d8d]">
-                <span className="flex items-center gap-2">
-                  <i className="size-2 rounded-full bg-[#512DA8]" />
-                  حاضر
-                </span>
-                <span className="flex items-center gap-2">
-                  <i className="size-2 rounded-full bg-[#e5e0eb]" />
-                  غایب
-                </span>
-                <span className="mr-auto font-bold text-[#512DA8]">۸۷٪ حضور موثر</span>
-              </div>
-              <div className="flex h-[145px] items-end justify-between gap-2 border-b border-[#eeeae5] px-1">
-                {[82, 96, 65, 100, 78, 92, 70, 98, 86, 45, 88, 95].map((h, i) => (
-                  <div key={i} className="flex h-full flex-1 items-end">
-                    <span
-                      className={`w-full rounded-t-[7px] transition-all hover:opacity-75 ${i === 9 ? 'bg-[#e7e3e9]' : 'bg-[#6c4ab7]'}`}
-                      style={{ height: `${h}%` }}
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="mt-3 flex justify-between text-[9px] text-[#aaa5ae]">
-                <span>هفته اول</span>
-                <span>هفته دوم</span>
-                <span>هفته سوم</span>
-                <span>هفته چهارم</span>
-              </div>
-            </div>
-          </div>
+          <StudentActivitySummary/>
         </div>
         <aside className="space-y-5">
           <div className="rounded-[26px] bg-[#e9f7c9] p-5">
             <div className="flex items-start justify-between">
               <div>
                 <span className="text-[10px] font-bold text-[#687545]">افتخار این هفته</span>
-                <h3 className="mt-1 text-lg font-black">قهرمان استمرار</h3>
+                <h3 className="mt-1 text-lg font-black">{learning?.streak>=7?'یادگیری پیوسته':'پیشرفت شخصی شما'}</h3>
               </div>
               <span className="grid size-14 place-items-center rounded-[20px] bg-[#b7f536] text-[#394514] shadow-[0_8px_22px_rgba(108,141,42,.18)]">
                 <Icon name="trophy" className="size-7" />
               </span>
             </div>
             <p className="mt-4 text-[11px] leading-6 text-[#68705a]">
-              ۷ روز پیاپی درس خواندی. فقط ۳ روز تا رکورد جدید باقی مانده!
+              {learning?`${learning.streak.toLocaleString('fa-IR')} روز زنجیره یادگیری · سطح ${learning.level.toLocaleString('fa-IR')} · ${learning.points.toLocaleString('fa-IR')} امتیاز`:'در حال دریافت پیشرفت شما…'}
             </p>
             <div className="mt-4 h-2 rounded-full bg-white/70">
-              <div className="h-full w-[70%] rounded-full bg-[#6e9a21]" />
+              <div className="h-full rounded-full bg-[#6e9a21]" style={{width:(learning?.percent||0)+'%'}} />
             </div>
           </div>
           <div className="rounded-[26px] border border-[#ebe7e2] bg-white p-5">
