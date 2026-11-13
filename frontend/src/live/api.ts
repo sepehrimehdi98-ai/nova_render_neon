@@ -5,7 +5,7 @@ export type Row = Record<string, any>;
 export class ApiError extends Error {constructor(public status:number,message:string){super(message)}}
 export async function api<T=Row>(path:string,data?:unknown,signal?:AbortSignal):Promise<T>{
  const response=await fetch('/api/platform'+(PORTAL_ROLE?'/portal/'+PORTAL_ROLE:'')+path,{method:data===undefined?'GET':'POST',credentials:'same-origin',headers:data===undefined?undefined:{'Content-Type':'application/json'},body:data===undefined?undefined:JSON.stringify(data),signal});
- const result=await response.json();if(!response.ok){if(response.status===401&&!['/login','/me'].includes(path))window.dispatchEvent(new Event('nova:session-expired'));throw new ApiError(response.status,result.error||'ارتباط با سرور برقرار نشد.');}if(data!==undefined&&(path==='/courses'||/^\/courses\/[^/]+\/(status|members)$/.test(path)))window.dispatchEvent(new Event('nova:courses-changed'));return result;
+ let result;try{result=await response.json()}catch{throw new ApiError(response.ok?502:response.status,response.status===429?'سرویس موقتاً درخواست‌های زیادی دریافت کرده؛ کمی بعد دوباره تلاش کنید.':'پاسخ سرویس معتبر نبود؛ ممکن است سرویس در حال راه‌اندازی باشد. دوباره تلاش کنید.');}if(!response.ok){if(response.status===401&&!['/login','/me'].includes(path))window.dispatchEvent(new Event('nova:session-expired'));throw new ApiError(response.status,result.error||'ارتباط با سرور برقرار نشد.');}if(data!==undefined&&(path==='/courses'||/^\/courses\/[^/]+\/(status|members)$/.test(path)))window.dispatchEvent(new Event('nova:courses-changed'));return result;
 }
 export const uid=()=>crypto.randomUUID();
 export const fa=(v:unknown)=>typeof v==='number'?v.toLocaleString('fa-IR'):String(v??'—');
