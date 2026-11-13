@@ -4,34 +4,7 @@ import {api} from '../../src/live/api';
 
 import Link from './navigation'
 import { useEffect, useState, type PointerEvent } from 'react'
-import { Icon, ProgressRing, SectionHead } from './nova-ui'
-
-const courses = [
-  {
-    title: 'پایتون مقدماتی',
-    chapter: 'فصل ۴: حلقه‌ها در پایتون',
-    value: 72,
-    color: '#512DA8',
-    icon: 'code' as const,
-    bg: '#eee8ff',
-  },
-  {
-    title: 'تفکر الگوریتمی',
-    chapter: 'فصل ۲: حل مسئله',
-    value: 48,
-    color: '#ff7657',
-    icon: 'spark' as const,
-    bg: '#fff0eb',
-  },
-  {
-    title: 'پروژه بازی‌سازی',
-    chapter: 'ساخت بازی حدس عدد',
-    value: 31,
-    color: '#139b83',
-    icon: 'play' as const,
-    bg: '#e5f8f3',
-  },
-]
+import { Icon, SectionHead } from './nova-ui'
 
 export default function HomePage() {
   const [userName,setUserName]=useState('');useEffect(()=>{api('/me').then(r=>setUserName(r.user.name.split(' ')[0])).catch(()=>{})},[]);
@@ -107,29 +80,7 @@ export default function HomePage() {
 
       <div className="mt-7 grid gap-7 xl:grid-cols-[1fr_340px]">
         <div>
-          <SectionHead title="دوره‌های در حال یادگیری" link="مشاهده همه" href="/lessons" />
-          <div className="grid gap-3 md:grid-cols-3">
-            {courses.map((c) => (
-              <Link
-                href="/lessons/python-basics"
-                key={c.title}
-                className="group rounded-[24px] border border-[#ebe7e2] bg-white p-4 transition hover:-translate-y-1 hover:shadow-[0_12px_35px_rgba(50,38,70,.08)]"
-              >
-                <div className="flex items-start justify-between">
-                  <span
-                    className="grid size-11 place-items-center rounded-2xl"
-                    style={{ background: c.bg, color: c.color }}
-                  >
-                    <Icon name={c.icon} className="size-5" />
-                  </span>
-                  <ProgressRing value={c.value} size={56} color={c.color} />
-                </div>
-                <h3 className="mt-5 text-sm font-extrabold">{c.title}</h3>
-                <p className="mt-1.5 truncate text-[10px] text-[#9993a1]">{c.chapter}</p>
-              </Link>
-            ))}
-          </div>
-          <div className="mt-7">
+          <div>
             <SectionHead title="حضور و فعالیت این ماه" link="تحلیل کامل" href="/progress" />
             <div className="rounded-[26px] border border-[#ebe7e2] bg-white p-5 md:p-6">
               <div className="mb-6 flex flex-wrap gap-5 text-[10px] text-[#837d8d]">
