@@ -2,6 +2,7 @@ import {useEffect,useState,type ReactNode} from 'react';
 import {BookOpen,LogOut} from 'lucide-react';
 import {api,type Role} from '../src/live/api';
 import './platform-header.css';
+import './mobile-layout.css';
 export default function PlatformShell({role,children}:{role:Role;children:ReactNode}){
  const [name,setName]=useState(''),[current,setCurrent]=useState(location.pathname+location.search),[error,setError]=useState('');useEffect(()=>{const refreshProfile=()=>api('/me').then(r=>setName(r.user.name)).catch(()=>{});void refreshProfile();window.addEventListener('nova:profile-updated',refreshProfile);const refresh=()=>setCurrent(location.pathname+location.search);window.addEventListener('popstate',refresh);window.addEventListener('nova:navigation',refresh);return()=>{window.removeEventListener('nova:profile-updated',refreshProfile);window.removeEventListener('popstate',refresh);window.removeEventListener('nova:navigation',refresh)}},[]);
  const links=role==='teacher'?[['خانه','/'],['دوره‌ها','/?page=lessons'],['آزمون‌ها','/?page=exams'],['پیشرفت','/?page=progress'],['تیکت‌ها','/?page=tickets'],['دستیار','/?page=assistant']]:role==='student'?[['خانه','/'],['دوره‌ها','/lessons'],['آزمون‌ها','/exams'],['عملکرد من','/progress'],['دستیار','/assistant']]:[['نظارت','/'],['تیکت‌ها','/?page=tickets'],['دانش‌آموزان','/?page=students'],['سلامت سرویس','/?page=health']];

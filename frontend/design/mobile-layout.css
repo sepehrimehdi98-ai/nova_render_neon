@@ -1,0 +1,39 @@
+/* Phone usability shared by student, teacher and administrator portals. */
+@media(max-width:760px){
+ .platform-shell{--platform-header-height:64px}
+ .platform-shell .platform-header{min-height:64px;padding:8px 10px;gap:8px}
+ .platform-shell .platform-header>nav{min-width:0;overscroll-behavior-x:contain;scroll-padding-inline:8px}
+ .platform-shell .platform-header>nav>a{min-height:44px;display:flex;align-items:center;justify-content:center}
+ .platform-shell .platform-header>button{width:44px;height:44px;min-width:44px}
+ .platform-shell :is(.btn,.nl-button,.teacher-blue-button,.teacher-outline-button,.studio-button,.studio-primary,.le-button,.le-read,.composer-plus,.composer-send,.composer-kind-trigger){min-height:44px}
+ .platform-shell :is(.composer-plus,.composer-send,.teacher-icon-button){min-width:44px;min-height:44px}
+ .platform-shell input:not([type=checkbox]):not([type=radio]),.platform-shell select,.platform-shell textarea:not(.lesson-code-box textarea):not(.studio-code-editor textarea){font-size:16px;min-width:0;max-width:100%}
+ .platform-shell :is(.course-workspace,.nova-learning-view,.teacher-modern-view,.studio-canvas,.studio-assistant,.admin-live-main){min-width:0}
+ .platform-shell .course-workspace>.panel-head{padding:12px;gap:12px;flex-wrap:wrap}
+ .platform-shell .course-workspace>.panel-head select{width:100%;max-width:100%}
+ .platform-shell :is(.live-two,.nl-two-fields){grid-template-columns:minmax(0,1fr)}
+ .platform-shell :is(.table-scroll,.progress-roster){max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+ .platform-shell :is(.document-message p,.ticket-bubble p,.builder-chat-answer p,.builder-chat-user p){overflow-wrap:anywhere}
+ .platform-shell .ticket-reply footer{flex-wrap:wrap;gap:8px}
+ .platform-shell .ticket-reply footer>button{min-height:44px;flex-grow:1}
+ .platform-shell .ticket-thread-heading{align-items:flex-start}
+ .platform-shell .ticket-thread-heading>div{min-width:0;width:100%}
+ .platform-shell .ticket-statistics>button{min-height:68px}
+ .platform-shell .studio-block-heading{flex-wrap:wrap;padding:8px;gap:8px}
+ .platform-shell .studio-block-actions{flex-basis:100%;order:2;justify-content:flex-end;gap:4px}
+ .platform-shell .studio-icon-button{width:44px;height:44px;min-width:44px}
+ .platform-shell .studio-text-toolbar{flex-wrap:wrap;gap:8px}
+ .platform-shell .studio-structured label{min-width:0}
+ .platform-shell .studio-preview-content:has(.lesson-experience){padding:12px!important}
+ .platform-shell .studio-event-editor label{width:100%;min-width:0}
+ .platform-shell .studio-header-actions{flex-wrap:wrap}
+ .platform-shell .admin-live-nav nav button{min-height:44px}
+ .platform-shell .admin-live-heading{gap:12px}
+ .platform-shell .admin-live-heading label{min-width:0}
+ .platform-shell .le-outline a{min-height:44px}
+ .platform-shell .le-options label{min-height:48px;overflow-wrap:anywhere}
+ .platform-shell .lesson-code-box{min-width:0;max-width:100%}
+ .platform-shell .lesson-code-box pre{max-width:100%;overflow-x:auto}
+ .platform-shell .nova-student-shell>nav{padding-bottom:max(8px,env(safe-area-inset-bottom))}
+ .platform-shell .nova-student-shell>nav>a{min-height:44px;min-width:44px;padding-inline:8px}
+}
