@@ -213,3 +213,10 @@ button, input, textarea, select {font-size: inherit;}
 code, pre, kbd, samp {font-family: ui-monospace, Consolas, monospace;}
 
 body,button,input,textarea,select,option,dialog {font-family: 'Vazirmatn', Tahoma, sans-serif !important;}
+
+/* Keep the original floating code illustration visible in narrow dashboard panels. */
+.student-coding-hero{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;align-items:center}
+.student-hero-animation{min-width:0;direction:ltr}
+.student-hero-animation .code-window{max-width:calc(100% - 28px)}
+@media(min-width:1100px){.student-coding-hero{grid-template-columns:minmax(0,1fr) 300px;gap:20px}.student-hero-animation{height:245px}}
+@media(max-width:480px){.student-hero-animation{height:205px;max-width:290px}.student-hero-animation .code-window{font-size:10px}}

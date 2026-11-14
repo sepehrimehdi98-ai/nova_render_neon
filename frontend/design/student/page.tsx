@@ -22,7 +22,7 @@ export default function HomePage() {
     <>
       <section
         onPointerMove={move}
-        className="hero-grid relative min-h-[310px] overflow-hidden rounded-[30px] bg-[#2d185e] p-7 text-white md:p-10"
+        className="hero-grid student-coding-hero relative min-h-[310px] overflow-hidden rounded-[30px] bg-[#2d185e] p-7 text-white md:p-10"
       >
         <div className="pointer-glow" style={{ left: `${pointer.x}%`, top: `${pointer.y}%` }} />
         <div className="relative z-10 max-w-[570px]">
@@ -50,7 +50,7 @@ export default function HomePage() {
             </span>
           </div>
         </div>
-        <div className="absolute left-8 top-8 hidden h-[245px] w-[330px] md:block">
+        <div className="student-hero-animation relative z-10 mx-auto h-[220px] w-full max-w-[330px]" aria-label="نمونه کد پایتون">
           <div
             className="code-window float-slow absolute left-0 top-8 w-[260px] rounded-2xl border border-white/10 bg-[#1d123a]/90 p-4 font-mono text-[11px] leading-6 shadow-2xl"
             dir="ltr"
