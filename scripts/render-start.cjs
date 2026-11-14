@@ -21,6 +21,7 @@ const startupDeadline = setTimeout(() => {
   if(process.env.OPENROUTER_API_KEY) {
     worker=require('node:child_process').fork(require('node:path').join(__dirname,'../backend/scripts/ai-worker.js'),[],{stdio:'inherit'});
     worker.on('exit',()=>{console.error('AI worker exited; restarting service.');app.close().finally(()=>process.exit(1));});
+    app.server.on('request',(req,res)=>{if(req.method!=='POST')return;res.once('finish',()=>{if((res.statusCode===202||res.statusCode===201&&req.url.includes('/ai/sources'))&&worker?.connected)worker.send({type:'nova:ai-work'},()=>{});});});
   }
   for (const signal of ['SIGTERM','SIGINT']) process.on(signal, () => {
     if(worker){worker.removeAllListeners('exit');worker.kill(signal);}
