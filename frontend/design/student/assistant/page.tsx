@@ -236,7 +236,7 @@ export default function AssistantPage() {
                     <b className="mb-2 block text-[10px]">
                       {message.role === 'bot' ? 'دستیار نووا' : 'شما'}
                     </b>
-                    <p className="text-xs leading-8 text-[#504957]">{message.text}</p>
+                    <p dir="auto" className="whitespace-pre-wrap text-xs leading-8 text-[#504957]">{message.text}</p>
                     {message.code && (
                       <div className="mt-4 overflow-hidden rounded-[16px] bg-[#172431]" dir="ltr">
                         <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5 text-[9px] text-[#9fb1bd]">
