@@ -37,3 +37,4 @@
  .platform-shell .nova-student-shell>nav{padding-bottom:max(8px,env(safe-area-inset-bottom))}
  .platform-shell .nova-student-shell>nav>a{min-height:44px;min-width:44px;padding-inline:8px}
 }
+@media(max-width:760px){body:has(.platform-shell){min-width:0}.platform-shell :is(.teacher-modern-view,.nova-learning-view) button{min-height:44px}}
