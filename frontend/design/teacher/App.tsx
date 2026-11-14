@@ -1,3 +1,4 @@
+import {LoginBrand,DesignerCredit} from '../LoginBrand';
 import TeacherConversation from '../TeacherConversation';
 import ClassEventEditor from '../ClassEventEditor';
 import StudioBlockFields from '../StudioBlockFields';
@@ -218,8 +219,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
     <main className="login-page">
       <section className="login-story">
         <div className="brand brand-light">
-          <span className="brand-mark">ن</span>
-          <span>نووا</span>
+          <LoginBrand />
         </div>
         <div className="story-copy">
           <p className="eyebrow light">آموزش با وضوح و اطمینان</p>
@@ -252,8 +252,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
           }}
         >
           <div className="mobile-brand brand">
-            <span className="brand-mark">ن</span>
-            <span>نووا</span>
+            <LoginBrand />
           </div>
           <p className="eyebrow">پنل ویژه معلمان</p>
           <h2>خوش آمدید.</h2>
@@ -277,6 +276,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
           <p className="login-help">
             به کمک نیاز دارید؟ <button type="button">با مدیر سامانه تماس بگیرید</button>
           </p>
+          <DesignerCredit />
         </form>
       </section>
     </main>
@@ -1276,9 +1276,9 @@ function Dashboard() {
 }
 
 export default function App() {
-  const [loggedIn, setLoggedIn] = useState<boolean|null>(null);
-  useEffect(()=>{api("/me").then(()=>setLoggedIn(true)).catch(()=>setLoggedIn(false))},[]);
+  const [loggedIn, setLoggedIn] = useState<boolean|null>(()=>location.pathname==='/login'?false:null);
+  useEffect(()=>{if(location.pathname==='/login')return;api("/me").then(()=>setLoggedIn(true)).catch(()=>setLoggedIn(false))},[]);
   return (
-    <div dir="rtl">{loggedIn===null ? <p role="status" style={{padding:24}}>در حال بررسی حساب…</p> : loggedIn ? <PlatformShell role="teacher"><Dashboard /></PlatformShell> : <Login onLogin={() => setLoggedIn(true)} />}</div>
+    <div dir="rtl">{loggedIn===null ? <p role="status" style={{padding:24}}>در حال بررسی حساب…</p> : loggedIn ? <PlatformShell role="teacher"><Dashboard /></PlatformShell> : <Login onLogin={() => location.pathname==='/login'?location.assign('/'):setLoggedIn(true)} />}</div>
   );
 }
