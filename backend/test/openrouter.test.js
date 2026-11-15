@@ -1,6 +1,15 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const {provider,cosine}=require('../lib/platform/rag-engine');
 const env={AI_PROVIDER:'openrouter',OPENROUTER_API_KEY:'test-secret'};
+
+test('transient free-provider failure uses one zero-price fallback; auth errors and opt-out never reroute',async()=>{
+ const original=global.fetch,requests=[];
+ try{global.fetch=async(_url,opts)=>{const payload=JSON.parse(opts.body);requests.push(payload);if(requests.length===1)throw new DOMException('Timed out','TimeoutError');return new Response(JSON.stringify({model:'verified-free-model',choices:[{message:{content:'{"answer":"Hello","operations":[]}'}}]}))};
+ const result=await provider(env).json('Answer naturally',{question:'Hi'});assert.equal(requests.length,2);assert.equal(requests[1].model,'openrouter/free');assert.deepEqual(requests[1].provider.max_price,{prompt:0,completion:0});assert.equal(requests[1].reasoning,undefined);assert.equal(result.__routing.usedFreeFallback,true);assert.equal(result.__routing.servedModel,'verified-free-model');assert.equal(JSON.stringify(result).includes('__routing'),false);
+ let count=0;global.fetch=async()=>{count++;return new Response('{}',{status:401})};await assert.rejects(provider(env).json('',{}),/AUTHENTICATION/);assert.equal(count,1);
+ count=0;global.fetch=async()=>{count++;throw new DOMException('Timed out','TimeoutError')};await assert.rejects(provider({...env,OPENROUTER_FREE_FALLBACK:'off'}).json('',{}));assert.equal(count,1);
+ }finally{global.fetch=original}
+});
 test('OpenRouter routing, authentication, JSON and safe failures',async()=>{
  const original=global.fetch;const requests=[];
  try{
