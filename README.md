@@ -1,3 +1,5 @@
+> **Live Render update verified on 2026-11-15.** Application code `561ee07` is published; the public student/teacher/admin portals and PostgreSQL API passed the checks in [RENDER-LIVE-RELEASE-20261115.md](RENDER-LIVE-RELEASE-20261115.md). Earlier “local/not deployed” notes below are historical. Admin recovery codes must still be generated privately in account settings.
+
 > Login loading fix: each role now loads its login component directly, before dashboard modules. Admin recovery UI is explicitly admin-only. See LOGIN-RESTORATION-20261115.md and run `node scripts/check-login-components.cjs` for component-render checks. Fresh local URLs: `/login?refresh=entry2` on ports3101/3102/3103.
 
 > Latest login update: [LOGIN-RESTORATION-20261115.md](LOGIN-RESTORATION-20261115.md) covers restored role login visuals, working recovery controls, isolated admin styling and 47 passing tests. Current dashboard designs remain unchanged. Local review: ports3101/3102/3103 at /login; Render not newly deployed.
