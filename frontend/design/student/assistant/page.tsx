@@ -1,5 +1,8 @@
+import AiMessage from '../../AiMessage';
+import {Copy,RotateCcw} from 'lucide-react';
+import './assistant-polish.css';
 import ChatPurpose from '../../ChatPurpose';
-import {api} from '../../../src/live/api';
+import {api,type Row} from '../../../src/live/api';
 import {consult} from '../../consult';
 'use client'
 
@@ -12,6 +15,8 @@ type Message = {
   text: string
   code?: string
   lesson?: boolean
+  error?: boolean
+  context?: string
 }
 
 const starters = [
@@ -21,94 +26,70 @@ const starters = [
   { icon: 'book' as const, title: 'مرور درس', text: 'درس امروز را در سه نکته خلاصه کن' },
 ]
 
-const conversations = [
-  { group: 'امروز', items: ['حلقه‌های تو در تو', 'ساخت ماشین حساب پایتون'] },
-  { group: '۷ روز گذشته', items: ['تفاوت لیست و تاپل', 'رفع خطای SyntaxError', 'تمرین شرط‌ها'] },
-]
-
-function getAnswer(question: string): Message {
-  if (question.includes('لیست')) {
-    return {
-      role: 'bot',
-      text: 'حتماً! یک لیست از نمره‌های پنج دانش‌آموز بساز و با استفاده از حلقه، میانگین آن‌ها را محاسبه کن. اگر میانگین بیشتر از ۱۸ بود، پیام «عالی» را چاپ کن.',
-      code: 'scores = [18, 16, 20, 19, 17]\n# کد خودت را از اینجا بنویس',
-    }
-  }
-  if (question.includes('خطا')) {
-    return {
-      role: 'bot',
-      text: 'کدت را اینجا بفرست تا خط‌به‌خط بررسی کنیم. معمولاً خطاهای پایتون از تورفتگی، جا افتادن دونقطه یا بسته نشدن پرانتزها ایجاد می‌شوند.',
-    }
-  }
-  if (question.includes('خلاصه')) {
-    return {
-      role: 'bot',
-      text: 'خلاصه درس امروز: ۱) حلقه for برای تکرار روی اعضای یک مجموعه است. ۲) range دنباله‌ای از اعداد می‌سازد. ۳) با break می‌توانیم حلقه را زودتر متوقف کنیم.',
-      lesson: true,
-    }
-  }
-  return {
-    role: 'bot',
-    text: 'حلقه for مثل این است که به پایتون بگویی: «برای هر عضو این مجموعه، یک کار مشخص را انجام بده». مثلاً برای چاپ اعداد ۱ تا ۵ می‌توانیم از کد زیر استفاده کنیم:',
-    code: 'for number in range(1, 6):\n    print(number)',
-    lesson: true,
-  }
-}
-
 export default function AssistantPage() {
   const [input, setInput] = useState('')
   const [purpose,setPurpose]=useState('auto')
   const [messages, setMessages] = useState<Message[]>([])
   const [typing, setTyping] = useState(false)
   const [sidebar, setSidebar] = useState(false)
+  const [mobile,setMobile]=useState(()=>typeof window!=='undefined'&&window.matchMedia('(max-width:1023px)').matches)
+  useEffect(()=>{const media=window.matchMedia('(max-width:1023px)');const change=()=>setMobile(media.matches);media.addEventListener('change',change);const escape=(e:KeyboardEvent)=>{if(e.key==='Escape')setSidebar(false)};window.addEventListener('keydown',escape);return()=>{media.removeEventListener('change',change);window.removeEventListener('keydown',escape)}},[])
+  const [userName,setUserName]=useState(''),[service,setService]=useState('loading'),[notice,setNotice]=useState('')
+  const [courses,setCourses]=useState<Row[]>([]),[courseId,setCourseId]=useState(''),[lessons,setLessons]=useState<Row[]>([]),[lockedLessons,setLockedLessons]=useState<string[]>([]),[lessonId,setLessonId]=useState(''),[contextLoading,setContextLoading]=useState(true),[contextError,setContextError]=useState(''),[contextAttempt,setContextAttempt]=useState(0)
+  useEffect(()=>{const c=new AbortController();api('/courses',undefined,c.signal).then(r=>{setCourses(r.courses);setCourseId(previous=>r.courses.some((x:Row)=>x.id===previous)?previous:r.courses[0]?.id||'');if(!r.courses.length)setContextLoading(false)}).catch(e=>{if(!c.signal.aborted){setContextError(e.message);setContextLoading(false)}});return()=>c.abort()},[contextAttempt])
+  useEffect(()=>{setLessons([]);setLockedLessons([]);setLessonId('');if(!courseId)return;const c=new AbortController();setContextLoading(true);setContextError('');Promise.all([api('/courses/'+courseId,undefined,c.signal),api('/courses/'+courseId+'/structure',undefined,c.signal)]).then(([r,structure])=>{if(!c.signal.aborted){setLessons(r.lessons);setLockedLessons(structure.locked||[]);setLessonId(r.lessons.find((l:Row)=>!structure.locked?.includes(l.id))?.id||'');setContextLoading(false)}}).catch(e=>{if(!c.signal.aborted){setContextError(e.message);setContextLoading(false)}});return()=>c.abort()},[courseId,contextAttempt])
+  const inputRef=useRef<HTMLTextAreaElement>(null)
+  useEffect(()=>{const c=new AbortController();api('/me',undefined,c.signal).then(r=>setUserName(r.user.name)).catch(()=>{});api('/capabilities',undefined,c.signal).then(r=>setService(r.ai?'online':'local')).catch(()=>{if(!c.signal.aborted)setService('unknown')});return()=>c.abort()},[])
   const endRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' })
+    endRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'nearest' })
   }, [messages, typing])
 
   function newChat() {
+    if(typing)return
     setMessages([])
     setInput('')
     setSidebar(false)
+    setNotice('')
+    inputRef.current?.focus()
   }
 
   async function send(text = input) {
-    if (!text.trim() || typing) return
-    setMessages((current) => [...current, { role: 'user', text: text.trim() }])
+    if (!text.trim() || typing || contextLoading || !lessonId || !courseId) return
+    const context=[courses.find(c=>c.id===courseId)?.title,lessons.find(l=>l.id===lessonId)?.title].filter(Boolean).join(' · ')
+    setMessages((current) => [...current, { role: 'user', text: text.trim(),context }])
     setInput('')
     setTyping(true)
     try{
-      const {courses}=await api('/courses');
-      let answer='برای مشاوره ابتدا یک درس منتشرشده لازم است.';
-      for(const course of courses){
-        const {lessons}=await api('/courses/'+course.id);
-        if(!lessons.length)continue;
-        const lesson=lessons[0],cap=await api('/capabilities');
-        answer=cap.ai?await consult(course.id,lesson.id,text,'','',purpose):'جست‌وجوی محلی · '+lesson.title+'\n'+(await api('/lessons/'+lesson.id+'/local-chat',{question:text,purpose})).answer;
-        break;
-      }
+      const cap=await api('/capabilities');setService(cap.ai?'online':'local');
+      const answer=cap.ai?await consult(courseId,lessonId,text,'','',purpose):'جست‌وجوی محلی · '+(lessons.find(l=>l.id===lessonId)?.title||'درس')+'\n'+(await api('/lessons/'+lessonId+'/local-chat',{question:text,purpose})).answer;
       setMessages(current=>[...current,{role:'bot',text:answer}]);
-    }catch(e){setMessages(current=>[...current,{role:'bot',text:String(e)}])}
+    }catch(e){setMessages(current=>[...current,{role:'bot',text:e instanceof Error?e.message:'پاسخ دریافت نشد؛ دوباره تلاش کنید.',error:true}])}
     finally{setTyping(false)}
   }
 
   return (
-    <div className="student-conversation-layout flex h-dvh overflow-hidden bg-white text-[#211a37]" dir="rtl">
+    <div className="student-conversation-layout flex h-dvh overflow-hidden bg-white text-[#233e2e]" dir="rtl">
       {sidebar && (
         <button
           aria-label="بستن منو"
           onClick={() => setSidebar(false)}
-          className="fixed inset-0 z-40 bg-[#211a37]/30 lg:hidden"
+          className="fixed inset-0 z-40 bg-[#233e2e]/30 lg:hidden"
         />
       )}
       <aside
+        id="student-ai-sidebar"
+        aria-label="فهرست گفت‌وگو"
+        aria-hidden={mobile&&!sidebar}
+        inert={mobile&&!sidebar?true:undefined}
         className={`fixed inset-y-0 right-0 z-50 flex w-[280px] flex-col bg-[#f5f3f0] p-3 transition-transform lg:static lg:translate-x-0 ${sidebar ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="flex h-14 items-center justify-between px-2">
           <Logo />
           <button
             onClick={() => setSidebar(false)}
+            aria-label="بستن فهرست گفت‌وگو"
             className="grid size-9 place-items-center rounded-xl text-[#827b89] hover:bg-white lg:hidden"
           >
             <Icon name="close" className="size-5" />
@@ -116,45 +97,30 @@ export default function AssistantPage() {
         </div>
         <button
           onClick={newChat}
-          className="mt-4 flex items-center gap-3 rounded-2xl border border-[#ded9d3] bg-white px-4 py-3.5 text-xs font-bold shadow-sm transition hover:border-[#7254b6]"
+          disabled={typing}
+          className="mt-4 flex items-center gap-3 rounded-2xl border border-[#ded9d3] bg-white px-4 py-3.5 text-xs font-bold shadow-sm transition hover:border-[#6e9c76]"
         >
-          <span className="grid size-7 place-items-center rounded-lg bg-[#512DA8] text-lg font-light text-white">
+          <span className="grid size-7 place-items-center rounded-lg bg-[#1d704b] text-lg font-light text-white">
             +
           </span>
           گفت‌وگوی جدید
-          <span className="mr-auto rounded-md border border-[#e4dfda] px-1.5 py-0.5 text-[8px] text-[#aaa3ad]">
-            Ctrl K
-          </span>
+
         </button>
         <div className="mt-5 flex-1 overflow-y-auto px-1">
-          {conversations.map((group) => (
-            <div key={group.group} className="mb-5">
-              <p className="mb-2 px-3 text-[9px] font-bold text-[#aaa3ad]">{group.group}</p>
-              {group.items.map((item, index) => (
-                <button
-                  key={item}
-                  className={`group mb-1 flex w-full items-center gap-2 rounded-xl px-3 py-3 text-right text-[10px] transition ${index === 0 && group.group === 'امروز' ? 'bg-white font-bold shadow-sm' : 'text-[#67616c] hover:bg-white/70'}`}
-                >
-                  <Icon name="bot" className="size-3.5 text-[#8c8493]" />
-                  <span className="truncate">{item}</span>
-                  <span className="mr-auto hidden tracking-[2px] text-[#a29ba7] group-hover:block">
-                    •••
-                  </span>
-                </button>
-              ))}
-            </div>
-          ))}
+          <h2 className="student-ai-history-heading">همین گفت‌وگو</h2>
+          {messages.filter(m=>m.role==='user').length?messages.map((m,index)=>m.role==='user'?<a key={index} className="student-ai-history-link" href={'#student-ai-message-'+index} onClick={()=>setSidebar(false)}><Icon name="bot" className="size-4"/><span>{m.text}</span></a>:null):<p className="student-ai-history-empty">پس از ارسال پرسش، دسترسی به پیام‌های همین گفت‌وگو اینجا نمایش داده می‌شود.</p>}
+          <p className="student-ai-history-empty">این فهرست تاریخچه ذخیره‌شده نیست؛ با شروع گفت‌وگوی جدید یا بارگذاری مجدد صفحه، نمای فعلی پاک می‌شود.</p>
         </div>
         <div className="border-t border-[#e2ddd7] pt-3">
           <Link
             href="/"
             className="flex items-center gap-3 rounded-2xl p-2.5 transition hover:bg-white"
           >
-            <span className="grid size-9 place-items-center rounded-xl bg-[#e6ddf8] text-lg">
-              👨🏻‍💻
+            <span className="grid size-9 place-items-center rounded-xl bg-[#e4eedb] text-lg">
+              <Icon name="user" className="size-5"/>
             </span>
             <span>
-              <b className="block text-[10px]">آرین محمدی</b>
+              <b className="block text-[10px]">{userName||'حساب من'}</b>
               <small className="text-[8px] text-[#99929e]">بازگشت به داشبورد</small>
             </span>
             <Icon name="arrow" className="mr-auto size-3 rotate-180 text-[#89818e]" />
@@ -166,20 +132,23 @@ export default function AssistantPage() {
         <header className="flex h-[68px] shrink-0 items-center border-b border-[#eeeae5] px-4 md:px-6">
           <button
             onClick={() => setSidebar(true)}
+            aria-label="باز کردن فهرست گفت‌وگو"
+            aria-expanded={sidebar}
+            aria-controls="student-ai-sidebar"
             className="ml-3 grid size-10 place-items-center rounded-xl hover:bg-[#f5f2ef] lg:hidden"
           >
             <Icon name="menu" className="size-5" />
           </button>
-          <button className="flex items-center gap-2 rounded-xl px-2 py-2 text-sm font-black hover:bg-[#f7f5f2]">
+          <div className="flex items-center gap-2 rounded-xl px-2 py-2 text-sm font-black">
             دستیار نووا
             <span className="rounded-md bg-[#eef8dc] px-2 py-1 text-[8px] font-bold text-[#638421]">
               آموزشی
             </span>
-          </button>
+          </div>
           <div className="mr-auto flex items-center gap-2">
             <span className="hidden items-center gap-1.5 text-[9px] text-[#918a96] sm:flex">
               <i className="size-1.5 rounded-full bg-[#5ac277]" />
-              آماده پاسخ‌گویی
+              {typing?'در حال آماده‌سازی پاسخ':service==='online'?'پاسخ آنلاین':service==='local'?'جست‌وجو در درس':service==='unknown'?'وضعیت اتصال نامشخص':'بررسی سرویس…'}
             </span>
             <Link
               href="/"
@@ -191,16 +160,19 @@ export default function AssistantPage() {
           </div>
         </header>
 
+        <details className="student-ai-context"><summary>زمینه پرسش: {contextLoading?'در حال دریافت…':courses.find(c=>c.id===courseId)?.title||'دوره‌ای در دسترس نیست'}</summary><div><label>دوره<select aria-label="دوره پرسش دستیار" disabled={typing} value={courseId} onChange={e=>setCourseId(e.target.value)}>{!courses.length&&<option value="">دوره‌ای در دسترس نیست</option>}{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label><label>درس<select aria-label="درس پرسش دستیار" disabled={typing||contextLoading} value={lessonId} onChange={e=>setLessonId(e.target.value)}>{!lessons.length&&<option value="">درس منتشرشده‌ای در دسترس نیست</option>}{lessons.map(l=><option key={l.id} value={l.id} disabled={lockedLessons.includes(l.id)}>{l.title}{lockedLessons.includes(l.id)?' · نیازمند تکمیل پیش‌نیاز':''}</option>)}</select></label></div></details>
+        {contextError&&<p className="student-ai-context-error" role="alert">{contextError}<button type="button" disabled={typing} onClick={()=>setContextAttempt(x=>x+1)}>تلاش دوباره</button></p>}
+        {!contextLoading&&!contextError&&!lessonId&&<p className="student-ai-context-error">برای پرسش مرتبط با درس، یک درس منتشرشده با پیش‌نیاز تکمیل‌شده لازم است.</p>}
         <div className="flex-1 overflow-y-auto">
           {messages.length === 0 ? (
             <div className="mx-auto flex min-h-full max-w-[780px] flex-col justify-center px-5 py-16">
               <div className="mb-9 text-center">
-                <span className="relative mx-auto grid size-16 place-items-center rounded-[22px] bg-[#512DA8] text-white shadow-[0_12px_35px_rgba(81,45,168,.22)]">
+                <span className="relative mx-auto grid size-16 place-items-center rounded-[22px] bg-[#1d704b] text-white shadow-[0_12px_35px_rgba(81,45,168,.22)]">
                   <Icon name="spark" className="size-8" />
                   <i className="absolute -left-1 -top-1 size-4 rounded-full border-4 border-white bg-[#b7f536]" />
                 </span>
                 <h1 className="mt-6 text-[24px] font-black md:text-[30px]">
-                  سلام آرین، امروز چی یاد بگیریم؟
+                  سلام {userName?userName.split(' ')[0]:'دوست من'}، امروز چی یاد بگیریم؟
                 </h1>
                 <p className="mx-auto mt-2 max-w-md text-[11px] leading-6 text-[#8e8793]">
                   سؤال برنامه‌نویسی بپرس، کدت را برای رفع اشکال بفرست یا از من بخواه یک مفهوم را ساده
@@ -212,9 +184,10 @@ export default function AssistantPage() {
                   <button
                     key={item.title}
                     onClick={() => send(item.text)}
-                    className="group rounded-[20px] border border-[#e7e2dd] bg-white p-4 text-right transition hover:-translate-y-0.5 hover:border-[#9b84cb] hover:shadow-[0_10px_30px_rgba(49,37,69,.07)]"
+                    disabled={typing||contextLoading||!lessonId}
+                    className="student-ai-starter group rounded-[20px] border border-[#e7e2dd] bg-white p-4 text-right transition hover:-translate-y-0.5 hover:border-[#83aa86] hover:shadow-[0_10px_30px_rgba(49,37,69,.07)]"
                   >
-                    <span className="mb-4 grid size-9 place-items-center rounded-xl bg-[#f0ebf9] text-[#6040a8] transition group-hover:bg-[#512DA8] group-hover:text-white">
+                    <span className="mb-4 grid size-9 place-items-center rounded-xl bg-[#eaf2e4] text-[#30764c] transition group-hover:bg-[#1d704b] group-hover:text-white">
                       <Icon name={item.icon} className="size-4" />
                     </span>
                     <b className="block text-[11px]">{item.title}</b>
@@ -226,64 +199,25 @@ export default function AssistantPage() {
           ) : (
             <div className="mx-auto w-full max-w-[820px] px-4 py-8 md:px-8">
               {messages.map((message, index) => (
-                <div key={index} className="mb-8 flex gap-3 md:gap-4">
+                <div key={index} id={'student-ai-message-'+index} role={message.error?'alert':undefined} className={'student-ai-message mb-8 flex gap-3 md:gap-4 '+message.role+(message.error?' is-error':'')}>
                   <span
-                    className={`grid size-8 shrink-0 place-items-center rounded-[11px] ${message.role === 'bot' ? 'bg-[#512DA8] text-white' : 'bg-[#e8e1f5] text-lg'}`}
+                    className={`grid size-8 shrink-0 place-items-center rounded-[11px] ${message.role === 'bot' ? 'bg-[#1d704b] text-white' : 'bg-[#e4eedb] text-lg'}`}
                   >
-                    {message.role === 'bot' ? <Icon name="spark" className="size-4" /> : '👨🏻‍💻'}
+                    {message.role === 'bot' ? <Icon name="spark" className="size-4" /> : <Icon name="user" className="size-4"/>}
                   </span>
                   <div className="min-w-0 flex-1 pt-1">
                     <b className="mb-2 block text-[10px]">
                       {message.role === 'bot' ? 'دستیار نووا' : 'شما'}
                     </b>
-                    <p dir="auto" className="whitespace-pre-wrap text-xs leading-8 text-[#504957]">{message.text}</p>
-                    {message.code && (
-                      <div className="mt-4 overflow-hidden rounded-[16px] bg-[#172431]" dir="ltr">
-                        <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5 text-[9px] text-[#9fb1bd]">
-                          <span>python</span>
-                          <button className="flex items-center gap-1.5 hover:text-white">
-                            <Icon name="save" className="size-3" />
-                            کپی کد
-                          </button>
-                        </div>
-                        <pre className="overflow-x-auto p-4 font-mono text-[11px] leading-6 text-[#d7e8e7]">
-                          <code>{message.code}</code>
-                        </pre>
-                      </div>
-                    )}
-                    {message.lesson && (
-                      <Link
-                        href="/lessons/python-basics"
-                        className="mt-4 flex items-center gap-3 rounded-[17px] border border-[#ded7e8] bg-[#f6f2fb] p-3 text-[#533399] transition hover:border-[#8f74c6]"
-                      >
-                        <span className="grid size-10 place-items-center rounded-xl bg-white">
-                          <Icon name="book" className="size-4" />
-                        </span>
-                        <span>
-                          <b className="block text-[10px]">مطالعه درس حلقه‌های پایتون</b>
-                          <small className="text-[8px] text-[#9083a8]">فصل سوم • ۱۲ دقیقه</small>
-                        </span>
-                        <Icon name="arrow" className="mr-auto size-3 rotate-180" />
-                      </Link>
-                    )}
-                    {message.role === 'bot' && (
-                      <div className="mt-3 flex gap-1 text-[#948d99]">
-                        {['check', 'edit'].map((name) => (
-                          <button
-                            key={name}
-                            className="grid size-7 place-items-center rounded-lg hover:bg-[#f3f0ed]"
-                          >
-                            <Icon name={name as 'check'} className="size-3" />
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    {message.context&&<small className="student-ai-message-context">{message.context}</small>}
+                    <AiMessage text={message.text}/>
+                    {message.role==='bot'&&<div className="student-ai-response-actions"><button type="button" onClick={async()=>{try{await navigator.clipboard.writeText(message.text);setNotice('پاسخ کپی شد.')}catch{setNotice('کپی خودکار ممکن نیست؛ متن پاسخ را انتخاب کنید.')}}}><Copy size={14}/>کپی پاسخ</button>{message.error&&<button type="button" disabled={typing} onClick={()=>{setInput([...messages.slice(0,index)].reverse().find(m=>m.role==='user')?.text||'');inputRef.current?.focus()}}><RotateCcw size={14}/>ویرایش و ارسال دوباره</button>}</div>}
                   </div>
                 </div>
               ))}
               {typing && (
-                <div className="mb-8 flex gap-4">
-                  <span className="grid size-8 place-items-center rounded-[11px] bg-[#512DA8] text-white">
+                <div className="mb-8 flex gap-4" role="status" aria-label="دستیار در حال آماده‌سازی پاسخ است">
+                  <span className="grid size-8 place-items-center rounded-[11px] bg-[#1d704b] text-white">
                     <Icon name="spark" className="size-4" />
                   </span>
                   <div className="flex items-center gap-1 pt-3">
@@ -300,15 +234,16 @@ export default function AssistantPage() {
 
         <div className="shrink-0 bg-gradient-to-t from-white via-white to-white/0 px-4 pb-4 pt-4">
           <div className="mx-auto max-w-[780px]">
-            <div className="rounded-[22px] border border-[#dcd6df] bg-white p-2 shadow-[0_12px_38px_rgba(41,30,58,.11)] focus-within:border-[#8065bb]">
+            <div className="rounded-[22px] border border-[#dcd6df] bg-white p-2 shadow-[0_12px_38px_rgba(41,30,58,.11)] focus-within:border-[#5b966b]">
               <ChatPurpose value={purpose} onChange={setPurpose} text={input} disabled={typing}/>
               <textarea
+                ref={inputRef}
                 aria-label="پیام دستیار"
                 maxLength={4000}
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter' && !event.shiftKey) {
+                  if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
                     event.preventDefault()
                     send()
                   }
@@ -322,13 +257,14 @@ export default function AssistantPage() {
                 <button
                   aria-label="ارسال پیام دستیار"
                   onClick={() => send()}
-                  disabled={!input.trim() || typing}
-                  className="grid size-9 place-items-center rounded-[12px] bg-[#512DA8] text-white transition disabled:bg-[#ddd8e2]"
+                  disabled={!input.trim() || typing || contextLoading || !lessonId}
+                  className="grid size-9 place-items-center rounded-[12px] bg-[#1d704b] text-white transition disabled:bg-[#ddd8e2]"
                 >
                   <Icon name="send" className="size-4" />
                 </button>
               </div>
             </div>
+            {notice&&<p className="student-ai-action-notice" role="status">{notice}</p>}
             <p className="mt-2 text-center text-[8px] text-[#aaa4ae]">
               دستیار نووا ممکن است اشتباه کند؛ پاسخ‌های مهم را با محتوای درس بررسی کن.
             </p>

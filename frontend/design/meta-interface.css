@@ -1,0 +1,58 @@
+/* Meta-inspired surface hierarchy, scoped to Nova's existing role layouts. */
+.platform-shell.nova-interface-meta{--ui-canvas:#f0f2f5;--ui-surface:#fff;--ui-ink:#1c1e21;--ui-muted:#5f6671;--ui-line:#dce1e7;--ui-accent:#1765cf;--ui-accent-soft:#e7f0ff;color:var(--ui-ink);background:var(--ui-canvas)}
+.platform-shell.platform-student.nova-interface-meta{--ui-accent:#16734c;--ui-accent-soft:#e5f3e9}
+.platform-shell.nova-interface-meta .platform-header{background:#fff;border-bottom:1px solid var(--ui-line);box-shadow:0 2px 8px #202d3c0a;padding-inline:24px}
+.platform-shell.nova-interface-meta .platform-header>nav>a{border-radius:9px;min-height:44px;display:flex;align-items:center;font-size:13px;color:#526072}
+.platform-shell.nova-interface-meta .platform-header>nav>a.active{background:var(--ui-accent-soft);color:var(--ui-accent);font-weight:750}
+.platform-shell.nova-interface-meta .platform-header>button{background:#eef1f5;border-color:transparent;border-radius:50%;min-height:40px;min-width:40px;color:#4b5968}
+.platform-shell.platform-admin.nova-interface-meta .admin-live-layout{background:var(--ui-canvas)}
+.platform-shell.platform-admin.nova-interface-meta .admin-live-nav{background:#172e27}
+.platform-shell.platform-admin.nova-interface-meta .admin-live-nav nav button{border-radius:9px;font-size:13px;min-height:46px}
+.platform-shell.platform-admin.nova-interface-meta .admin-live-nav nav button.active{background:#e6efff;color:#225a9d;box-shadow:none}
+.platform-shell.platform-admin.nova-interface-meta .admin-live-main .live-panel{background:#fff;border-color:var(--ui-line);border-radius:14px}
+.platform-shell.platform-admin.nova-interface-meta .admin-live-main .section-top h2{color:#253b4b}
+.platform-shell.platform-admin.nova-interface-meta .admin-live-summary>section{transform:none;border:1px solid var(--ui-line);border-radius:12px;box-shadow:none}
+.platform-shell.platform-admin.nova-interface-meta .admin-paper-pin{display:none}
+.platform-shell.platform-admin.nova-interface-meta .admin-live-summary .paper-yellow{background:#fff5dc}
+.platform-shell.platform-admin.nova-interface-meta .admin-live-summary .paper-blue{background:#e7effb}
+.platform-shell.platform-admin.nova-interface-meta .admin-live-summary .paper-coral{background:#fcece5}
+.platform-shell.platform-admin.nova-interface-meta .admin-live-summary .paper-green{background:#eaf3e6}
+.platform-shell.platform-admin.nova-interface-meta .admin-live-main .btn{min-height:42px;border-radius:9px;font-size:13px;padding:10px 14px}
+.platform-shell.platform-admin.nova-interface-meta .admin-live-main .btn.primary{background:var(--ui-accent);border-color:var(--ui-accent);color:#fff}
+.platform-shell.platform-admin.nova-interface-meta .admin-live-main .btn.secondary{background:#edf2f8;border-color:#d7e0eb;color:#3a5677}
+.platform-shell.platform-admin.nova-interface-meta .admin-live-main .btn.ghost{background:#fff;border-color:#dce1e7;color:#5b6673}
+.platform-shell.platform-admin.nova-interface-meta .admin-live-main .live-field input,.platform-shell.platform-admin.nova-interface-meta .admin-live-main .live-field textarea,.platform-shell.platform-admin.nova-interface-meta .admin-live-heading select{background:#fff;border-color:#ccd3dd;border-radius:9px;min-height:44px;font-size:14px}
+.platform-shell.platform-admin.nova-interface-meta .admin-course-catalog{background:#e9eef5;border-color:#d5dde7}
+.platform-shell.platform-admin.nova-interface-meta .admin-course-choices>button{background:#f7f9fc;color:#354d66}
+.platform-shell.platform-admin.nova-interface-meta .admin-course-choices>button[aria-pressed=true]{border-color:#83a9df;background:#fff}
+.platform-shell.platform-admin.nova-interface-meta .admin-course-summary,.platform-shell.platform-admin.nova-interface-meta .admin-course-create{background:#fff;border-color:var(--ui-line)}
+.platform-shell.platform-admin.nova-interface-meta .admin-course-tabs>button{background:#fff;border-color:#d6dfe9;color:#526781}
+.platform-shell.platform-admin.nova-interface-meta .admin-course-tabs>button[aria-pressed=true]{background:var(--ui-accent);color:#fff;border-color:var(--ui-accent)}
+.platform-shell.platform-admin.nova-interface-meta .admin-lesson-cards article>header{background:#f4f7fb}
+.platform-shell.platform-admin.nova-interface-meta .admin-course-preview-heading{background:#e9f0fa;border-color:#cfdced}
+.platform-shell.platform-admin.nova-interface-meta .recovery-page-intro{background:#e8effb;border-color:#cedcf1}
+.platform-shell.platform-admin.nova-interface-meta .recovery-page-emblem{background:#dbe7fa;color:#35639e}
+.platform-shell.platform-admin.nova-interface-meta .recovery-detail-panel{background:#fff!important;border-color:#d2deed!important}
+.platform-shell.platform-admin.nova-interface-meta .recovery-inbox-list>button{background:#fff;border-color:#dce1e7}
+.platform-shell.platform-admin.nova-interface-meta .recovery-inbox-list>button.selected{background:#edf3fd;border-color:#83a9df}
+.platform-shell.platform-admin.nova-interface-meta .recovery-channel-badge{background:#fff;color:#3e608b;border-color:#c8d7ec}
+.platform-shell.platform-admin.nova-interface-meta .admin-recovery-bell{background:#e9f0fb;border-color:#d0dff3;color:#3a6195;border-radius:9px}
+.platform-shell.platform-teacher.nova-interface-meta .teacher-white-panel{background:#fff;border-color:var(--ui-line);border-radius:14px}
+.platform-shell.platform-teacher.nova-interface-meta .tc-sidebar{background:#f2f5fa}
+.platform-shell.platform-teacher.nova-interface-meta .tc-main>header{background:#fff}
+.platform-shell.platform-teacher.nova-interface-meta .tc-message.user{background:#eaf1fc;border-color:#d6e3f6}
+.platform-shell.nova-interface-meta .source-composer{border-radius:14px;border-color:#d2dce8;box-shadow:0 3px 12px #2342670d}
+.platform-shell.nova-interface-meta .source-composer:focus-within{border-color:var(--ui-accent);box-shadow:0 0 0 1px var(--ui-accent)}
+.platform-shell.nova-interface-meta .composer-plus{border-radius:50%;background:#eef2f7}
+.platform-shell.nova-interface-meta .composer-send{background:var(--ui-accent);border-radius:50%}
+.platform-shell.platform-student.nova-interface-meta .student-conversation-layout>aside{background:#f0f4ef}
+.platform-shell.platform-student.nova-interface-meta .student-ai-message.user>div{background:#e7f2e8;border-color:#d5e5d7}
+.platform-shell.nova-interface-meta :is(button,a,input,textarea,select,summary):focus-visible{outline:3px solid var(--ui-accent);outline-offset:3px}
+.platform-shell.nova-interface-meta ::selection{background:var(--ui-accent-soft);color:var(--ui-ink)}
+dialog.recovery-dialog{background:#fff;border-radius:16px;color:#263545}
+dialog.recovery-dialog[data-role=admin],dialog.recovery-dialog[data-role=teacher]{--recovery-accent:#1765cf}
+dialog.recovery-dialog>header{border-bottom-color:#e0e5eb}
+dialog.recovery-dialog .recovery-steps button{border-color:#d4ddea;background:#f3f6fa;color:#4a6280}
+dialog.recovery-dialog .recovery-steps button[aria-pressed=true]{background:var(--recovery-accent);color:#fff;border-color:var(--recovery-accent)}
+@media(max-width:760px){.platform-shell.nova-interface-meta .platform-header{padding-inline:10px;gap:8px}.platform-shell.nova-interface-meta .platform-header>nav>a{font-size:12px;min-height:44px}.platform-shell.nova-interface-meta .platform-header>button{min-height:44px;min-width:44px}.platform-shell.platform-admin.nova-interface-meta .admin-live-main .btn{min-height:44px;font-size:14px}.platform-shell.platform-admin.nova-interface-meta .admin-live-main .live-field input,.platform-shell.platform-admin.nova-interface-meta .admin-live-main .live-field textarea,.platform-shell.platform-admin.nova-interface-meta .admin-live-heading select{font-size:16px}.platform-shell.platform-admin.nova-interface-meta .admin-live-summary>section{min-height:150px}}
+@media(pointer:coarse){.platform-shell.nova-interface-meta :is(.btn,.composer-plus,.composer-send,.tc-new){min-height:44px}}

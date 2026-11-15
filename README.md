@@ -1,3 +1,7 @@
+> Meta-inspired interface continuation: scoped clean surfaces, rounded actions and clearer hierarchy now accompany the segmented admin and AI interfaces. See [PANEL-REFINEMENT-20261115.md](PANEL-REFINEMENT-20261115.md) for scope and verification limits. This is Nova's interpretation of the requested style, not official Meta branding or a replacement of existing role flows.
+
+> Panel refinement: [PANEL-REFINEMENT-20261115.md](PANEL-REFINEMENT-20261115.md) describes segmented admin course/recovery management, shared safe AI message/code display, working student conversation controls and responsive refinements.49 regression tests and component checks pass; browser screenshot verification remains blocked.
+
 > **Live recovery workflow verified:** release `3a8d275` adds student/teacher recovery dialogs, admin notification/inbox review and secure manual reset-code delivery. Both roles passed live reset tests using dedicated accounts, now deactivated; real credentials remain unchanged.49 tests and all builds passed. Read [RECOVERY-WORKFLOW-20261115.md](RECOVERY-WORKFLOW-20261115.md). SMS is prepared as a disabled transport seam, not an active service.
 
 > Recovery workflow update: [RECOVERY-WORKFLOW-20261115.md](RECOVERY-WORKFLOW-20261115.md) explains student/teacher requests, admin in-panel notifications and identity review, private one-time reset codes, the new login dialogs and the disabled future SMS transport seam. Users choose their new permanent password; admins do not receive it.
