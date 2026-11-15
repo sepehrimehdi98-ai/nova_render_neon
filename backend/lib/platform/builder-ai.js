@@ -17,4 +17,4 @@ function validateBuilderReply(value,input,evidence){
  if(input.intent==='proposal'&&!result.operations.length)throw Error('INVALID_AI_RESPONSE');
  return {...result,sources:evidence.filter(e=>citations.includes(e.id)).map(({text,...s})=>({...s,excerpt:text.slice(0,650)})),verification:'source-ids-checked; teacher-review-required; code-not-executed'};
 }
-module.exports={documentEvidence,validateBuilderReply,validateConversationReply,jsonWithValidation};
+module.exports={needsCitation,documentEvidence,validateBuilderReply,validateConversationReply,jsonWithValidation};

@@ -30,7 +30,7 @@ function extractAnswer(doc,question){
 }
 async function teacherWorkspace(c){
  const {q,u,route,req,data,url,scope,send,res,fail,id,text}=c;const m=route.match(/^\/courses\/([^/]+)\/(documents|progress|my-progress)(?:\/([^/]+))?(?:\/(chat|messages|jobs|file))?$/);if(!m)return null;
- const cid=id(m[1]);await scope(q,u,cid);if(m[2]==='my-progress'){if(req.method!=='GET'||u.role!=='student')fail(403,'فقط عملکرد شخصی دانش‌آموز');return personalProgress(c,cid);}if(u.role==='student')fail(403,'این بخش فقط برای مدرس و مدیر است.');const reply=(x,status=200)=>send(res,status,x);
+ const cid=id(m[1]);await scope(q,u,cid);if(m[2]==='my-progress'){if(req.method!=='GET'||u.role!=='student')fail(403,'فقط عملکرد شخصی دانش‌آموز');return personalProgress(c,cid);}if(u.role==='student'&&(m[2]!=='documents'||m[3]&&m[4]!=='file'))fail(403,'این بخش فقط برای مدرس و مدیر است.');const reply=(x,status=200)=>send(res,status,x);
  if(m[2]==='progress'){if(req.method!=='GET')fail(405,'روش مجاز نیست.');return progress(c,cid);}
  if(!m[3]){
   if(req.method==='GET')return reply({documents:await q.all('SELECT id,name,mime,bytes,pages_json,created_at FROM nova_documents WHERE course_id=? AND user_id=? ORDER BY created_at DESC LIMIT 50',[cid,u.id]).then(rows=>rows.map(({pages_json,...r})=>({...r,pages:JSON.parse(pages_json).length}))),online:!!(process.env.OPENROUTER_API_KEY||process.env.LIARA_AI_API_KEY)});
@@ -64,6 +64,7 @@ async function personalProgress(c,cid){
  const results=await q.all("SELECT x.id,x.title,CASE WHEN COALESCE(s.show_results,1)=1 THEN a.score ELSE NULL END AS score,a.submitted_at FROM nova_exams x LEFT JOIN nova_exam_settings s ON s.exam_id=x.id LEFT JOIN nova_exam_attempts a ON a.exam_id=x.id AND a.user_id=? AND a.submitted_at>=? WHERE x.course_id=? AND x.status='published' ORDER BY x.opens_at,x.id",[u.id,since,cid]);
  const progress=await q.one("SELECT COUNT(*) AS lessons,(SELECT COUNT(*) FROM nova_progress p JOIN nova_lessons l ON l.id=p.lesson_id WHERE l.course_id=? AND l.status='published' AND p.user_id=? AND p.version=l.published_version AND p.completed_at IS NOT NULL) AS completed FROM nova_lessons WHERE course_id=? AND status='published'",[cid,u.id,cid]);
  const daily=await q.all('SELECT substr(a.created_at,1,10) AS day,SUM(a.accepted_seconds) AS seconds FROM nova_activity_events a JOIN nova_lessons l ON l.id=a.lesson_id WHERE a.user_id=? AND l.course_id=? AND a.created_at>=? GROUP BY substr(a.created_at,1,10) ORDER BY day',[u.id,cid,since]);const scores=results.filter(r=>r.score!==null).map(r=>Number(r.score));
- return send(res,200,{selected:{id:u.id,name:u.name,lessons:Number(progress.lessons),completed:Number(progress.completed),average:scores.length?scores.reduce((a,b)=>a+b,0)/scores.length:null,activity:daily.reduce((n,d)=>n+Number(d.seconds),0),results,daily},exams:[],activityDefinition:'زمان ثبت‌شده در صفحه درس؛ اثبات حضور یا توجه قطعی نیست.'});
+ const courseInfo=await q.one('SELECT title FROM nova_courses WHERE id=?',[cid]);
+ return send(res,200,{courseId:cid,courseTitle:courseInfo.title,days,since,generatedAt:new Date().toISOString(),selected:{id:u.id,name:u.name,lessons:Number(progress.lessons),completed:Number(progress.completed),average:scores.length?scores.reduce((a,b)=>a+b,0)/scores.length:null,activity:daily.reduce((n,d)=>n+Number(d.seconds),0),results,daily},exams:[],activityDefinition:'زمان ثبت‌شده در صفحه درس؛ اثبات حضور یا توجه قطعی نیست.'});
 }
 module.exports={teacherWorkspace,decodeFile,parseDocument,extractAnswer};

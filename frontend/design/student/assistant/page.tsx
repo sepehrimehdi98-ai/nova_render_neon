@@ -1,3 +1,4 @@
+import {Paperclip,X} from 'lucide-react';
 import AiMessage from '../../AiMessage';
 import {Copy,RotateCcw} from 'lucide-react';
 import './assistant-polish.css';
@@ -29,6 +30,8 @@ const starters = [
 export default function AssistantPage() {
   const [input, setInput] = useState('')
   const [purpose,setPurpose]=useState('auto')
+  const [documents,setDocuments]=useState<Row[]>([]),[uploading,setUploading]=useState(false),[uploadError,setUploadError]=useState('');const fileInput=useRef<HTMLInputElement>(null);
+
   const [messages, setMessages] = useState<Message[]>([])
   const [typing, setTyping] = useState(false)
   const [sidebar, setSidebar] = useState(false)
@@ -38,6 +41,7 @@ export default function AssistantPage() {
   const [courses,setCourses]=useState<Row[]>([]),[courseId,setCourseId]=useState(''),[lessons,setLessons]=useState<Row[]>([]),[lockedLessons,setLockedLessons]=useState<string[]>([]),[lessonId,setLessonId]=useState(''),[contextLoading,setContextLoading]=useState(true),[contextError,setContextError]=useState(''),[contextAttempt,setContextAttempt]=useState(0)
   useEffect(()=>{const c=new AbortController();api('/courses',undefined,c.signal).then(r=>{setCourses(r.courses);setCourseId(previous=>r.courses.some((x:Row)=>x.id===previous)?previous:r.courses[0]?.id||'');if(!r.courses.length)setContextLoading(false)}).catch(e=>{if(!c.signal.aborted){setContextError(e.message);setContextLoading(false)}});return()=>c.abort()},[contextAttempt])
   useEffect(()=>{setLessons([]);setLockedLessons([]);setLessonId('');if(!courseId)return;const c=new AbortController();setContextLoading(true);setContextError('');Promise.all([api('/courses/'+courseId,undefined,c.signal),api('/courses/'+courseId+'/structure',undefined,c.signal)]).then(([r,structure])=>{if(!c.signal.aborted){setLessons(r.lessons);setLockedLessons(structure.locked||[]);setLessonId(r.lessons.find((l:Row)=>!structure.locked?.includes(l.id))?.id||'');setContextLoading(false)}}).catch(e=>{if(!c.signal.aborted){setContextError(e.message);setContextLoading(false)}});return()=>c.abort()},[courseId,contextAttempt])
+  useEffect(()=>{setDocuments([]);setUploadError('')},[courseId]);
   const inputRef=useRef<HTMLTextAreaElement>(null)
   useEffect(()=>{const c=new AbortController();api('/me',undefined,c.signal).then(r=>setUserName(r.user.name)).catch(()=>{});api('/capabilities',undefined,c.signal).then(r=>setService(r.ai?'online':'local')).catch(()=>{if(!c.signal.aborted)setService('unknown')});return()=>c.abort()},[])
   const endRef = useRef<HTMLDivElement>(null)
@@ -55,15 +59,16 @@ export default function AssistantPage() {
     inputRef.current?.focus()
   }
 
+  async function attach(file:File){if(!courseId)return;setUploadError('');if(file.size>1500000||!file.size){setUploadError('فایل باید بین ۱ بایت و ۱٫۵ مگابایت باشد.');return}if(!/\.(pdf|docx|txt|md)$/i.test(file.name)){setUploadError('فقط PDF متنی، DOCX، TXT و Markdown پذیرفته می‌شود.');return}if(documents.length>=6){setUploadError('حداکثر شش فایل برای هر پیام انتخاب کنید.');return}setUploading(true);const captured=courseId;try{const base64=await new Promise<string>((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=()=>reject(Error('خواندن فایل ممکن نشد.'));r.readAsDataURL(file)});const doc=await api('/courses/'+captured+'/documents',{file:{name:file.name,base64}});setDocuments(d=>[...d,{...doc,courseId:captured}])}catch(e){setUploadError((e as Error).message)}finally{setUploading(false)}}
   async function send(text = input) {
-    if (!text.trim() || typing || contextLoading || !lessonId || !courseId) return
-    const context=[courses.find(c=>c.id===courseId)?.title,lessons.find(l=>l.id===lessonId)?.title].filter(Boolean).join(' · ')
+    if (!text.trim() || typing || uploading || contextLoading || !lessonId || !courseId) return
+    const context=[courses.find(c=>c.id===courseId)?.title,lessons.find(l=>l.id===lessonId)?.title].filter(Boolean).concat(documents.filter(d=>d.courseId===courseId).map(d=>d.name)).join(' · ')
     setMessages((current) => [...current, { role: 'user', text: text.trim(),context }])
     setInput('')
     setTyping(true)
     try{
-      const cap=await api('/capabilities');setService(cap.ai?'online':'local');
-      const answer=cap.ai?await consult(courseId,lessonId,text,'','',purpose):'جست‌وجوی محلی · '+(lessons.find(l=>l.id===lessonId)?.title||'درس')+'\n'+(await api('/lessons/'+lessonId+'/local-chat',{question:text,purpose})).answer;
+      const cap=['online','local'].includes(service)?{ai:service==='online'}:await api('/capabilities');setService(cap.ai?'online':'local');if(!cap.ai&&documents.some(d=>d.courseId===courseId))throw Error('خواندن سند با دستیار آنلاین نیاز به اتصال سرویس AI دارد.');
+      const answer=cap.ai?await consult(courseId,lessonId,text,'','',purpose,documents.filter(d=>d.courseId===courseId).map(d=>d.id)):'جست‌وجوی محلی · '+(lessons.find(l=>l.id===lessonId)?.title||'درس')+'\n'+(await api('/lessons/'+lessonId+'/local-chat',{question:text,purpose})).answer;
       setMessages(current=>[...current,{role:'bot',text:answer}]);
     }catch(e){setMessages(current=>[...current,{role:'bot',text:e instanceof Error?e.message:'پاسخ دریافت نشد؛ دوباره تلاش کنید.',error:true}])}
     finally{setTyping(false)}
@@ -235,6 +240,7 @@ export default function AssistantPage() {
         <div className="shrink-0 bg-gradient-to-t from-white via-white to-white/0 px-4 pb-4 pt-4">
           <div className="mx-auto max-w-[780px]">
             <div className="rounded-[22px] border border-[#dcd6df] bg-white p-2 shadow-[0_12px_38px_rgba(41,30,58,.11)] focus-within:border-[#5b966b]">
+              <div className="student-ai-files">{documents.filter(d=>d.courseId===courseId).map(d=><span key={d.id}>{d.name}<button type="button" aria-label={'حذف پیوست '+d.name} disabled={typing} onClick={()=>setDocuments(items=>items.filter(x=>x.id!==d.id))}><X size={13}/></button></span>)}</div>{uploadError&&<p role="alert">{uploadError}</p>}<input hidden ref={fileInput} type="file" accept=".pdf,.docx,.txt,.md" onChange={e=>{const file=e.target.files?.[0];e.target.value='';if(file)void attach(file)}}/>
               <ChatPurpose value={purpose} onChange={setPurpose} text={input} disabled={typing}/>
               <textarea
                 ref={inputRef}
@@ -253,11 +259,11 @@ export default function AssistantPage() {
                 className="max-h-32 w-full resize-none bg-transparent px-3 py-2 text-xs leading-6 outline-none"
               />
               <div className="flex items-center justify-between px-1">
-                <small className="text-[10px] text-[#77877e]">لینک را داخل پیام بنویسید</small>
+                <button type="button" className="student-attach" disabled={typing||uploading||contextLoading||!courseId} onClick={()=>fileInput.current?.click()}><Paperclip size={17}/>{uploading?'در حال بارگذاری…':'افزودن فایل'}</button>
                 <button
                   aria-label="ارسال پیام دستیار"
                   onClick={() => send()}
-                  disabled={!input.trim() || typing || contextLoading || !lessonId}
+                  disabled={!input.trim() || typing || uploading || contextLoading || !lessonId}
                   className="grid size-9 place-items-center rounded-[12px] bg-[#1d704b] text-white transition disabled:bg-[#ddd8e2]"
                 >
                   <Icon name="send" className="size-4" />
