@@ -1,3 +1,4 @@
+import Planner from '../Planner';
 import {LessonCover} from '../LessonCover';
 import CourseWorkspace from '../CourseWorkspace';
 import {useEffect,useState} from 'react';
@@ -11,7 +12,7 @@ import Page5 from './progress/page';
 import Page6 from './lessons/python-basics/page';
 import {DashboardShell} from './nova-ui';
 export default function App(){
- const pages:Record<string,React.ComponentType>={'/':Page0,'/assistant':Page1,'/lessons':Page2,'/login':Page3,'/profile':Page4,'/progress':Page5,'/exams':()=> <CourseWorkspace screen="exams"/>,'/lessons/python-basics':Page6};
+ const pages:Record<string,React.ComponentType>={'/planner':Planner,'/':Page0,'/assistant':Page1,'/lessons':Page2,'/login':Page3,'/profile':Page4,'/progress':Page5,'/exams':()=> <CourseWorkspace screen="exams"/>,'/lessons/python-basics':Page6};
  const Page=pages[location.pathname.replace(/\/$/,'')||'/']||pages['/'];
  if(location.pathname==='/profile')return <Page4/>;
  if(location.pathname==='/lessons/view')return <StoredLesson/>;

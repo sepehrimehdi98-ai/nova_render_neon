@@ -1,3 +1,4 @@
+import {PlannerSummary} from '../Planner';
 import StudentActivitySummary from './StudentActivitySummary';
 import StudentHomeAdditions from './StudentHomeAdditions';
 import {api} from '../../src/live/api';
@@ -34,19 +35,18 @@ export default function HomePage() {
             سلام {userName}، آماده‌ای کد بزنی؟
           </h1>
           <p className="mt-2 max-w-[460px] text-xs leading-7 text-[#c9bbe8]">
-            امروز قراره حلقه‌های پایتون رو کامل کنی. فقط ۲۵ دقیقه تا رسیدن به هدف روزانه‌ات فاصله
-            داری.
+            درس‌های دوره‌ات را ادامه بده، برنامه‌ات را تنظیم کن و قدم بعدی یادگیری را انتخاب کن.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link
-              href="/lessons/python-basics"
+              href="/lessons"
               className="inline-flex items-center gap-2 rounded-2xl bg-[#b7f536] px-5 py-3 text-xs font-extrabold text-[#21183d] shadow-[0_8px_25px_rgba(183,245,54,.2)]"
             >
               ادامه یادگیری <Icon name="arrow" className="size-4 rotate-180" />
             </Link>
             <span className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-[11px] text-[#d9d0ea]">
               <Icon name="clock" className="size-4" />
-              ۲۵ دقیقه تا هدف
+              با برنامه خودت پیش برو
             </span>
           </div>
         </div>
@@ -102,30 +102,8 @@ export default function HomePage() {
               <div className="h-full rounded-full bg-[#6e9a21]" style={{width:(learning?.percent||0)+'%'}} />
             </div>
           </div>
-          <div className="rounded-[26px] border border-[#ebe7e2] bg-white p-5">
-            <SectionHead title="برنامه امروز" />
-            {[
-              ['۱۰:۳۰', 'تمرین حلقه For', 'code'],
-              ['۱۶:۰۰', 'کوییز فصل سوم', 'quiz'],
-              ['۱۸:۳۰', 'جلسه رفع اشکال', 'video'],
-            ].map((a, i) => (
-              <div
-                key={a[0]}
-                className={`flex items-center gap-3 py-3 ${i < 2 ? 'border-b border-[#f0ede9]' : ''}`}
-              >
-                <span className="grid size-9 place-items-center rounded-xl" style={{background:a[2]==='code'?'#e1f3e9':a[2]==='quiz'?'#eee4fa':'#fff0dd',color:a[2]==='code'?'#197954':a[2]==='quiz'?'#7443aa':'#b87627'}}>
-                  <Icon name={a[2] as 'code'} className="size-4" />
-                </span>
-                <div className="flex-1">
-                  <b className="block text-[11px]">{a[1]}</b>
-                  <small className="text-[9px] text-[#aaa4af]">{a[0]}</small>
-                </div>
-                <span
-                  className={`size-2 rounded-full ${i === 0 ? 'bg-[#b7f536]' : 'bg-[#e5e1e7]'}`}
-                />
-              </div>
-            ))}
-          </div>
+          <PlannerSummary/>
+
         </aside>
       </div>
       <div className="mt-8"><StudentHomeAdditions/></div>

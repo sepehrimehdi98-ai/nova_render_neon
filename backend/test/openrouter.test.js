@@ -67,3 +67,6 @@ test('Seeded lessons persist and OpenRouter RAG completes student and teacher jo
  assert.equal(calls,4);
  }finally{global.fetch=original;if(store)await store.close();if(oldDb===undefined)delete process.env.NOVA_LOCAL_DB;else process.env.NOVA_LOCAL_DB=oldDb;fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+
+test('daily provider quota uses a short shared cooldown without repeated upstream requests',async()=>{const previous=global.fetch;let calls=0;try{global.fetch=async()=>{calls++;return new Response(JSON.stringify({error:{message:'Daily free models per day limit exceeded'}}),{status:429})};const client=provider({AI_PROVIDER:'openrouter',OPENROUTER_API_KEY:'test'});await assert.rejects(client.json('Explain',{}),/AI_DAILY_LIMIT/);await assert.rejects(client.json('Explain again',{}),e=>e.message==='AI_DAILY_LIMIT'&&e.retryAfterSeconds<=300);assert.equal(calls,1)}finally{global.fetch=previous}});

@@ -1,3 +1,4 @@
+import Planner,{PlannerSummary} from '../Planner';
 import AiGuide from '../AiGuide';
 import {builderGuide} from '../PanelGuides';
 import Login from './Login';
@@ -22,7 +23,7 @@ import {api,type Row} from '../../src/live/api';
 import {useEffect} from 'react';
 import { useMemo, useState } from "react";
 
-type Page = "خانه" | "درس‌ها" | "آزمون‌ها" | "تحلیل‌ها" | "پیام‌ها" | "دستیار";
+type Page = "برنامه‌ریز" | "خانه" | "درس‌ها" | "آزمون‌ها" | "تحلیل‌ها" | "پیام‌ها" | "دستیار";
 type IconName =
   | "home"
   | "book"
@@ -221,6 +222,7 @@ function Sidebar({ page, setPage }: { page: Page; setPage: (page: Page) => void 
   const [profile,setProfile]=useState('');useEffect(()=>{api('/me').then(r=>setProfile(r.user.name)).catch(()=>{})},[]);
   const nav: { label: Page; icon: IconName }[] = [
     { label: "خانه", icon: "home" },
+    { label: "برنامه‌ریز", icon: "exam" },
     { label: "درس‌ها", icon: "book" },
     { label: "آزمون‌ها", icon: "exam" },
     { label: "تحلیل‌ها", icon: "chart" },
@@ -277,14 +279,7 @@ function Topbar({ title, onNew }: { title: string; onNew: () => void }) {
         <h1>{title}</h1>
       </div>
       <div className="top-actions">
-        <label className="search">
-          <Icon name="search" size={17} />
-          <input placeholder="جست‌وجو در همه‌جا..." />
-        </label>
-        <button className="icon-btn">
-          <Icon name="bell" size={19} />
-          <i />
-        </button>
+        <a className="icon-btn" href="/?page=planner" aria-label="برنامه و یادآوری‌های امروز"><Icon name="exam" size={19}/></a>
         <button className="primary-btn" onClick={onNew}>
           <Icon name="plus" size={18} /> ایجاد جدید
         </button>
@@ -293,125 +288,7 @@ function Topbar({ title, onNew }: { title: string; onNew: () => void }) {
   );
 }
 
-function خانه({ goدرس‌ها }: { goدرس‌ها: () => void }) {
-  return (
-    <div className="page-stack">
-      <section className="hero">
-        <div>
-          <p className="eyebrow light">دوشنبه، ۶ اسفند</p>
-          <h2>
-            صبح بخیر، علی.
-            <br />
-            <em>آماده‌ای الهام‌بخش باشی؟</em>
-          </h2>
-          <p>امروز ۳ کلاس و ۸ تکلیف در انتظار بررسی دارید.</p>
-          <button className="light-btn" onClick={goدرس‌ها}>
-            ساخت درس <Icon name="arrow" size={18} />
-          </button>
-        </div>
-        <div className="hero-art">
-          <div className="sun" />
-          <div className="book-art">
-            <span />
-            <span />
-            <span />
-          </div>
-          <div className="float-card fc1">
-            <Icon name="sparkle" size={16} /> هوش مصنوعی آماده است
-          </div>
-          <div className="float-card fc2">
-            8 <small>برای بررسی</small>
-          </div>
-        </div>
-      </section>
-      <section className="stats-grid">
-        <Stat
-          icon="users"
-          label="دانش‌آموز فعال"
-          value="84"
-          یادداشت="۶+ نفر در این ماه"
-          tone="green"
-        />
-        <Stat
-          icon="book"
-          label="درس منتشرشده"
-          value="12"
-          یادداشت="۳ درس در حال تکمیل"
-          tone="purple"
-        />
-        <Stat
-          icon="exam"
-          label="بررسی‌های معلق"
-          value="8"
-          یادداشت="مهلت تا پایان هفته"
-          tone="orange"
-        />
-        <Stat
-          icon="chart"
-          label="میانگین نمره"
-          value="82%"
-          یادداشت="۴٫۲٪+ نسبت به ماه قبل"
-          tone="blue"
-        />
-      </section>
-      <div className="content-split">
-        <section className="panel">
-          <div className="panel-head">
-            <div>
-              <p className="eyebrow">محتوای شما</p>
-              <h3>درس‌های اخیر</h3>
-            </div>
-            <button onClick={goدرس‌ها}>
-              مشاهده همه <Icon name="arrow" size={15} />
-            </button>
-          </div>
-          <div className="lesson-list">
-            {lessons.map((lesson, i) => (
-              <div className="lesson-row" key={lesson.title}>
-                <span className="lesson-icon" style={{ background: lesson.color }}>
-                  <Icon name={i === 2 ? "sparkle" : "book"} size={21} />
-                </span>
-                <div className="lesson-info">
-                  <strong>{lesson.title}</strong>
-                  <span>{lesson.class}</span>
-                </div>
-                <span className={"status " + lesson.status.toLowerCase()}>{lesson.status}</span>
-                <div className="mini-progress">
-                  <span>{lesson.progress}%</span>
-                  <div>
-                    <i style={{ width: `${lesson.progress}%` }} />
-                  </div>
-                </div>
-                <button className="more-btn">
-                  <Icon name="more" size={18} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-        <section className="panel agenda">
-          <div className="panel-head">
-            <div>
-              <p className="eyebrow">امروز</p>
-              <h3>برنامه امروز</h3>
-            </div>
-            <button className="date-box">24</button>
-          </div>
-          <div className="timeline">
-            <Agenda time="09:00" color="#a6d65b" title="توسعه وب" room="پایه دهم · کلاس ۲۰۴" />
-            <Agenda
-              time="11:30"
-              color="#8c7ceb"
-              title="آزمایشگاه علوم"
-              room="پایه نهم · آزمایشگاه ۲"
-            />
-            <Agenda time="14:00" color="#f0a76a" title="بررسی تکالیف" room="۸ تکلیف" />
-          </div>
-        </section>
-      </div>
-    </div>
-  );
-}
+function خانه({goدرس‌ها}:{goدرس‌ها:()=>void}){const [courses,setCourses]=useState<Row[]>([]),[name,setName]=useState(''),[error,setError]=useState('');useEffect(()=>{Promise.all([api('/me'),api('/courses')]).then(([me,c])=>{setName(me.user.name);setCourses(c.courses)}).catch(e=>setError(e.message))},[]);return <section className="teacher-real-home"><header><h1>سلام {name}، امروز چه چیزی می‌سازیم؟</h1><p>دوره‌های واقعی شما، برنامه شخصی و زمان کلاس‌ها</p><button className="btn primary" onClick={goدرس‌ها}>مدیریت دوره‌ها و درس‌ها</button></header>{error&&<p role="alert">{error}</p>}<div className="teacher-course-links">{courses.map(c=><a key={c.id} href={'/?page=lessons&course='+c.id}><BookOpen size={18}/>{c.title}<small>{c.status==='published'?'منتشرشده':c.status==='archived'?'بایگانی':'پیش‌نویس'}</small></a>)}</div><PlannerSummary/></section>}
 
 function Stat({
   icon,
@@ -1177,12 +1054,13 @@ function پیام‌هاPage() { return <LiveTickets role="teacher"/>; }
 function TeacherAssistantPage(){const [courses,setCourses]=useState<Row[]>([]),[cid,setCid]=useState('');useEffect(()=>{api('/courses').then(r=>{setCourses(r.courses);const preferred=new URLSearchParams(location.search).get('course');setCid(r.courses.some((c:Row)=>c.id===preferred)?preferred:r.courses[0]?.id||'')})},[]);return <div className="teacher-modern-view teacher-assistant-full"><label className="document-course-select">دوره<select aria-label="دوره گفت‌وگو" value={cid} onChange={e=>setCid(e.target.value)}>{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label><TeacherConversation key={cid} course={cid}/></div>}
 
 function Dashboard() {
-  const [page, setPage] = useState<Page>(()=>new URLSearchParams(location.search).get('page')==='exams'?'آزمون‌ها':new URLSearchParams(location.search).get('page')==='lessons'?'درس‌ها':new URLSearchParams(location.search).get('page')==='assistant'?'دستیار':new URLSearchParams(location.search).get('page')==='progress'?'تحلیل‌ها':new URLSearchParams(location.search).get('page')==='tickets'?'پیام‌ها':'خانه');
-  useEffect(()=>{const pages:Record<string,string>={'خانه':'','درس‌ها':'lessons','آزمون‌ها':'exams','تحلیل‌ها':'progress','پیام‌ها':'tickets','دستیار':'assistant'};const url=new URL(location.href);if(pages[page])url.searchParams.set('page',pages[page]);else url.searchParams.delete('page');if(page!=='درس‌ها')url.searchParams.delete('newLesson');if(page!=='آزمون‌ها')url.searchParams.delete('exam');history.replaceState(null,'',url);window.dispatchEvent(new Event('nova:navigation'))},[page]);
+  const [page, setPage] = useState<Page>(()=>new URLSearchParams(location.search).get('page')==='planner'?'برنامه‌ریز':new URLSearchParams(location.search).get('page')==='exams'?'آزمون‌ها':new URLSearchParams(location.search).get('page')==='lessons'?'درس‌ها':new URLSearchParams(location.search).get('page')==='assistant'?'دستیار':new URLSearchParams(location.search).get('page')==='progress'?'تحلیل‌ها':new URLSearchParams(location.search).get('page')==='tickets'?'پیام‌ها':'خانه');
+  useEffect(()=>{const pages:Record<string,string>={'برنامه‌ریز':'planner','خانه':'','درس‌ها':'lessons','آزمون‌ها':'exams','تحلیل‌ها':'progress','پیام‌ها':'tickets','دستیار':'assistant'};const url=new URL(location.href);if(pages[page])url.searchParams.set('page',pages[page]);else url.searchParams.delete('page');if(page!=='درس‌ها')url.searchParams.delete('newLesson');if(page!=='آزمون‌ها')url.searchParams.delete('exam');history.replaceState(null,'',url);window.dispatchEvent(new Event('nova:navigation'))},[page]);
   useEffect(()=>{const open=()=>setPage('آزمون‌ها');window.addEventListener('nova:teacher-exams',open);return()=>window.removeEventListener('nova:teacher-exams',open)},[]);
   const titles = useMemo(
     () => ({
       خانه: "نمای کلی",
+      برنامه‌ریز: "برنامه‌ریز",
       درس‌ها: "درس‌ها",
       آزمون‌ها: "آزمون‌ها",
       تحلیل‌ها: "تحلیل‌ها",
@@ -1197,6 +1075,7 @@ function Dashboard() {
       <div className="main-shell">
         {page!=="دستیار"&&<Topbar title={titles[page]} onNew={() => setPage("درس‌ها")} />}
         <div className={page==="دستیار"?"teacher-chat-page":"page"}>
+          {page === "برنامه‌ریز" && <Planner/>}
           {page === "خانه" && <خانه goدرس‌ها={() => setPage("درس‌ها")} />}
           {page === "درس‌ها" && <درس‌هاPage />}
           {page === "آزمون‌ها" && <آزمون‌هاPage />}

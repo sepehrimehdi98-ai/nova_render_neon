@@ -1,15 +1,15 @@
-import {Paperclip,X} from 'lucide-react';
+import {Paperclip,X,BookOpen,ChevronDown} from 'lucide-react';
 import AiMessage from '../../AiMessage';
 import {Copy,RotateCcw} from 'lucide-react';
 import './assistant-polish.css';
 import ChatPurpose from '../../ChatPurpose';
 import {api,type Row} from '../../../src/live/api';
-import {consult} from '../../consult';
+import {consult,extractFromFiles} from '../../consult';
 'use client'
 
 import Link from '../navigation'
 import { useEffect, useRef, useState } from 'react'
-import { Icon, Logo } from '../nova-ui'
+import { Icon } from '../nova-ui'
 
 type Message = {
   role: 'user' | 'bot'
@@ -67,8 +67,8 @@ export default function AssistantPage() {
     setInput('')
     setTyping(true)
     try{
-      const cap=['online','local'].includes(service)?{ai:service==='online'}:await api('/capabilities');setService(cap.ai?'online':'local');if(!cap.ai&&documents.some(d=>d.courseId===courseId))throw Error('خواندن سند با دستیار آنلاین نیاز به اتصال سرویس AI دارد.');
-      const answer=cap.ai?await consult(courseId,lessonId,text,'','',purpose,documents.filter(d=>d.courseId===courseId).map(d=>d.id)):'جست‌وجوی محلی · '+(lessons.find(l=>l.id===lessonId)?.title||'درس')+'\n'+(await api('/lessons/'+lessonId+'/local-chat',{question:text,purpose})).answer;
+      const cap=['online','local'].includes(service)?{ai:service==='online'}:await api('/capabilities');setService(cap.ai?'online':'local');
+      const answer=cap.ai?await consult(courseId,lessonId,text,'','',purpose,documents.filter(d=>d.courseId===courseId).map(d=>d.id)):documents.some(d=>d.courseId===courseId)?await extractFromFiles(courseId,lessonId,text,documents.filter(d=>d.courseId===courseId).map(d=>d.id)):'جست‌وجوی محلی · '+(lessons.find(l=>l.id===lessonId)?.title||'درس')+'\n'+(await api('/lessons/'+lessonId+'/local-chat',{question:text,purpose})).answer;
       setMessages(current=>[...current,{role:'bot',text:answer}]);
     }catch(e){setMessages(current=>[...current,{role:'bot',text:e instanceof Error?e.message:'پاسخ دریافت نشد؛ دوباره تلاش کنید.',error:true}])}
     finally{setTyping(false)}
@@ -91,7 +91,7 @@ export default function AssistantPage() {
         className={`fixed inset-y-0 right-0 z-50 flex w-[280px] flex-col bg-[#f5f3f0] p-3 transition-transform lg:static lg:translate-x-0 ${sidebar ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="flex h-14 items-center justify-between px-2">
-          <Logo />
+          <h2 className="student-chat-menu-title">گفت‌وگوهای شما</h2>
           <button
             onClick={() => setSidebar(false)}
             aria-label="بستن فهرست گفت‌وگو"
@@ -146,9 +146,7 @@ export default function AssistantPage() {
           </button>
           <div className="flex items-center gap-2 rounded-xl px-2 py-2 text-sm font-black">
             دستیار نووا
-            <span className="rounded-md bg-[#eef8dc] px-2 py-1 text-[8px] font-bold text-[#638421]">
-              آموزشی
-            </span>
+
           </div>
           <div className="mr-auto flex items-center gap-2">
             <span className="hidden items-center gap-1.5 text-[9px] text-[#918a96] sm:flex">
@@ -165,7 +163,7 @@ export default function AssistantPage() {
           </div>
         </header>
 
-        <details className="student-ai-context"><summary>زمینه پرسش: {contextLoading?'در حال دریافت…':courses.find(c=>c.id===courseId)?.title||'دوره‌ای در دسترس نیست'}</summary><div><label>دوره<select aria-label="دوره پرسش دستیار" disabled={typing} value={courseId} onChange={e=>setCourseId(e.target.value)}>{!courses.length&&<option value="">دوره‌ای در دسترس نیست</option>}{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label><label>درس<select aria-label="درس پرسش دستیار" disabled={typing||contextLoading} value={lessonId} onChange={e=>setLessonId(e.target.value)}>{!lessons.length&&<option value="">درس منتشرشده‌ای در دسترس نیست</option>}{lessons.map(l=><option key={l.id} value={l.id} disabled={lockedLessons.includes(l.id)}>{l.title}{lockedLessons.includes(l.id)?' · نیازمند تکمیل پیش‌نیاز':''}</option>)}</select></label></div></details>
+        <details className="student-ai-context"><summary><BookOpen size={18}/><span>انتخاب دوره و درس</span><strong>{contextLoading?'در حال دریافت…':courses.find(c=>c.id===courseId)?.title||'دوره‌ای در دسترس نیست'}</strong><ChevronDown size={16}/></summary><div><div className="student-course-segments" role="group" aria-label="انتخاب دوره پرسش">{courses.map(c=><button type="button" key={c.id} aria-pressed={courseId===c.id} disabled={typing||uploading} onClick={()=>setCourseId(c.id)}>{c.title}</button>)}</div><label className="student-course-native">دوره<select aria-label="دوره پرسش دستیار" disabled={typing} value={courseId} onChange={e=>setCourseId(e.target.value)}>{!courses.length&&<option value="">دوره‌ای در دسترس نیست</option>}{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label><label>درس<select aria-label="درس پرسش دستیار" disabled={typing||contextLoading} value={lessonId} onChange={e=>setLessonId(e.target.value)}>{!lessons.length&&<option value="">درس منتشرشده‌ای در دسترس نیست</option>}{lessons.map(l=><option key={l.id} value={l.id} disabled={lockedLessons.includes(l.id)}>{l.title}{lockedLessons.includes(l.id)?' · نیازمند تکمیل پیش‌نیاز':''}</option>)}</select></label></div></details>
         {contextError&&<p className="student-ai-context-error" role="alert">{contextError}<button type="button" disabled={typing} onClick={()=>setContextAttempt(x=>x+1)}>تلاش دوباره</button></p>}
         {!contextLoading&&!contextError&&!lessonId&&<p className="student-ai-context-error">برای پرسش مرتبط با درس، یک درس منتشرشده با پیش‌نیاز تکمیل‌شده لازم است.</p>}
         <div className="flex-1 overflow-y-auto">

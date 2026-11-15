@@ -8,13 +8,13 @@ function provider(env=process.env,workerSignal){
  const key=openrouter?env.OPENROUTER_API_KEY:env.LIARA_AI_API_KEY;
  const model=openrouter?(env.OPENROUTER_CHAT_MODEL||'nvidia/nemotron-3-ultra-550b-a55b:free'):env.LIARA_AI_CHAT_MODEL;
  if(!key||!model||(!openrouter&&!/^https:\/\/ai\.liara\.ir\/api\/v1\/[a-zA-Z0-9_-]+$/.test(base)))throw Error('AI_NOT_CONFIGURED');
- let retryPrimaryAt=0;
+ let retryPrimaryAt=0,dailyLimitUntil=0;
  if(openrouter&&env.OPENROUTER_FREE_ONLY!=='false'&&!model.endsWith(':free'))throw Error('FREE_MODEL_REQUIRED');
  async function call(endpoint,payload,timeoutMs=90000){
   try{const r=await fetch(base+'/'+endpoint,{method:'POST',redirect:'error',signal:workerSignal?AbortSignal.any([workerSignal,AbortSignal.timeout(timeoutMs)]):AbortSignal.timeout(timeoutMs),headers:{authorization:'Bearer '+key,'content-type':'application/json'},body:JSON.stringify(payload)});
   let size=0;const chunks=[];if(r.body)for await(const chunk of r.body){size+=chunk.length;if(size>2000000)throw Error('AI_RESPONSE_LIMIT');chunks.push(Buffer.from(chunk));}
   let data={};try{data=JSON.parse(Buffer.concat(chunks).toString('utf8'))}catch{if(r.ok)throw Error('INVALID_AI_RESPONSE')}
-  if(!r.ok){const message=typeof data.error?.message==='string'?data.error.message:'';const daily=r.status===429&&/free.models.per.day|daily|per day|requests.*day/i.test(message);const error=Error(daily?'AI_DAILY_LIMIT':({401:'AI_AUTHENTICATION_FAILED',402:'AI_CREDITS_REQUIRED',403:'AI_ACCESS_BLOCKED',404:'AI_MODEL_UNAVAILABLE',429:'AI_RATE_LIMITED'})[r.status]||'AI_PROVIDER_UNAVAILABLE');if(r.status===429){error.rateLimitScope=daily?'daily':/per.minute|per minute|minute/i.test(message)?'minute':'provider-or-account';const retry=Number(r.headers.get('retry-after'));if(Number.isFinite(retry)&&retry>0)error.retryAfterSeconds=Math.min(86400,Math.ceil(retry));}throw error;}
+  if(!r.ok){const message=typeof data.error?.message==='string'?data.error.message:'';const daily=r.status===429&&/free.models.per.day|daily|per day|requests.*day/i.test(message);if(daily)dailyLimitUntil=Date.now()+300000;const error=Error(daily?'AI_DAILY_LIMIT':({401:'AI_AUTHENTICATION_FAILED',402:'AI_CREDITS_REQUIRED',403:'AI_ACCESS_BLOCKED',404:'AI_MODEL_UNAVAILABLE',429:'AI_RATE_LIMITED'})[r.status]||'AI_PROVIDER_UNAVAILABLE');if(r.status===429){error.rateLimitScope=daily?'daily':/per.minute|per minute|minute/i.test(message)?'minute':'provider-or-account';const retry=Number(r.headers.get('retry-after'));if(Number.isFinite(retry)&&retry>0)error.retryAfterSeconds=Math.min(86400,Math.ceil(retry));}throw error;}
   if(data.error)throw Error('AI_PROVIDER_UNAVAILABLE');return data;}catch(error){if(workerSignal?.aborted)throw Error('AI_WORKER_STOPPING');throw error;}
 
  }
@@ -28,6 +28,7 @@ function provider(env=process.env,workerSignal){
   return sources.slice(0,3);
  },
  async json(instruction,data,online=false){
+  if(Date.now()<dailyLimitUntil)throw Object.assign(Error('AI_DAILY_LIMIT'),{rateLimitScope:'daily',retryAfterSeconds:Math.ceil((dailyLimitUntil-Date.now())/1000)});
   // External web search is opt-in and may be billed; the free profile disables it.
   if(online)throw Error('WEB_NOT_CONFIGURED');
   const budget=responseBudget(instruction,data),freeFallback=openrouter&&model.endsWith(':free')&&env.OPENROUTER_FREE_FALLBACK!=='off';

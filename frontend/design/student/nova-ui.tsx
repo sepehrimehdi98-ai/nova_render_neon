@@ -192,6 +192,7 @@ const nav = [
   { href: '/assistant', label: 'دستیار نووا', icon: 'bot' as const },
   { href: '/exams', label: 'آزمون‌ها', icon: 'quiz' as const },
   { href: '/lessons', label: 'درس‌های من', icon: 'book' as const },
+  { href: '/planner', label: 'برنامه‌ریز', icon: 'calendar' as const },
   { href: '/profile', label: 'پروفایل', icon: 'user' as const },
 ]
 

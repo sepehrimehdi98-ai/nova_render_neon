@@ -1,8 +1,12 @@
 'use strict';
 const {randomUUID}=require('node:crypto');
 async function ragRoutes({q,u,route,req,data,scope,lessonScope,send,res,fail,id,text}){
- const m=route.match(/^\/courses\/([^/]+)\/ai\/(sources|jobs|approve|revoke)$/);if(!m)return null;
+ const m=route.match(/^\/courses\/([^/]+)\/ai\/(sources|jobs|approve|revoke|extract)$/);if(!m)return null;
  const cid=id(m[1]);await scope(q,u,cid);const teacher=u.role!=='student';
+ if(m[2]==='extract'){
+ if(req.method!=='POST')fail(405,'روش مجاز نیست.');const question=text(data.question,4000,1),lesson=await lessonScope(q,u,id(data.lessonId));if(lesson.course_id!==cid)fail(403,'درس مربوط به این دوره نیست.');const docs=await require('./teacher-conversation').selectedDocuments(q,u,cid,data.documentIds||[],fail,id);if(!docs.length)fail(400,'فایل خود را انتخاب کنید.');const sources=require('./builder-ai').documentEvidence(docs,question).slice(0,6);return send(res,200,{answer:sources.map(s=>s.text).join('\n\n'),sources:sources.map(({text,...s})=>({...s,excerpt:text})),verification:'extractive-not-generative',mode:'local'});
+ }
+
  if(m[2]==='sources'){
   if(!teacher)fail(403,'فقط مدرس و مدیر');
   if(req.method==='GET')return send(res,200,{sources:await q.all('SELECT * FROM nova_ai_sources WHERE course_id=? ORDER BY created_at DESC LIMIT 100',[cid])});
