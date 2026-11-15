@@ -30,3 +30,14 @@ test('builder consultation supports normal replies, isolates lessons, restores s
  assert.throws(()=>validateBuilderReply({answer:'No changes',operations:[]},{blocks:[],intent:'summary'},[]));assert.throws(()=>validateBuilderReply({answer:'Fake URL',operations:[{action:'add',block:{kind:'video',sourceUrl:'https://bad.example'}}]},{blocks:[]},[]));
  }finally{await app.close();for(const [key,value]of Object.entries(previous)){if(value===undefined)delete process.env[key];else process.env[key]=value;}}
 });
+
+test('lesson proposals remove decorative markup while preserving code, quotations and citation checks',()=>{
+ const {cleanLessonProposal,lessonProse}=require('../lib/platform/lesson-copy');
+ const code='name = "Nova"\n# Keep this Python comment\nprint(name)\nvalue = -2';
+ const raw={answer:'## Key points\n- **Variables** store values.\n\n### Improvement\n- Add one comparison.',operations:[{action:'add',block:{kind:'code',title:'# Example',description:'- **Print** the value.',body:code}},{action:'add',block:{kind:'exercise',title:'Practice',body:'## Task\n- Print "Nova".',starter:code,sampleAnswer:code,feedback:'**Good work**'}},{action:'add',block:{kind:'summary',title:'## Summary',body:'"Variables hold values."\n- Use meaningful names.'}}],citations:[],basis:'general'};
+ const clean=cleanLessonProposal(raw);assert.equal(clean.operations[0].block.body,code);assert.equal(clean.operations[1].block.starter,code);assert.equal(clean.operations[1].block.sampleAnswer,code);assert.equal(clean.operations[1].block.body,'Task\nPrint "Nova".');assert.equal(clean.operations[2].block.body,'"Variables hold values."\nUse meaningful names.');assert.ok(!clean.answer.includes('#'));assert.ok(!clean.answer.includes('**'));assert.equal(raw.operations[0].block.title,'# Example','input remains unchanged');
+ assert.equal(lessonProse('C# and -2 remain; `a_b` is a name.'),'C# and -2 remain; `a_b` is a name.');assert.equal(lessonProse('```python\n# comment\nprint("Nova")\n```'),'```python\n# comment\nprint("Nova")\n```');
+ assert.equal(validateBuilderReply(raw,{blocks:[]},[]).operations[0].block.body,code);
+ assert.throws(()=>validateBuilderReply({...raw,citations:['forged']},{blocks:[]},[]),/INVALID_AI_RESPONSE/);
+ assert.equal(cleanLessonProposal({answer:'## Ordinary chat',operations:[]}).answer,'## Ordinary chat');
+});

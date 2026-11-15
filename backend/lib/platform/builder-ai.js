@@ -9,7 +9,7 @@ function documentEvidence(documents,question){
  return documents.flatMap(d=>JSON.parse(d.pages_json).map(p=>({...p,score:terms.filter(t=>p.text.toLowerCase().includes(t)).length})).sort((a,b)=>b.score-a.score||a.page-b.page).slice(0,3).map(p=>({id:'doc:'+d.id+':'+p.page,documentId:d.id,title:d.name,page:p.page,text:excerpt(p.text)})));
 }
 function validateBuilderReply(value,input,evidence){
- const result=require('./lesson-studio').validateProposal(value);
+ const result=require('./lesson-studio').validateProposal(require('./lesson-copy').cleanLessonProposal(value));
  const citations=value.citations||[];
  if(!Array.isArray(citations)||citations.length>30||citations.some(id=>!evidence.some(e=>e.id===id))||(value.basis==='sources'||needsCitation(input.question,evidence))&&!citations.length)throw Error('INVALID_AI_RESPONSE');
  for(const o of result.operations){if(o.action==='update'&&!input.blocks.some(b=>b.id===o.target&&b.kind===o.block.kind))throw Error('INVALID_AI_RESPONSE');if(o.action==='add'&&input.blockTypes?.length&&!input.blockTypes.includes(o.block.kind))throw Error('INVALID_AI_RESPONSE');}
