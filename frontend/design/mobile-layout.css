@@ -38,3 +38,33 @@
  .platform-shell .nova-student-shell>nav>a{min-height:44px;min-width:44px;padding-inline:8px}
 }
 @media(max-width:760px){body:has(.platform-shell){min-width:0}.platform-shell :is(.teacher-modern-view,.nova-learning-view) button{min-height:44px}}
+
+/* Keep tablet and narrow landscape layouts within their own content column. */
+@media(min-width:761px) and (max-width:1100px){
+ .platform-shell .live-three{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .platform-shell .admin-live-heading{flex-wrap:wrap;gap:16px}
+ .platform-shell .admin-live-heading label{min-width:0;max-width:100%}
+}
+@media(max-width:760px){
+ .platform-shell .live-three{grid-template-columns:minmax(0,1fr)}
+ .platform-shell .admin-live-nav nav{overscroll-behavior-x:contain;scroll-padding-inline:12px}
+ .platform-shell .admin-live-main .lesson-list-row{align-items:flex-start;gap:12px}
+ .platform-shell .admin-live-main .lesson-list-row>strong{flex-basis:100%;min-width:0;overflow-wrap:anywhere}
+ .platform-shell .admin-live-main .lesson-list-row>.btn{flex:1 1 130px}
+ .platform-shell .admin-lesson-review>header{flex-wrap:wrap;gap:12px}
+ .platform-shell .admin-lesson-review>header h2{font-size:16px;line-height:1.8;overflow-wrap:anywhere}
+ .platform-shell .admin-live-main .admin-health-services{flex-wrap:wrap}
+ .platform-shell .admin-live-main .admin-health-summary{align-items:flex-start;gap:12px}
+ .platform-shell .admin-live-main .admin-health-summary>div{min-width:0;overflow-wrap:anywhere}
+ .platform-shell .admin-live-main .admin-health-seal{width:52px;height:52px}
+ .platform-shell .admin-live-main :is(td,th){font-size:13px;line-height:1.8}
+ .platform-shell .admin-live-main :is(.btn,.live-field){font-size:14px}
+ .platform-shell .admin-live-main .actions>select{width:100%;min-width:0}
+ .platform-shell .admin-live-main .media-item .actions>.btn{flex:1}
+ .platform-shell :is(.media-item,.live-panel,.ticket-bubble){overflow-wrap:anywhere}
+}
+/* Touch tablets also need reachable controls at desktop-sized breakpoints. */
+@media(pointer:coarse){
+ .platform-shell :is(.btn,.studio-button,.studio-icon-button,.teacher-icon-button,.admin-live-nav nav button){min-height:44px}
+ .platform-shell :is(.studio-icon-button,.teacher-icon-button){min-width:44px}
+}

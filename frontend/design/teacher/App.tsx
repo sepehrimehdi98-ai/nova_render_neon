@@ -1,3 +1,5 @@
+import Login from './Login';
+import {studioVideoFields} from '../studio-video';
 import {LoginBrand,DesignerCredit} from '../LoginBrand';
 import TeacherConversation from '../TeacherConversation';
 import ClassEventEditor from '../ClassEventEditor';
@@ -212,76 +214,6 @@ const lessons = [
   },
 ];
 
-function Login({ onLogin }: { onLogin: () => void }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  return (
-    <main className="login-page">
-      <section className="login-story">
-        <div className="brand brand-light">
-          <LoginBrand />
-        </div>
-        <div className="story-copy">
-          <p className="eyebrow light">آموزش با وضوح و اطمینان</p>
-          <h1>
-            هر درس را به تجربه‌ای
-            <br />
-            تبدیل کنید؛ <em>بدون مرز.</em>
-          </h1>
-          <p>
-            تجربه‌های یادگیری ماندگار بسازید، هر دانش‌آموز را بهتر بشناسید و کارهای تکراری را به هوش
-            مصنوعی بسپارید.
-          </p>
-        </div>
-        <div className="orbit orbit-one" />
-        <div className="orbit orbit-two" />
-        <div className="login-quote">
-          <div className="quote-avatar">م‌س</div>
-          <div>
-            <strong>«نووا زمان بیشتری برای تدریس به من می‌دهد.»</strong>
-            <span>مریم سانتوس · دبیر زیست‌شناسی</span>
-          </div>
-        </div>
-      </section>
-      <section className="login-form-wrap">
-        <form
-          className="login-form"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            try {await api("/login",{username:email,password});onLogin()}catch(error){alert(String(error))}
-          }}
-        >
-          <div className="mobile-brand brand">
-            <LoginBrand />
-          </div>
-          <p className="eyebrow">پنل ویژه معلمان</p>
-          <h2>خوش آمدید.</h2>
-          <p className="muted">برای ورود به فضای کاری خود، وارد حساب شوید.</p>
-          <label>
-            نام کاربری
-            <input value={email} onChange={(e) => setEmail(e.target.value)} type="text" required />
-          </label>
-          <label>
-            رمز عبور <span>رمز عبور را فراموش کرده‌اید؟</span>
-            <input
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type="password"
-              required
-            />
-          </label>
-          <button className="primary-btn login-btn">
-            ورود به نووا <Icon name="arrow" size={18} />
-          </button>
-          <p className="login-help">
-            به کمک نیاز دارید؟ <button type="button">با مدیر سامانه تماس بگیرید</button>
-          </p>
-          <DesignerCredit />
-        </form>
-      </section>
-    </main>
-  );
-}
 
 function Sidebar({ page, setPage }: { page: Page; setPage: (page: Page) => void }) {
   const [profile,setProfile]=useState('');useEffect(()=>{api('/me').then(r=>setProfile(r.user.name)).catch(()=>{})},[]);
@@ -611,13 +543,10 @@ function درس‌هاPage() {
       const sampleVideo=media.find(m=>m.course_id===course&&m.status==='approved'&&m.mime.startsWith('video/'));
       const content=blocks.map(b=>{
         const base={...b.original,pendingMedia:b.requiresUrl&&!b.source?true:undefined,description:b.description,starter:b.starter,sampleAnswer:b.sampleAnswer,feedback:b.feedback,options:b.options,correct:b.correct,explanation:b.explanation,id:String(b.original?.id||b.id),title:b.title,body:b.content,fontSize:b.fontSize,textMarks:b.textMarks,variant:b.type==='فهرست'?'list':b.type==='نقل‌قول'?'quote':b.type==='جداکننده'?'divider':undefined};
-        if(b.type==="ویدیو"){if(b.requiresUrl&&!b.source?.trim())return {...base,kind:'video',pendingMedia:true};
-          if(b.original?.sourceUrl&&b.original.sourceUrl===b.source)return {...base,kind:'video',sourceUrl:b.source};
-          if(!b.source?.trim()&&b.original?.mediaId)return {...base,kind:'video',mediaId:b.original.mediaId};
-          if(!b.source?.trim()&&sampleVideo)return {...base,kind:'video',sourceUrl:'/api/platform/files/'+sampleVideo.id};
-          const embedUrl=mediaSource(b.source||'',true);
-          if(!embedUrl)throw Error('کد iframe کاویمو را در بلوک ویدیو وارد کنید.');
-          return {...base,kind:'video',embedUrl};
+        if(b.type==="ویدیو"){
+          const video=studioVideoFields(b,mediaSource(b.source||'',true),sampleVideo?.id);
+          if(video.pendingMedia&&!b.requiresUrl)throw Error('نشانی فایل تأییدشده یا کد iframe کاویمو را در بلوک ویدیو وارد کنید.');
+          return {...base,kind:'video',...video};
         }
         if(b.type==="تصویر"){
           const imageUrl=mediaSource(b.source||'',false);
@@ -666,7 +595,7 @@ function درس‌هاPage() {
     setSelected(block.id);
   };
   const typeKinds:Record<string,string>={'ویدیو':'video','تصویر':'image','کد':'code','یادداشت':'note','عنوان':'heading','تمرین':'exercise','سؤال':'mcq','توضیح تکمیلی':'explanation','جمع‌بندی':'summary'};
-  function draftBlocks(){return blocks.map(b=>({...b.original,pendingMedia:b.requiresUrl&&!b.source?true:undefined,id:String(b.original?.id||b.id),kind:typeKinds[b.type]||'text',title:b.title,body:b.content,fontSize:b.fontSize,textMarks:b.textMarks,description:b.description,starter:b.starter,sampleAnswer:b.sampleAnswer,feedback:b.feedback,options:b.options,correct:b.correct,explanation:b.explanation,...(b.type==='ویدیو'?{sourceUrl:b.source?.startsWith('/api/')?b.source:!b.requiresUrl&&!b.source&&!b.original?.mediaId&&media.find(m=>m.course_id===course&&m.status==='approved'&&m.mime.startsWith('video/'))?'/api/platform/files/'+media.find(m=>m.course_id===course&&m.status==='approved'&&m.mime.startsWith('video/'))!.id:undefined,embedUrl:mediaSource(b.source||'',true)||undefined}:b.type==='تصویر'?{imageUrl:mediaSource(b.source||'',false)||undefined}:{}),variant:b.type==='فهرست'?'list':b.type==='نقل‌قول'?'quote':b.type==='جداکننده'?'divider':undefined}));}
+  function draftBlocks(){return blocks.map(b=>({...b.original,id:String(b.original?.id||b.id),kind:typeKinds[b.type]||'text',title:b.title,body:b.content,fontSize:b.fontSize,textMarks:b.textMarks,description:b.description,starter:b.starter,sampleAnswer:b.sampleAnswer,feedback:b.feedback,options:b.options,correct:b.correct,explanation:b.explanation,...(b.type==='ویدیو'?studioVideoFields(b,mediaSource(b.source||'',true),media.find(m=>m.course_id===course&&m.status==='approved'&&m.mime.startsWith('video/'))?.id):b.type==='تصویر'?{imageUrl:mediaSource(b.source||'',false)||undefined}:{}),variant:b.type==='فهرست'?'list':b.type==='نقل‌قول'?'quote':b.type==='جداکننده'?'divider':undefined}));}
   function applyProposal(operations:Row[],snapshot:Row[]){const now=draftBlocks();if(JSON.stringify(now)!==JSON.stringify(snapshot))throw Error('محتوا پس از درخواست تغییر کرده است؛ دوباره پیشنهاد بگیرید.');setBlocks(previous=>{let next=[...previous];for(const op of operations){const b=op.block;const type=Object.keys(typeKinds).find(k=>typeKinds[k]===b.kind)||'متن';if(op.action==='update'){const index=next.findIndex(x=>String(x.original?.id||x.id)===op.target);if(index<0)continue;next[index]={...next[index],title:b.title,content:b.body,textMarks:undefined,description:b.description,starter:b.starter,sampleAnswer:b.sampleAnswer,feedback:b.feedback,options:b.options,correct:b.correct,explanation:b.explanation};}else next.push({id:Date.now()+next.length,requiresUrl:b.pendingMedia===true,type:type as Block['type'],title:b.title,content:b.body,textMarks:undefined,description:b.description,starter:b.starter,sampleAnswer:b.sampleAnswer,feedback:b.feedback,options:b.options,correct:b.correct,explanation:b.explanation});}return next});setToast('پیشنهاد با تأیید شما در پیش‌نویس اعمال شد؛ برای انتشار ذخیره کنید.');}
   function renderMedia(b:Block){
     const video=b.type==='ویدیو';

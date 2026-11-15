@@ -1,0 +1,10 @@
+import {useState,type FormEvent} from 'react';
+import {api} from '../../src/live/api';
+import {AdminLoginRecovery} from '../../src/live/AdminRecovery';
+import {LoginBrand,DesignerCredit} from '../LoginBrand';
+import './login.css';
+export default function AdminLogin({onEnter}:{onEnter:()=>void}){
+ const [username,setUsername]=useState(''),[password,setPassword]=useState(''),[show,setShow]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ async function submit(e:FormEvent){e.preventDefault();if(busy)return;setBusy(true);setError('');try{await api('/login',{username:username.trim(),password});onEnter()}catch(e){setError(e instanceof Error?e.message:'ورود انجام نشد؛ دوباره تلاش کنید.')}finally{setBusy(false)}}
+ return <main className="nova-admin-login" dir="rtl"><section className="admin-login-story"><LoginBrand/><span className="admin-login-role">نووا · پنل مدیر</span><h1>یاد بگیر.<br/>بساز.<br/><em>مسیرت را روشن کن.</em></h1><p>کلاس، تمرین و یادگیری در یک فضای متمرکز.</p><div className="admin-login-code" dir="ltr"><code>student = "You"<br/>path = "Python"<br/><b>print("Let's learn!")</b></code></div></section><section className="admin-login-panel"><form onSubmit={submit} className="admin-login-form"><LoginBrand/><h2>خوش آمدید</h2><p>با حساب مدیر وارد سامانه نووا شوید.</p><label>نام کاربری<input required autoComplete="username" dir="ltr" value={username} onChange={e=>setUsername(e.target.value)}/></label><label>گذرواژه<div className="admin-login-password"><input required type={show?'text':'password'} autoComplete="current-password" dir="ltr" value={password} onChange={e=>setPassword(e.target.value)}/><button type="button" aria-label={show?'پنهان کردن گذرواژه':'نمایش گذرواژه'} aria-pressed={show} onClick={()=>setShow(!show)}>{show?'پنهان':'نمایش'}</button></div></label>{error&&<p className="admin-login-error" role="alert">{error}</p>}<button className="admin-login-submit" type="submit" disabled={busy}>{busy?'در حال ورود…':'ورود به حساب ←'}</button><AdminLoginRecovery/><DesignerCredit/></form></section></main>;
+}

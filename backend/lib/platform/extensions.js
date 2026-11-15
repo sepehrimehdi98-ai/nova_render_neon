@@ -4,6 +4,7 @@ const stamp = () => new Date().toISOString();
 async function limit(q, key, max = 5, window = 900000) { const k = createHash('sha256').update(key).digest('hex'); const row = await q.one('SELECT * FROM nova_throttles WHERE key_hash=?', [k]); const fresh = !row || Date.now() - Number(row.window_at) > window; if (!fresh && row.failures >= max)
     throw Object.assign(new Error('درخواست زیاد است؛ کمی بعد تلاش کنید.'), { status: 429 }); await q.run('INSERT INTO nova_throttles(key_hash,failures,window_at) VALUES(?,?,?) ON CONFLICT(key_hash) DO UPDATE SET failures=excluded.failures,window_at=excluded.window_at', [k, fresh ? 1 : row.failures + 1, fresh ? Date.now() : Number(row.window_at)]); }
 async function publicRecovery({ store, route, req, data, send, res, hashPassword, hash, fail }) {
+    const adminRecovery=await require('./admin-recovery').complete({store,route,req,data,send,res,hashPassword,fail});if(adminRecovery)return adminRecovery;
     if (!['/recovery/request', '/recovery/complete'].includes(route) || req.method !== 'POST')
         return null;
     const token = typeof data.token === 'string' ? data.token : '';
@@ -23,6 +24,7 @@ async function checkPrerequisites(q, u, lesson) { const current=await q.one('SEL
     throw Object.assign(new Error('ابتدا درس‌های پیش‌نیاز را تکمیل کنید.'), { status: 403 }); }
 async function extensions(ctx) {
     const { q, u, route, req, data, url, scope, lessonScope, send, res, fail, id, text, integer, audit, hashPassword, verifyPassword, hash } = ctx;
+    const adminCodes=await require('./admin-recovery').routes(ctx);if(adminCodes)return adminCodes;
     if (route === '/account/password' && req.method === 'POST') {
         await limit(q, 'password-change:' + u.id, 5);
         if (!await verifyPassword(String(data.currentPassword || ''), u.password_hash))
@@ -66,7 +68,7 @@ async function extensions(ctx) {
     if (route === '/admin/operations' && req.method === 'GET') {
         if (u.role !== 'admin')
             fail(403, 'فقط مدیر مجاز است.');
-        return send(res, 200, { metrics: require('./monitor').snapshot(), storage: q.postgres ? 'postgresql' : 'sqlite-local', backupConfigured: require('./backup').keyConfigured(), users: Number((await q.one('SELECT COUNT(*) AS n FROM nova_users')).n), courses: Number((await q.one('SELECT COUNT(*) AS n FROM nova_courses')).n), audit: await q.all('SELECT a.action,a.target_id,a.created_at,u.name FROM nova_audit a JOIN nova_users u ON u.id=a.actor_id ORDER BY a.created_at DESC LIMIT 100'), videoHost: 'stream.novextech.ir', videoProtection: 'provider-verification-required' });
+        return send(res, 200, { metrics: require('./monitor').snapshot(), storage: q.postgres ? 'postgresql' : 'sqlite-local', backupConfigured: require('./backup').keyConfigured(), checkedAt: stamp(), security: {backupAlgorithm:'AES-256-GCM',backupKeyValid:require('./backup').keyConfigured(),backupStorage:'server-local-export-required',passwordStorage:'salted-scrypt',databaseEncryption:'provider-managed-not-attested'}, roleCounts: await q.all('SELECT role,active,COUNT(*) AS count FROM nova_users GROUP BY role,active'), lastBackup: await q.one("SELECT created_at FROM nova_audit WHERE action='backup.created' ORDER BY created_at DESC LIMIT 1"), users: Number((await q.one('SELECT COUNT(*) AS n FROM nova_users')).n), courses: Number((await q.one('SELECT COUNT(*) AS n FROM nova_courses')).n), courseSummary:await q.all("SELECT c.id,c.title,c.status,(SELECT COUNT(*) FROM nova_lessons l WHERE l.course_id=c.id AND l.status='published') AS published_lessons,(SELECT COUNT(*) FROM nova_lessons l WHERE l.course_id=c.id AND l.status='draft') AS draft_lessons,(SELECT COUNT(*) FROM nova_teachers t WHERE t.course_id=c.id) AS teachers FROM nova_courses c ORDER BY c.title"), audit: await q.all('SELECT a.action,a.target_id,a.created_at,u.name,u.role,d.details_json,l.course_id,c.title AS course_title,l.draft_rev,l.published_version FROM nova_audit a JOIN nova_users u ON u.id=a.actor_id LEFT JOIN nova_audit_details d ON d.audit_id=a.id LEFT JOIN nova_lessons l ON l.id=a.target_id LEFT JOIN nova_courses c ON c.id=COALESCE(l.course_id,a.target_id) ORDER BY a.created_at DESC LIMIT 100'), videoHost: 'stream.novextech.ir', videoProtection: 'provider-verification-required' });
     }
     if (route === '/admin/backup' && req.method === 'POST') {
         if (u.role !== 'admin')
@@ -173,4 +175,4 @@ async function extensions(ctx) {
     }
     return null;
 }
-module.exports = { extensions, publicRecovery, checkPrerequisites };
+module.exports = { extensions, publicRecovery, checkPrerequisites, limit };

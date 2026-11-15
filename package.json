@@ -9,7 +9,7 @@
     "setup": "node scripts/setup.cjs",
     "build": "npm --prefix frontend run typecheck && npm --prefix frontend run build && node scripts/python-assets.cjs",
     "start": "node scripts/start.cjs",
-    "test": "npm --prefix backend test && node --test --test-isolation=none backend/test/demo-features.test.js && node --test --test-isolation=none backend/test/portals.test.js",
+    "test": "npm --prefix backend test && node --test --test-isolation=none backend/test/demo-features.test.js && node --test --test-isolation=none backend/test/portals.test.js && node --test --test-isolation=none scripts/studio-video.test.cjs && node --test --test-isolation=none scripts/note-draft.test.cjs",
     "seed": "node backend/scripts/demo-seed.js",
     "dev": "npm --prefix frontend run dev",
     "build:portals": "npm --prefix frontend run typecheck && npm --prefix frontend run build:student && npm --prefix frontend run build:teacher && npm --prefix frontend run build:admin && node scripts/python-assets.cjs portals/student/dist && node scripts/python-assets.cjs portals/teacher/dist && node scripts/python-assets.cjs portals/admin/dist",

@@ -46,3 +46,11 @@ backend/test/profile-conversation.test.js
 
 ## تحديث رابط دبیر — Full-page refinement
 Teacher chat now fills the available viewport under the shared header, with separate private history, message reading, source references and composer regions. The sidebar brand/logo was removed. Practical exercises have a written task plus syntax-highlighted starter.py and solution.py editors; example-code blocks retain their design. Browser verification now succeeded: the plus menu opened; an exercise preview ran score = 20 / print(score) and returned 20. Portal and combined builds pass. This supersedes the earlier browser-timeout limitation for the desktop chat and exercise preview. Mobile and real online model output are still not claimed as verified.
+
+
+## Sample-code block and GitHub sync
+The teacher code block now has separate title, description and highlighted executable code. Description survives backend draft/publication validation and is displayed in the shared student/teacher preview. Browser execution returned Nova; 34 tests and all builds pass. Source synchronized to GitHub main commit 6776d93a94031daec47cd9b07a5066e45fa35931. Render live rollout remains unverified: its dashboard timed out and no deployment checks were reported. This supersedes earlier statements about source not being pushed.
+
+
+## Homepage and editor cleanup
+Removed the three hard-coded student course cards and visually hid the redundant Create/Edit Lesson heading. Database-backed courses and functional controls remain. Portal and combined builds pass; teacher header verified visually. These last two file changes are local/package-only: the GitHub connector failed during synchronization.

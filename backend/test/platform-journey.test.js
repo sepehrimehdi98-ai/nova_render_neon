@@ -54,10 +54,10 @@ test('persistent full course journey and endpoint access boundaries', async () =
         await request('/profile',{cookie:student,body:{avatar:8}});
         assert.equal((await request('/profile',{cookie:student})).data.avatar,8);
         await request('/profile',{cookie:student,body:{avatar:9}},400);
-        await request('/lesson-note',{cookie:student,body:{lessonId:lid,body:'Private lesson note'}});
+        await request('/lesson-note',{cookie:student,body:{lessonId:lid,body:'Private lesson note',revision:0}});
         assert.equal((await request('/lesson-note?lessonId='+lid,{cookie:student})).data.body,'Private lesson note');
         assert.equal((await request('/lesson-note?lessonId='+lid,{cookie:teacher})).data.body,'');
-        await request('/lesson-note',{cookie:student,body:{lessonId:lid,body:''}});
+        await request('/lesson-note',{cookie:student,body:{lessonId:lid,body:'',revision:1}});
         assert.equal((await request('/lesson-note?lessonId='+lid,{cookie:student})).data.body,'');
 
         const lesson = (await request(`/lessons/${lid}`, { cookie: student })).data;

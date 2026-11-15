@@ -24,7 +24,16 @@ const integer = (v, min, max) => {
     return v;
 };
 const publicUser = u => ({ id: u.id, username: u.username, name: u.name, role: u.role, active: Boolean(u.active) });
-async function audit(q, u, action, target) { await q.run('INSERT INTO nova_audit(id,actor_id,action,target_id,created_at) VALUES(?,?,?,?,?)', [randomUUID(), u.id, action, target, now()]); }
+async function audit(q, u, action, target) {
+ const aid=randomUUID();await q.run('INSERT INTO nova_audit(id,actor_id,action,target_id,created_at) VALUES(?,?,?,?,?)',[aid,u.id,action,target,now()]);
+ let details=null;
+ if(action.startsWith('lesson.')){const lesson=await q.one('SELECT course_id,draft_rev,published_version,status,draft_json FROM nova_lessons WHERE id=?',[target]);if(lesson){const doc=JSON.parse(lesson.draft_json);details={courseId:lesson.course_id,title:doc.title,draftRevision:lesson.draft_rev,publishedVersion:lesson.published_version,status:lesson.status,blocks:doc.blocks.reduce((counts,b)=>({...counts,[b.kind]:(counts[b.kind]||0)+1}),{})};}}
+ if(action.startsWith('course.')){const course=await q.one('SELECT id,title,status FROM nova_courses WHERE id=?',[target]);if(course)details={courseId:course.id,title:course.title,status:course.status};}
+ if(action.startsWith('ticket.')){const ticket=await q.one('SELECT subject,course_id,status,revision FROM nova_tickets WHERE id=?',[target]);if(ticket)details={title:ticket.subject,courseId:ticket.course_id,status:ticket.status,revision:ticket.revision};}
+ if(action.startsWith('exam.')){const exam=await q.one('SELECT title,course_id,status,revision FROM nova_exams WHERE id=?',[target]);if(exam)details={title:exam.title,courseId:exam.course_id,status:exam.status,revision:exam.revision};}
+ if(action.startsWith('media.')){const media=await q.one('SELECT title,course_id,status,mime FROM nova_media WHERE id=?',[target]);if(media)details={title:media.title,courseId:media.course_id,status:media.status,mime:media.mime};}
+ if(details)await q.run('INSERT INTO nova_audit_details VALUES(?,?)',[aid,JSON.stringify(details)]);
+}
 function validateLesson(input, publishing = false) {
     let cover;try{cover=require('./lesson-cover').validateCover(input.cover)}catch{fail(400,'جلد درس باید تصویر HTTPS یا عنصر معتبر باشد.')}
     const title = text(input.title);
@@ -213,6 +222,7 @@ async function createPlatform(store, { demo = false, origin = 'http://127.0.0.1:
             const recovery = await publicRecovery({ store, route, req, data, send, res, hashPassword, hash, fail });
             if (recovery)
                 return recovery;
+            if(route==='/lesson-note'&&req.method==='POST')await store.tx(async q=>{const actor=await auth(q,req);if(!actor)fail(401,'ابتدا وارد شوید.');await require('./extensions').limit(q,'lesson-note:'+actor.id,60,60000);});
             // Hash passwords outside database locks, after checking authentication/role in a separate read transaction.
             let newHash;
             if (route === '/users' && req.method === 'POST') {
@@ -296,8 +306,16 @@ async function createPlatform(store, { demo = false, origin = 'http://127.0.0.1:
                 }
                 if(route==='/lesson-note'){
                   const lid=id(req.method==='GET'?url.searchParams.get('lessonId'):data.lessonId);await lessonScope(q,u,lid);
-                  if(req.method==='GET')return send(res,200,{body:(await q.one('SELECT body FROM nova_lesson_notes WHERE user_id=? AND lesson_id=?',[u.id,lid]))?.body||''});
-                  if(req.method==='POST'){const body=text(data.body,10000,0);if(!body)await q.run('DELETE FROM nova_lesson_notes WHERE user_id=? AND lesson_id=?',[u.id,lid]);else await q.run('INSERT INTO nova_lesson_notes(user_id,lesson_id,body,updated_at) VALUES(?,?,?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET body=excluded.body,updated_at=excluded.updated_at',[u.id,lid,body,now()]);return send(res,200,{ok:true});}
+                  if(req.method==='GET'){const row=await q.one('SELECT body FROM nova_lesson_notes WHERE user_id=? AND lesson_id=?',[u.id,lid]),rev=await q.one('SELECT revision FROM nova_lesson_note_revisions WHERE user_id=? AND lesson_id=?',[u.id,lid]);return send(res,200,{body:row?.body||'',revision:Number(rev?.revision||0)});}
+                  if(req.method==='POST'){
+                    if(typeof data.body!=='string'||data.body.length>10000||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(data.body))fail(400,'یادداشت باید متن ساده، بدون نویسه کنترلی و حداکثر ۱۰۰۰۰ نویسه باشد.');
+                    if(!Number.isSafeInteger(data.revision)||data.revision<0)fail(400,'ابتدا نسخه یادداشت را دریافت کنید.');
+                    await lockIdentity(q,u.id);
+                    const current=Number((await q.one('SELECT revision FROM nova_lesson_note_revisions WHERE user_id=? AND lesson_id=?',[u.id,lid]))?.revision||0);
+                    if(data.revision!==current)fail(409,'نسخه دیگری از یادداشت ذخیره شده است. پیش از جایگزینی، هر دو نسخه را بررسی کنید.');
+                    await q.run('INSERT INTO nova_lesson_notes(user_id,lesson_id,body,updated_at) VALUES(?,?,?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET body=excluded.body,updated_at=excluded.updated_at',[u.id,lid,data.body,now()]);
+                    await q.run('INSERT INTO nova_lesson_note_revisions VALUES(?,?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET revision=excluded.revision',[u.id,lid,current+1]);return send(res,200,{ok:true,revision:current+1});
+                  }fail(405,'روش مجاز نیست.');
                 }
                 if(route==='/profile' && req.method==='GET')return send(res,200,{user:publicUser(u),avatar:(await q.one('SELECT avatar FROM nova_profiles WHERE user_id=?',[u.id]))?.avatar||1});
                 if(route==='/profile' && req.method==='POST'){

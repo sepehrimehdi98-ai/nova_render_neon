@@ -1,3 +1,4 @@
+import AccountRecovery from '../../AccountRecovery';
 import {LoginBrand,DesignerCredit} from '../../LoginBrand';
 import {api} from '../../../src/live/api';
 'use client'
@@ -77,9 +78,11 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [recoveryOpen,setRecoveryOpen]=useState(false)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if(loading)return
     if (!phone.trim() || password.length < 4) {
       setError('نام کاربری یا رمز عبور را به‌درستی وارد کن.')
       return
@@ -114,7 +117,7 @@ export default function LoginPage() {
                   value={phone}
                   onChange={(event) => setPhone(event.target.value)}
                   inputMode="text"
-                  autoComplete="tel"
+                  autoComplete="username"
                   placeholder="نام کاربری"
                   className="h-14 w-full rounded-[17px] border border-[#e3ded9] bg-[#faf9f7] pr-11 pl-4 text-xs outline-none transition focus:border-[#6b4ab2] focus:bg-white focus:ring-4 focus:ring-[#6b4ab2]/5"
                 />
@@ -145,16 +148,13 @@ export default function LoginPage() {
               </div>
             </label>
             <div className="flex items-center justify-between text-[9px]">
-              <label className="flex items-center gap-2 text-[#746d78]">
-                <input type="checkbox" className="accent-[#512DA8]" />
-                مرا به خاطر بسپار
-              </label>
-              <button type="button" className="font-bold text-[#5e3da6]">
+              <span className="text-[#746d78]">ورود امن به حساب آموزشی</span>
+              <button type="button" onClick={()=>setRecoveryOpen(true)} className="font-bold text-[#5e3da6]">
                 رمز را فراموش کردی؟
               </button>
             </div>
             {error && (
-              <p className="rounded-xl bg-[#fff0ed] px-3 py-2.5 text-[9px] font-bold text-[#c94e39]">
+              <p role="alert" className="rounded-xl bg-[#fff0ed] px-3 py-2.5 text-[9px] font-bold text-[#c94e39]">
                 {error}
               </p>
             )}
@@ -171,15 +171,16 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+          <AccountRecovery open={recoveryOpen} onToggle={setRecoveryOpen}/>
 
           <div className="mt-6 flex items-center gap-3 text-[9px] text-[#aaa4ad]">
             <i className="h-px flex-1 bg-[#e9e5e0]" />
-            ورود نمایشی
+            حساب آموزشی نووا
             <i className="h-px flex-1 bg-[#e9e5e0]" />
           </div>
           <p className="mt-5 text-center text-[10px] text-[#817a87]">
             هنوز عضو نووا نیستی؟{' '}
-            <button className="font-extrabold text-[#5c3aa5]">ساخت حساب کاربری</button>
+            <span className="font-extrabold text-[#5c3aa5]">برای ساخت حساب، با مدیر آموزش تماس بگیر.</span>
           </p>
         </div>
         <div className="flex justify-between text-[8px] text-[#aaa4ad]">

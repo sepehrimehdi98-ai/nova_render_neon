@@ -16,6 +16,7 @@ test('account recovery, feedback, modules, prerequisites and encrypted restore',
     try {
         const admin = (await call('/login', null, { demoRole: 'admin' })).cookie, teacher = (await call('/login', null, { demoRole: 'teacher' })).cookie;
         const users = (await call('/users', admin)).data.users;
+        const operations=(await call('/admin/operations',admin)).data;assert.ok(operations.checkedAt);assert.equal(operations.security.backupAlgorithm,'AES-256-GCM');assert.ok(operations.roleCounts.some(r=>r.role==='teacher'));assert.equal(JSON.stringify(operations).includes('password_hash'),false);await call('/admin/operations',teacher,undefined,403);
         const tid = users.find(u => u.role === 'teacher').id;
         const sid = (await call('/users', admin, { username: 'learner', name: 'Learner', role: 'student', password: 'Old-strong-password-001' }, 201)).data.id;
         const sid2 = (await call('/users', admin, { username: 'otherlearner', name: 'Other learner', role: 'student', password: 'Other-strong-password-001' }, 201)).data.id;

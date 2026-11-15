@@ -1,0 +1,8 @@
+import {useState} from 'react';
+import {api} from '../src/live/api';
+import './account-recovery.css';
+export default function AccountRecovery({open,onToggle}:{open?:boolean;onToggle?:(open:boolean)=>void}){
+ const [username,setUsername]=useState(''),[token,setToken]=useState(''),[password,setPassword]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
+ async function run(complete:boolean){if(busy)return;setBusy(true);setMessage('');try{const r=await api(complete?'/recovery/complete':'/recovery/request',complete?{token,password}:{username});setMessage(r.message);if(complete){setToken('');setPassword('')}}catch(e){setMessage(e instanceof Error?e.message:'ارتباط انجام نشد؛ دوباره تلاش کنید.')}finally{setBusy(false)}}
+ return <details className="nova-account-recovery" open={open} onToggle={e=>onToggle?.(e.currentTarget.open)}><summary>بازیابی رمز عبور</summary><p>پس از تأیید هویت، مدیر کد یک‌بارمصرف در اختیار شما می‌گذارد.</p><label>نام کاربری<input autoComplete="username" dir="ltr" value={username} onChange={e=>setUsername(e.target.value)}/></label><button type="button" disabled={busy||!username.trim()} onClick={()=>void run(false)}>ثبت درخواست بازیابی</button><label>کد یک‌بارمصرف مدیر<input type="password" autoComplete="off" dir="ltr" value={token} onChange={e=>setToken(e.target.value)}/></label><label>گذرواژه جدید، حداقل ۱۲ نویسه<input type="password" autoComplete="new-password" value={password} onChange={e=>setPassword(e.target.value)}/></label><button type="button" disabled={busy||!token||password.length<12} onClick={()=>void run(true)}>{busy?'در حال بررسی…':'تغییر گذرواژه'}</button>{message&&<p role="status">{message}</p>}</details>;
+}

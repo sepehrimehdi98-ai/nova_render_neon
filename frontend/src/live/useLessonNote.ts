@@ -1,0 +1,21 @@
+import {useEffect,useRef,useState} from 'react';
+import {api,ApiError} from './api';
+import {noteKey,parseDraft,storeDraft,type NoteDraft} from './note-draft';
+type Copy={body:string;revision:number};
+export function useLessonNote(userId:string,lessonId:string){
+ const key=noteKey(userId,lessonId),[body,setBody]=useState(''),[dirty,setDirty]=useState(false),[localError,setLocalError]=useState(false),[ready,setReady]=useState(false),[error,setError]=useState(''),[conflict,setConflict]=useState<Copy|null>(null),[otherTab,setOtherTab]=useState(false);
+ const bodyRef=useRef(''),revision=useRef<number|null>(null),edited=useRef(false),dirtyRef=useRef(false),syncing=useRef(false);
+ const persist=(text:string,rev:number|null)=>{try{storeDraft(localStorage,key,text,rev);setLocalError(false)}catch{setLocalError(true)}};
+ useEffect(()=>{let active=true;const controller=new AbortController();let draft:NoteDraft|null=null;bodyRef.current='';revision.current=null;edited.current=false;dirtyRef.current=false;setBody('');setDirty(false);setReady(false);setConflict(null);setError('');setOtherTab(false);try{draft=parseDraft(localStorage.getItem(key));if(draft){bodyRef.current=draft.body;revision.current=draft.revision;dirtyRef.current=true;setBody(draft.body);setDirty(true)}}catch{setLocalError(true)}
+  api<Copy>('/lesson-note?lessonId='+encodeURIComponent(lessonId),undefined,controller.signal).then(server=>{if(!active)return;if(edited.current||draft){if((revision.current!==null&&revision.current!==server.revision||revision.current===null&&server.body!==bodyRef.current)&&server.body!==bodyRef.current)setConflict(server);else{revision.current=server.revision;if(dirtyRef.current)persist(bodyRef.current,server.revision)}}else{bodyRef.current=server.body;revision.current=server.revision;setBody(server.body)}setReady(true)}).catch(e=>{if(active&&e.name!=='AbortError'){setError('دریافت یادداشت از حساب انجام نشد؛ متن شما حفظ می‌شود. دوباره تلاش کنید.');setReady(false)}});
+  const warn=(e:BeforeUnloadEvent)=>{if(dirtyRef.current){e.preventDefault();e.returnValue=''}};
+  const changed=(e:StorageEvent)=>{if(e.key===key&&dirtyRef.current)setOtherTab(true)};
+  window.addEventListener('beforeunload',warn);window.addEventListener('storage',changed);
+  return()=>{active=false;controller.abort();window.removeEventListener('beforeunload',warn);window.removeEventListener('storage',changed)};
+ },[key,lessonId]);
+ function change(value:string){edited.current=true;dirtyRef.current=true;bodyRef.current=value;setBody(value);setDirty(true);persist(value,revision.current)}
+ async function refresh(){const server=await api<Copy>('/lesson-note?lessonId='+encodeURIComponent(lessonId));setReady(true);setError('');if(dirtyRef.current&&server.body!==bodyRef.current)setConflict(server);else{revision.current=server.revision;if(!dirtyRef.current){bodyRef.current=server.body;setBody(server.body)}}}
+ async function sync(){if(syncing.current)return;if(!ready||revision.current===null)throw Error('ابتدا یادداشت حساب را دوباره دریافت کنید.');if(conflict)throw Error('ابتدا اختلاف نسخه‌ها را بررسی کنید.');syncing.current=true;const sent=bodyRef.current;try{const result=await api<{revision:number}>('/lesson-note',{lessonId,body:sent,revision:revision.current});revision.current=result.revision;setError('');if(bodyRef.current===sent){dirtyRef.current=false;setDirty(false);try{const current=parseDraft(localStorage.getItem(key));if(current?.body===sent)localStorage.removeItem(key)}catch{setLocalError(true)}}else persist(bodyRef.current,result.revision)}catch(e){if(e instanceof ApiError&&e.status===409){await refresh();throw Error('نسخه دیگری ذخیره شده؛ هر دو متن را بررسی کنید.')}throw e}finally{syncing.current=false}}
+ function resolve(keepLocal:boolean){if(!conflict)return;revision.current=conflict.revision;if(keepLocal){persist(bodyRef.current,conflict.revision)}else{bodyRef.current=conflict.body;setBody(conflict.body);dirtyRef.current=false;setDirty(false);try{localStorage.removeItem(key)}catch{setLocalError(true)}}setConflict(null);setOtherTab(false)}
+ return {body,dirty,localError,ready,error,conflict,otherTab,change,sync,refresh,resolve};
+}
