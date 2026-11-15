@@ -1,3 +1,5 @@
+> **Live recovery workflow verified:** release `3a8d275` adds student/teacher recovery dialogs, admin notification/inbox review and secure manual reset-code delivery. Both roles passed live reset tests using dedicated accounts, now deactivated; real credentials remain unchanged.49 tests and all builds passed. Read [RECOVERY-WORKFLOW-20261115.md](RECOVERY-WORKFLOW-20261115.md). SMS is prepared as a disabled transport seam, not an active service.
+
 > Recovery workflow update: [RECOVERY-WORKFLOW-20261115.md](RECOVERY-WORKFLOW-20261115.md) explains student/teacher requests, admin in-panel notifications and identity review, private one-time reset codes, the new login dialogs and the disabled future SMS transport seam. Users choose their new permanent password; admins do not receive it.
 
 > **Live Render update verified on 2026-11-15.** Application code `561ee07` is published; the public student/teacher/admin portals and PostgreSQL API passed the checks in [RENDER-LIVE-RELEASE-20261115.md](RENDER-LIVE-RELEASE-20261115.md). Earlier “local/not deployed” notes below are historical. Admin recovery codes must still be generated privately in account settings.

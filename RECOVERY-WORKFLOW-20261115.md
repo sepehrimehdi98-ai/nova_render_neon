@@ -28,3 +28,12 @@ Before enabling SMS, add a server-side provider adapter and verified contact own
 The recovery HTTP journey covers request deduplication, unknown-user parity, admin notifications, role denial, identity-note enforcement, rejection, code reissue/version checks, superseded-token rejection, concurrent completion (one200/one400), session revocation and successful new-password login. SMS fails closed without affecting existing access. The complete regression suite and three builds are run before publication; live testing uses dedicated temporary accounts and deactivates them afterwards. Existing real passwords must not be changed by testing.
 
 The screenshot/browser tools remain blocked by OS process permissions. Component render and HTTP checks do not certify pixel-level design; no fresh screenshot verification is claimed.
+
+## Published release and live proof
+Application commit3a8d27550c88f2092c3e55eb7752f49e34805a9b is live on all three Render portals and the shared API.49 automated tests, TypeScript, all3 portal builds and the final admin build passed. Three login component render checks passed with admin-only self-recovery.
+
+At2026-11-15T14:19:04Z dedicated temporary student and teacher accounts completed real production requests, admin notification/inbox checks, identity-approved manual code issuance, old-session revocation, new-password login and replay rejection. Requests ended resolved. Both temporary accounts were deactivated afterwards; their inactive audit/account records are retained. Real admin/student/teacher credentials were not reset. SMS capabilities remain disabled. No real person's identity was automatically verified by this test; the operator owned the synthetic accounts it created.
+
+Live URLs: student https://nova-student.onrender.com/login?release=3a8d275 ; teacher https://nova-teacher.onrender.com/login?release=3a8d275 ; admin inbox https://nova-admin-veea.onrender.com/?page=recovery . Use the normal existing live credentials. The admin checks pending requests in “بازیابی حساب‌ها”; each login recovery button opens a dedicated dialog.
+
+Evidence in the originating workspace: work/recovery-workflow-tests.log, recovery-workflow-build.log, recovery-admin-final-build.log, recovery-release-status.json and recovery-workflow-live-verification.json. Private scripts and credentials are excluded from deliverable packages. This report supersedes earlier recovery UI/deployment descriptions; it does not claim visual screenshot verification or fully configured two-factor/SMS authentication.
