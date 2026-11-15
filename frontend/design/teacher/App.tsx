@@ -248,24 +248,14 @@ function Sidebar({ page, setPage }: { page: Page; setPage: (page: Page) => void 
         ))}
       </nav>
       <div className="sidebar-bottom">
-        <div className="upgrade">
-          <span className="spark">
-            <Icon name="sparkle" size={17} />
-          </span>
-          <strong>دستیار آموزشی</strong>
-          <p>۱۲ تولید محتوا باقی مانده</p>
-          <div>
-            <i style={{ width: "68%" }} />
-          </div>
-        </div>
-        <button className="profile">
-          <span className="avatar">{profile.slice(0,1)||'م'}</span>
+        <a className="upgrade" href="/?page=planner"><strong>برنامه روزانه من</strong><p>هدف‌ها، کلاس‌ها و یادآوری‌های واقعی</p></a>
+        <div className="profile">
+          <span className="avatar"><Icon name="users" size={18}/></span>
           <span>
             <strong>{profile||'مدرس'}</strong>
             <small>معلم</small>
           </span>
-          <Icon name="more" size={18} />
-        </button>
+        </div>
       </div>
     </aside>
   );
