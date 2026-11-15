@@ -5,9 +5,11 @@ const env={AI_PROVIDER:'openrouter',OPENROUTER_API_KEY:'test-secret'};
 test('transient free-provider failure uses one zero-price fallback; auth errors and opt-out never reroute',async()=>{
  const original=global.fetch,requests=[];
  try{global.fetch=async(_url,opts)=>{const payload=JSON.parse(opts.body);requests.push(payload);if(requests.length===1)throw new DOMException('Timed out','TimeoutError');return new Response(JSON.stringify({model:'verified-free-model',choices:[{message:{content:'{"answer":"Hello","operations":[]}'}}]}))};
- const result=await provider(env).json('Answer naturally',{question:'Hi'});assert.equal(requests.length,2);assert.equal(requests[1].model,'openrouter/free');assert.deepEqual(requests[1].provider.max_price,{prompt:0,completion:0});assert.equal(requests[1].reasoning,undefined);assert.equal(result.__routing.usedFreeFallback,true);assert.equal(result.__routing.servedModel,'verified-free-model');assert.equal(JSON.stringify(result).includes('__routing'),false);
+ const coolingClient=provider(env),result=await coolingClient.json('Answer naturally',{question:'Hi'});assert.equal(requests.length,2);assert.equal(requests[1].model,'openrouter/free');assert.deepEqual(requests[1].provider.max_price,{prompt:0,completion:0});assert.equal(requests[1].reasoning,undefined);assert.equal(result.__routing.usedFreeFallback,true);assert.equal(result.__routing.servedModel,'verified-free-model');assert.equal(JSON.stringify(result).includes('__routing'),false);
+ await coolingClient.json('Follow up',{question:'Continue'});assert.equal(requests.length,3);assert.equal(requests[2].model,'openrouter/free','cooldown avoids waiting on the same unavailable primary again');
  let count=0;global.fetch=async()=>{count++;return new Response('{}',{status:401})};await assert.rejects(provider(env).json('',{}),/AUTHENTICATION/);assert.equal(count,1);
  count=0;global.fetch=async()=>{count++;throw new DOMException('Timed out','TimeoutError')};await assert.rejects(provider({...env,OPENROUTER_FREE_FALLBACK:'off'}).json('',{}));assert.equal(count,1);
+ count=0;global.fetch=async()=>{count++;return new Response(JSON.stringify({error:{message:'free-models-per-day daily quota exceeded'}}),{status:429,headers:{'retry-after':'60'}})};await assert.rejects(provider(env).json('',{}),e=>e.message==='AI_DAILY_LIMIT'&&e.rateLimitScope==='daily'&&e.retryAfterSeconds===60);assert.equal(count,1,'daily limits are not retried through another route');
  }finally{global.fetch=original}
 });
 test('OpenRouter routing, authentication, JSON and safe failures',async()=>{

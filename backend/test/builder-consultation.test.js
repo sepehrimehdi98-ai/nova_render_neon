@@ -1,6 +1,14 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto');
 const {openStore}=require('../lib/platform/store'),{start}=require('../product-server'),{processAi}=require('../lib/platform/rag-engine'),{documentEvidence,validateBuilderReply}=require('../lib/platform/builder-ai');
+test('teacher source answers get one bounded repair while ordinary greetings need no citation',async()=>{
+ const {jsonWithValidation,validateConversationReply}=require('../lib/platform/builder-ai'),evidence=[{id:'doc:owned:1',text:'Silver Lynx',title:'Club'}];let calls=0;
+ const client={json:async()=>{calls++;return {answer:'Silver Lynx',basis:'sources',citations:[calls===1?'invented':'doc:owned:1']}}};
+ const answer=await jsonWithValidation(client,'Answer with citations',{},v=>validateConversationReply(v,evidence,'According to the selected document'));assert.equal(calls,2);assert.equal(answer.__attempts,2);assert.deepEqual(answer.citations,['doc:owned:1']);
+ assert.throws(()=>validateConversationReply({answer:'Silver Lynx',basis:'general',citations:[]},evidence,'According to the selected document'));
+ assert.equal(validateConversationReply({answer:'Hello!',basis:'general',citations:[]},evidence,'Hi').answer,'Hello!');
+ calls=0;await assert.rejects(jsonWithValidation({json:async()=>{calls++;throw Error('AI_RATE_LIMITED')}},'',{},()=>{}),/AI_RATE_LIMITED/);assert.equal(calls,1);
+});
 test('builder consultation supports normal replies, isolates lessons, restores saved conversations and gates summaries/citations',async()=>{
  const previous={AI_PROVIDER:process.env.AI_PROVIDER,OPENROUTER_API_KEY:process.env.OPENROUTER_API_KEY};process.env.AI_PROVIDER='openrouter';process.env.OPENROUTER_API_KEY='mock-only';
  const store=await openStore({filename:':memory:',url:''}),app=await start({port:0,demo:true,store}),base='http://127.0.0.1:'+app.server.address().port,cookies={};
