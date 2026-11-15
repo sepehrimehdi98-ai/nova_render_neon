@@ -1,3 +1,5 @@
+import AiGuide from '../AiGuide';
+import {builderGuide} from '../PanelGuides';
 import Login from './Login';
 import {studioVideoFields} from '../studio-video';
 import {LoginBrand,DesignerCredit} from '../LoginBrand';
@@ -619,7 +621,7 @@ function درس‌هاPage() {
         <button className="studio-brand" onClick={()=>setBuilder(false)} aria-label="بازگشت به مدیریت درس‌ها"><BookOpen size={38}/><strong>نووا</strong></button>
         <nav className="studio-breadcrumb" aria-label="مسیر صفحه"><Home size={17}/><span>‹</span><span>{courses.find(c=>c.id===course)?.title||'دوره پایتون'}</span><span>/</span><button onClick={()=>setBuilder(false)}>مدیریت درس‌ها</button></nav>
         <h1 className="teacher-sr-only">{saved?'ویرایش درس':'ساخت درس جدید'}</h1>
-        <div className="studio-header-actions"><button className="studio-button" onClick={()=>setPreview(true)}><Icon name="eye" size={20}/>پیش‌نمایش</button><button className="studio-button studio-primary" disabled={busy} onClick={()=>void save(false)}><Upload size={19}/>{busy?'در حال ذخیره…':'ذخیره پیش‌نویس'}</button></div>
+        <div className="studio-header-actions"><AiGuide sections={builderGuide} scope=".lesson-studio" label="راهنمای درس‌ساز"/><button className="studio-button" onClick={()=>setPreview(true)}><Icon name="eye" size={20}/>پیش‌نمایش</button><button className="studio-button studio-primary" disabled={busy} onClick={()=>void save(false)}><Upload size={19}/>{busy?'در حال ذخیره…':'ذخیره پیش‌نویس'}</button></div>
       </header>
       {toast&&<div className="studio-notice" role="status">{toast}<button aria-label="بستن پیام" onClick={()=>setToast('')}>×</button></div>}
       <div className="studio-workspace">

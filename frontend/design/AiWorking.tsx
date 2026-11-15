@@ -1,0 +1,3 @@
+import {useEffect,useState} from 'react';
+import {LoaderCircle} from 'lucide-react';
+export default function AiWorking({status,createdAt}:{status:string;createdAt?:string}){const [start]=useState(()=>{const time=Date.parse(createdAt||'');return Number.isFinite(time)?time:Date.now()}),[seconds,setSeconds]=useState(0);useEffect(()=>{const update=()=>setSeconds(Math.max(0,Math.floor((Date.now()-start)/1000)));update();const timer=setInterval(update,1000);return()=>clearInterval(timer)},[start]);return <div className="ai-working"><LoaderCircle size={16} className="ai-working-icon"/><span role="status">{status==='queued'?'در صف پاسخ':'در حال آماده‌سازی پاسخ'}</span><span aria-hidden="true">{seconds.toLocaleString('fa-IR')} ثانیه</span></div>}
