@@ -1,0 +1,28 @@
+import {date,fa,labels,type Row} from './api';
+import './audit-event.css';
+
+const actions:Record<string,string>={
+ 'lesson.create':'درس جدید ساخت','lesson.save':'تغییرات درس را ذخیره کرد','lesson.publish':'درس را برای دانش‌آموزان منتشر کرد','lesson.unpublish':'انتشار درس را متوقف کرد','lesson.ai-apply':'پیشنهاد هوش مصنوعی را به پیش‌نویس افزود','lesson.restore-draft':'نسخه قبلی درس را به پیش‌نویس برگرداند',
+ 'course.create':'دوره جدید ساخت','course.edit':'اطلاعات دوره را ویرایش کرد','course.published':'دوره را منتشر کرد','course.archived':'دوره را بایگانی کرد','course.draft':'دوره را به پیش‌نویس برگرداند','course.membership':'عضویت یک کاربر در دوره را تغییر داد','course.organize':'ترتیب فصل‌ها و درس‌ها را تغییر داد','module.create':'فصل جدید ساخت','module.edit':'اطلاعات فصل را ویرایش کرد',
+ 'ticket.create':'تیکت جدید ثبت کرد','ticket.reply':'به تیکت پاسخ داد','ticket.messages':'پیام جدید به تیکت افزود','ticket.status':'وضعیت تیکت را تغییر داد','ticket.assign':'مسئول رسیدگی به تیکت را تعیین کرد',
+ 'exam.create':'آزمون جدید ساخت','exam.update':'آزمون را ویرایش کرد','practice.review':'پاسخ تمرین را بررسی کرد','class-event.create':'کلاس یا تمرین را در برنامه ثبت کرد',
+ 'media.upload':'فایل بارگذاری کرد','media.approved':'فایل ارسالی را تأیید کرد','media.rejected':'فایل ارسالی را رد کرد','user.create':'حساب کاربری ساخت','user.active':'وضعیت فعال بودن حساب را تغییر داد',
+ 'account.password':'گذرواژه خود را تغییر داد','account.admin-recovered':'حساب مدیر را بازیابی کرد','account.recovery-issued':'درخواست بازیابی را تأیید و کد موقت صادر کرد','account.recovery-rejected':'درخواست بازیابی را رد کرد','account.recovered':'گذرواژه جدید برای حساب انتخاب کرد','account.recovery-codes-issued':'کدهای بازیابی حساب مدیر را صادر کرد','backup.created':'نسخه پشتیبان ساخت','profile.details':'اطلاعات پروفایل خود را ویرایش کرد','profile.avatar':'تصویر پروفایل خود را تغییر داد'
+};
+const groups:Record<string,[string,string]>={lesson:['آموزش','learning'],course:['آموزش','learning'],module:['آموزش','learning'],exam:['ارزیابی','assessment'],practice:['ارزیابی','assessment'],'class-event':['برنامه کلاسی','assessment'],ticket:['پشتیبانی','support'],media:['فایل‌ها','media'],account:['امنیت حساب','security'],user:['حساب‌ها','security'],profile:['پروفایل','security'],backup:['پشتیبان','security']};
+const blocks:Record<string,string>={video:'ویدیو',text:'متن',note:'یادداشت',explanation:'توضیح',tip:'نکته',code:'کد نمونه',practice:'تمرین عملی',exercise:'تمرین عملی',mcq:'سؤال چهارگزینه‌ای',quiz:'سؤال چهارگزینه‌ای',image:'تصویر',summary:'جمع‌بندی',exam:'آزمون'};
+export function auditInfo(event:Row){let detail:Row={};try{const parsed=JSON.parse(event.details_json||'{}');if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed))detail=parsed}catch{}const group=groups[String(event.action).split('.')[0]]||['سایر فعالیت‌ها','other'];return {detail,group,action:actions[event.action]||'فعالیتی در سامانه ثبت کرد',title:detail.title||event.course_title||'',courseId:detail.courseId||event.course_id};}
+export function auditSearch(event:Row){const info=auditInfo(event);return [info.action,...info.group,event.name,labels[event.role],info.title,event.course_title,event.action,event.target_id].join(' ').toLocaleLowerCase();}
+export default function AuditEvent({event,compact=false}:{event:Row;compact?:boolean}){
+ const {detail,group,action,title,courseId}=auditInfo(event);
+ return <article className={'nova-audit-event'+(compact?' is-compact':'')}>
+  <div className="audit-event-heading"><span className={'audit-category '+group[1]}>{group[0]}</span><time dateTime={event.created_at}>{date(event.created_at)}</time></div>
+  <p className="audit-event-sentence"><strong>{event.name||'کاربر ثبت‌شده'}</strong><span className={'account-role role-'+event.role}>{labels[event.role]||'کاربر'}</span><span>{action}.</span></p>
+  {title&&<p className="audit-event-target">محتوای مرتبط: <strong>{title}</strong>{event.course_title&&detail.title&&event.course_title!==detail.title&&<span> · دوره {event.course_title}</span>}</p>}
+  {!compact&&<>
+   <div className="audit-event-facts">{detail.status&&labels[detail.status]&&<span>وضعیت ثبت‌شده: <strong>{labels[detail.status]}</strong></span>}{detail.draftRevision!==undefined&&<span>نسخه پیش‌نویس: {fa(detail.draftRevision)}</span>}{detail.publishedVersion!==undefined&&<span>نسخه انتشار: {fa(detail.publishedVersion)}</span>}{detail.blocks&&typeof detail.blocks==='object'&&<span>محتوا: {Object.entries(detail.blocks).map(([kind,count])=>(blocks[kind]||'بلوک دیگر')+' '+fa(Number(count))).join('، ')}</span>}</div>
+   {!event.details_json&&<p className="audit-event-history">جزئیات این فعالیت در زمان انجام ذخیره نشده است.{title?' نام محتوای مرتبط از اطلاعات فعلی نمایش داده می‌شود.':''}</p>}
+   <div className="audit-event-footer">{courseId&&<a href={'/?page=courses&course='+encodeURIComponent(courseId)}>مشاهده دوره و درس‌ها ←</a>}<details><summary>جزئیات فنی برای پشتیبانی</summary><dl><div><dt>کد فعالیت</dt><dd><bdi>{event.action}</bdi></dd></div><div><dt>شناسه مورد مرتبط</dt><dd><bdi>{event.target_id}</bdi></dd></div></dl></details></div>
+  </>}
+ </article>;
+}
