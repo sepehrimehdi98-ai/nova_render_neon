@@ -9,7 +9,7 @@ function parseChatInput(question,purpose='auto'){
 }
 async function resolveChatLinks(question,fetcher=require('./chat-reference').fetchChatReference){
  const {links}=parseChatInput(question);const sources=[],notices=[];
- for(const link of links){try{const url=require('./chat-reference').chatUrl(link);const body=await fetcher(url.href);sources.push({id:'link:'+createHash('sha256').update(url.href).digest('hex'),url:url.href,title:url.hostname,text:body.slice(0,6000)});}catch{notices.push('لینک خوانده نشد: '+link+' — صفحه باید عمومی، متنی و قابل دسترسی با HTTPS باشد. می‌توانید متن آن را هم در گفتگو بفرستید.');}}
+ const resolved=await Promise.all(links.map(async link=>{try{const url=require('./chat-reference').chatUrl(link);const body=await fetcher(url.href);return {source:{id:'link:'+createHash('sha256').update(url.href).digest('hex'),url:url.href,title:url.hostname,text:body.slice(0,6000)}};}catch{return {notice:'لینک خوانده نشد: '+link+' — صفحه باید عمومی، متنی و قابل دسترسی با HTTPS باشد. می‌توانید متن آن را هم در گفتگو بفرستید.'};}}));for(const item of resolved){if(item.source)sources.push(item.source);if(item.notice)notices.push(item.notice);}
  return {sources,notices};
 }
 function responseLanguage(question){return /[\u0600-\u06ff]/.test(String(question))?'Persian':'English'}

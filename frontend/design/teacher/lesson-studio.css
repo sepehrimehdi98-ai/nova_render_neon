@@ -163,6 +163,7 @@
 .studio-notice{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:100;display:flex;align-items:center;gap:20px;background:#142c53;color:white;border-radius:9px;padding:12px 18px;font-size:13px;max-width:calc(100% - 32px);box-shadow:0 4px 22px #122b4322;}
 .studio-notice button{background:transparent;border:0;color:white;font-size:23px;}
 .studio-preview-content{max-width:900px;margin:25px auto;}
+.studio-preview .studio-header p{font-size:12px;color:#64748b;margin:6px 0}.studio-preview .studio-preview-content{background:#f6f9f6;border-radius:14px}.studio-preview .lesson-experience :is(button,input,textarea){font-family:Vazirmatn,Tahoma}.studio-preview .lesson-experience .le-sidebar{top:95px}
 .studio-preview-content>h2{font-size:28px;}
 .studio-preview-content>p{margin:10px 0 24px;color:#6e798e;}
 .studio-preview-block{background:white;border:1px solid var(--studio-line);border-radius:9px;padding:20px;margin:16px 0;}
