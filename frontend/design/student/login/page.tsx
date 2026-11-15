@@ -149,9 +149,7 @@ export default function LoginPage() {
             </label>
             <div className="flex items-center justify-between text-[9px]">
               <span className="text-[#746d78]">ورود امن به حساب آموزشی</span>
-              <button type="button" onClick={()=>setRecoveryOpen(true)} className="font-bold text-[#5e3da6]">
-                رمز را فراموش کردی؟
-              </button>
+              <span className="font-bold text-[#5e3da6]">بازیابی با تأیید مدیر</span>
             </div>
             {error && (
               <p role="alert" className="rounded-xl bg-[#fff0ed] px-3 py-2.5 text-[9px] font-bold text-[#c94e39]">

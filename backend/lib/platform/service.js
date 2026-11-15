@@ -219,7 +219,7 @@ async function createPlatform(store, { demo = false, origin = 'http://127.0.0.1:
                     fail(403, 'مبدأ درخواست معتبر نیست.');
                 data = await body(req);
             }
-            const recovery = await publicRecovery({ store, route, req, data, send, res, hashPassword, hash, fail });
+            const recovery = await publicRecovery({ store, route, req, data, send, res, hashPassword, hash, fail, portalRole });
             if (recovery)
                 return recovery;
             if(route==='/lesson-note'&&req.method==='POST')await store.tx(async q=>{const actor=await auth(q,req);if(!actor)fail(401,'ابتدا وارد شوید.');await require('./extensions').limit(q,'lesson-note:'+actor.id,60,60000);});

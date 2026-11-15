@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS nova_attempts(id TEXT PRIMARY KEY,user_id TEXT NOT NU
 CREATE INDEX IF NOT EXISTS nova_attempts_scope ON nova_attempts(user_id,lesson_id,version);
 CREATE TABLE IF NOT EXISTS nova_progress(user_id TEXT NOT NULL REFERENCES nova_users(id),lesson_id TEXT NOT NULL,version INTEGER NOT NULL,video_ack INTEGER NOT NULL DEFAULT 0 CHECK(video_ack IN(0,1)),completed_at TEXT,updated_at TEXT NOT NULL,PRIMARY KEY(user_id,lesson_id,version),FOREIGN KEY(lesson_id,version) REFERENCES nova_versions(lesson_id,version));
 CREATE TABLE IF NOT EXISTS nova_recovery_requests(id TEXT PRIMARY KEY,username TEXT NOT NULL,user_id TEXT REFERENCES nova_users(id),status TEXT NOT NULL DEFAULT 'open',created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_recovery_verifications(request_id TEXT PRIMARY KEY REFERENCES nova_recovery_requests(id),reviewer_id TEXT NOT NULL REFERENCES nova_users(id),note TEXT NOT NULL,reviewed_at TEXT NOT NULL,revision TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS nova_recovery_status_date ON nova_recovery_requests(status,created_at);
 CREATE TABLE IF NOT EXISTS nova_admin_recovery_codes(code_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES nova_users(id),created_at TEXT NOT NULL,used_at TEXT);
 CREATE TABLE IF NOT EXISTS nova_reset_tokens(token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES nova_users(id),expires_at TEXT NOT NULL,used_at TEXT,issued_by TEXT NOT NULL REFERENCES nova_users(id));
 CREATE TABLE IF NOT EXISTS nova_reviews(submission_id TEXT PRIMARY KEY REFERENCES nova_practice(id),reviewer_id TEXT NOT NULL REFERENCES nova_users(id),grade INTEGER NOT NULL CHECK(grade>=0 AND grade<=100),feedback TEXT NOT NULL,revision INTEGER NOT NULL,updated_at TEXT NOT NULL);

@@ -3,22 +3,18 @@ const { randomUUID, randomBytes, createHash } = require('node:crypto');
 const stamp = () => new Date().toISOString();
 async function limit(q, key, max = 5, window = 900000) { const k = createHash('sha256').update(key).digest('hex'); const row = await q.one('SELECT * FROM nova_throttles WHERE key_hash=?', [k]); const fresh = !row || Date.now() - Number(row.window_at) > window; if (!fresh && row.failures >= max)
     throw Object.assign(new Error('درخواست زیاد است؛ کمی بعد تلاش کنید.'), { status: 429 }); await q.run('INSERT INTO nova_throttles(key_hash,failures,window_at) VALUES(?,?,?) ON CONFLICT(key_hash) DO UPDATE SET failures=excluded.failures,window_at=excluded.window_at', [k, fresh ? 1 : row.failures + 1, fresh ? Date.now() : Number(row.window_at)]); }
-async function publicRecovery({ store, route, req, data, send, res, hashPassword, hash, fail }) {
+async function publicRecovery({ store, route, req, data, send, res, hashPassword, hash, fail, portalRole }) {
     const adminRecovery=await require('./admin-recovery').complete({store,route,req,data,send,res,hashPassword,fail});if(adminRecovery)return adminRecovery;
     if (!['/recovery/request', '/recovery/complete'].includes(route) || req.method !== 'POST')
         return null;
     const token = typeof data.token === 'string' ? data.token : '';
-    if (route === '/recovery/request')
-        return store.tx(async (q) => { await limit(q, 'recovery-request:' + require('./demo-features').clientIp(req), 5); const username = String(data.username || '').trim().toLowerCase().slice(0, 80); if (!username)
-            fail(400, 'نام کاربری را وارد کنید.'); const user = await q.one('SELECT id FROM nova_users WHERE username=? AND active=1', [username]); if (user)
-            await q.run('INSERT INTO nova_recovery_requests(id,username,user_id,status,created_at) VALUES(?,?,?,\'open\',?)', [randomUUID(), username, user.id, stamp()]); return send(res, 200, { message: 'اگر حساب فعال باشد، درخواست برای مدیر ثبت می‌شود. کد بازیابی را پس از تأیید هویت از مدیر دریافت کنید.' }); });
+    if(route==='/recovery/request')return require('./recovery-workflow').request({store,req,data,send,res,fail,portalRole});
     if (!/^[a-f0-9]{64}$/.test(token) || typeof data.password !== 'string' || data.password.length < 12 || data.password.length > 256)
         fail(400, 'کد یا گذرواژه معتبر نیست.');
     // Reserve a request slot before expensive hashing, including invalid/expired codes.
     await store.tx(q => limit(q, 'recovery-complete:' + require('./demo-features').clientIp(req), 8));
     const encoded = await hashPassword(data.password);
-    return store.tx(async (q) => { const row = await q.one('SELECT t.* FROM nova_reset_tokens t JOIN nova_users u ON u.id=t.user_id WHERE t.token_hash=? AND t.used_at IS NULL AND t.expires_at>? AND u.active=1' + (q.postgres ? ' FOR UPDATE OF t' : ''), [hash(token), stamp()]); if (!row)
-        fail(400, 'کد بازیابی منقضی یا استفاده شده است.'); await require('./demo-features').lockIdentity(q,row.user_id); await q.run('UPDATE nova_users SET password_hash=? WHERE id=?', [encoded, row.user_id]); await q.run('UPDATE nova_reset_tokens SET used_at=? WHERE user_id=? AND used_at IS NULL', [stamp(), row.user_id]); await q.run('DELETE FROM nova_sessions WHERE user_id=?', [row.user_id]); await q.run("UPDATE nova_recovery_requests SET status='resolved' WHERE user_id=? AND status IN('open','issued')", [row.user_id]); await q.run('INSERT INTO nova_audit(id,actor_id,action,target_id,created_at) VALUES(?,?,?,?,?)', [randomUUID(), row.user_id, 'account.recovered', row.user_id, stamp()]); return send(res, 200, { message: 'گذرواژه تغییر کرد. با گذرواژه تازه وارد شوید.' }); });
+    return store.tx(async q=>{const lookup=await q.one('SELECT t.user_id FROM nova_reset_tokens t JOIN nova_users u ON u.id=t.user_id WHERE t.token_hash=? AND t.used_at IS NULL AND t.expires_at>? AND u.active=1',[hash(token),stamp()]);if(!lookup)fail(400,'کد بازیابی منقضی یا استفاده شده است.');await require('./demo-features').lockIdentity(q,lookup.user_id);const row=await q.one("SELECT t.*,u.role AS account_role FROM nova_reset_tokens t JOIN nova_users u ON u.id=t.user_id WHERE t.token_hash=? AND t.used_at IS NULL AND t.expires_at>? AND u.active=1 AND u.role IN('student','teacher')",[hash(token),stamp()]);if(!row||portalRole&&row.account_role!==portalRole)fail(400,'کد بازیابی منقضی یا استفاده شده است.');await q.run('UPDATE nova_users SET password_hash=? WHERE id=?',[encoded,row.user_id]);await q.run('UPDATE nova_reset_tokens SET used_at=? WHERE user_id=? AND used_at IS NULL',[stamp(),row.user_id]);await q.run('DELETE FROM nova_sessions WHERE user_id=?',[row.user_id]);await q.run("UPDATE nova_recovery_requests SET status='resolved' WHERE user_id=? AND status IN('open','issued')",[row.user_id]);await q.run('INSERT INTO nova_audit VALUES(?,?,?,?,?)',[randomUUID(),row.user_id,'account.recovered',row.user_id,stamp()]);return send(res,200,{message:'گذرواژه تغییر کرد. با گذرواژه تازه وارد شوید؛ نشست‌های قبلی باطل شدند.'});});
 }
 async function checkPrerequisites(q, u, lesson) { const current=await q.one('SELECT course_id,position FROM nova_lessons WHERE id=?',[lesson.id]);if(current){const previous=await q.one("SELECT l.id,l.published_version,v.content_json FROM nova_lessons l JOIN nova_versions v ON v.lesson_id=l.id AND v.version=l.published_version WHERE l.course_id=? AND l.position<? AND l.status='published' ORDER BY l.position DESC LIMIT 1",[current.course_id,current.position]);if(previous&&JSON.parse(previous.content_json).completion?.gateNext===true&&!await q.one('SELECT lesson_id FROM nova_progress WHERE user_id=? AND lesson_id=? AND version=? AND completed_at IS NOT NULL',[u.id,previous.id,previous.published_version]))throw Object.assign(new Error('ابتدا جلسه قبل را طبق شرایط دبیر تکمیل کنید.'),{status:403});}const missing = await q.one(`SELECT r.required_id FROM nova_prerequisites r JOIN nova_lessons l ON l.id=r.required_id LEFT JOIN nova_progress p ON p.lesson_id=l.id AND p.user_id=? AND p.version=l.published_version WHERE r.lesson_id=? AND (l.status<>'published' OR p.completed_at IS NULL) LIMIT 1`, [u.id, lesson.id]); if (missing)
     throw Object.assign(new Error('ابتدا درس‌های پیش‌نیاز را تکمیل کنید.'), { status: 403 }); }
@@ -40,31 +36,8 @@ async function extensions(ctx) {
         await audit(q, u, 'account.password', u.id);
         return send(res, 200, { message: 'گذرواژه تغییر کرد؛ دوباره وارد شوید.' });
     }
-    if (route === '/admin/recovery' && req.method === 'GET') {
-        if (u.role !== 'admin')
-            fail(403, 'فقط مدیر مجاز است.');
-        return send(res, 200, { requests: await q.all('SELECT r.id,r.username,r.status,r.created_at,u.name,u.role FROM nova_recovery_requests r JOIN nova_users u ON u.id=r.user_id ORDER BY r.created_at DESC LIMIT 100') });
-    }
-    let match = route.match(/^\/users\/([^/]+)\/recovery$/);
-    if (match && req.method === 'POST') {
-        if (u.role !== 'admin')
-            fail(403, 'فقط مدیر مجاز است.');
-        const target = await q.one('SELECT * FROM nova_users WHERE id=?', [id(match[1])]);
-        if (!target || !target.active || target.role === 'admin')
-            fail(400, 'برای این حساب نمی‌توان کد صادر کرد.');
-        if (data.identityConfirmed !== true)
-            fail(400, 'تأیید هویت صاحب حساب لازم است.');
-        await limit(q, 'reset-issue:' + target.id, 5);
-        await require('./demo-features').lockIdentity(q,target.id);
-        const token = randomBytes(32).toString('hex'), expiresAt = new Date(Date.now() + 900000).toISOString();
-        await q.run('UPDATE nova_reset_tokens SET used_at=? WHERE user_id=? AND used_at IS NULL', [stamp(), target.id]);
-        await q.run('INSERT INTO nova_reset_tokens(token_hash,user_id,expires_at,issued_by) VALUES(?,?,?,?)', [hash(token), target.id, expiresAt, u.id]);
-        await q.run("UPDATE nova_users SET password_hash='!reset-required' WHERE id=?", [target.id]);
-        await q.run('DELETE FROM nova_sessions WHERE user_id=?', [target.id]);
-        await q.run("UPDATE nova_recovery_requests SET status='issued' WHERE user_id=? AND status='open'", [target.id]);
-        await audit(q, u, 'account.recovery-issued', target.id);
-        return send(res, 200, { token, expiresAt, message: 'کد یک‌بارمصرف است؛ آن را فقط به صاحب حساب تأییدشده بدهید. ورود قبلی غیرفعال شد.' });
-    }
+    const recoveryWorkflow=await require('./recovery-workflow').routes(ctx);if(recoveryWorkflow)return recoveryWorkflow;
+    let match;
     if (route === '/admin/operations' && req.method === 'GET') {
         if (u.role !== 'admin')
             fail(403, 'فقط مدیر مجاز است.');

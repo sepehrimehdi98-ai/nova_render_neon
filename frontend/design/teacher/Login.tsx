@@ -67,7 +67,7 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
           <button type="submit" disabled={loginBusy} className="primary-btn login-btn">
             {loginBusy?'در حال ورود…':'ورود به نووا'} <ArrowLeft size={18}/>
           </button>
-          <p className="login-help"><button type="button" onClick={()=>setRecoveryOpen(true)}>رمز عبور را فراموش کرده‌اید؟</button></p><AccountRecovery open={recoveryOpen} onToggle={setRecoveryOpen}/>
+          <p className="login-help">در صورت فراموشی رمز، درخواست بررسی هویت را برای مدیر بفرستید.</p><AccountRecovery open={recoveryOpen} onToggle={setRecoveryOpen}/>
           <DesignerCredit />
         </form>
       </section>
