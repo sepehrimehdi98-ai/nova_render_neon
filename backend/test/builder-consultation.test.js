@@ -2,6 +2,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto');
 const {openStore}=require('../lib/platform/store'),{start}=require('../product-server'),{processAi}=require('../lib/platform/rag-engine'),{documentEvidence,validateBuilderReply}=require('../lib/platform/builder-ai');
 test('teacher source answers get one bounded repair while ordinary greetings need no citation',async()=>{
+ const late=documentEvidence([{id:'late',name:'Long text',pages_json:JSON.stringify([{page:1,text:'Unrelated introduction. '.repeat(700)+' Workshop mascot Copper Finch.'}])}],'What is the workshop mascot in the uploaded file?');assert.match(late[0].text,/Copper Finch/);assert.ok(late[0].text.length<=2200);
  const {jsonWithValidation,validateConversationReply}=require('../lib/platform/builder-ai'),evidence=[{id:'doc:owned:1',text:'Silver Lynx',title:'Club'}];let calls=0;
  const client={json:async()=>{calls++;return {answer:'Silver Lynx',basis:'sources',citations:[calls===1?'invented':'doc:owned:1']}}};
  const answer=await jsonWithValidation(client,'Answer with citations',{},v=>validateConversationReply(v,evidence,'According to the selected document'));assert.equal(calls,2);assert.equal(answer.__attempts,2);assert.deepEqual(answer.citations,['doc:owned:1']);
