@@ -199,16 +199,15 @@ const nav = [
 export function Logo() {
   return (
     <Link href="/" className="flex items-center gap-3" aria-label="نووا، خانه">
-      <span className="grid size-10 place-items-center rounded-[14px] bg-[#157659] text-white shadow-[0_8px_20px_rgba(21,118,89,.15)]">
+      <span className="grid size-10 place-items-center rounded-[14px] bg-[#2466d6] text-white">
         <svg viewBox="0 0 34 34" className="size-7" fill="none">
           <path
-            d="M7 24V10l10 7 10-7v14"
+            d="M9 25V9l16 16V9"
             stroke="currentColor"
             strokeWidth="3.2"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          <circle cx="17" cy="17" r="3" fill="#B7F536" />
         </svg>
       </span>
       <span>

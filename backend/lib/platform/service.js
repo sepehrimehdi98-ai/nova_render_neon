@@ -281,6 +281,7 @@ async function createPlatform(store, { demo = false, origin = 'http://127.0.0.1:
  const workers=await q.all('SELECT * FROM nova_worker_health');
  return send(res,200,{workers:workers.map(w=>({...w,stale:Date.now()-Date.parse(w.last_seen)>900000})),ai:await q.all('SELECT status,COUNT(*) AS count FROM nova_ai_jobs GROUP BY status'),grading:await q.all('SELECT status,COUNT(*) AS count FROM nova_grading_jobs GROUP BY status')});
  }
+ const adminDataResult=await require('./admin-data').adminDataRoutes({q,u,route,req,url,send,res,fail});if(adminDataResult)return adminDataResult;
  const homeResult=await require('./home').homeRoutes({q,u,route,req,send,res,fail});if(homeResult)return homeResult;
  const plannerResult=await require('./planner').plannerRoutes({q,u,route,req,data,url,scope,send,res,fail,id,text});if(plannerResult)return plannerResult;
  const profileResult=await require('./student-profile').profileRoutes({q,u,route,req,data,url,send,res,fail,text,integer,audit});if(profileResult)return profileResult;

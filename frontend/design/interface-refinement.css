@@ -1,0 +1,24 @@
+/* Quiet chat focus: the surface indicates focus, not a box around the text. */
+.platform-shell.nova-interface-meta .student-conversation-layout .student-input-surface{border:1px solid #d5dbe2;background:#fff;box-shadow:none;border-radius:16px;transition:border-color .15s ease}
+.platform-shell.nova-interface-meta .student-conversation-layout .student-input-surface:focus-within{border-color:#8995a5;box-shadow:none;background:#fff}
+.platform-shell.nova-interface-meta .student-conversation-layout .student-input-surface textarea,
+.platform-shell.nova-interface-meta .student-conversation-layout .student-input-surface textarea:focus,
+.platform-shell.nova-interface-meta .student-conversation-layout .student-input-surface textarea:focus-visible{border:0!important;outline:none!important;box-shadow:none!important;background:transparent!important;border-radius:0;color:#293442;caret-color:#293442}
+.platform-shell.nova-interface-meta .student-conversation-layout .student-input-surface:has(textarea:focus-visible){outline:2px solid #aab4c1;outline-offset:2px}
+.platform-shell.nova-interface-meta .source-composer:focus-within{border-color:#8995a5!important;box-shadow:none!important}
+.platform-shell.nova-interface-meta .source-composer>textarea:focus{outline:none!important;border:0!important;box-shadow:none!important;background:transparent!important}
+.platform-shell .student-profile-view .sp-identity-top{gap:14px;align-items:center;isolation:isolate}
+.platform-shell .student-profile-view .sp-identity-top>div:last-child{flex:1;min-width:0;overflow-wrap:anywhere}
+.platform-shell .student-profile-view .sp-identity-top h2{font-size:21px;line-height:1.8;overflow-wrap:anywhere}
+.platform-shell .student-profile-view .sp-current-avatar{width:88px;height:88px;min-width:88px;flex:none;overflow:hidden;isolation:isolate;align-self:center}
+.platform-shell .student-profile-view .sp-current-avatar>span{font:52px/1 'Segoe UI Emoji','Apple Color Emoji',sans-serif;display:block;width:100%;text-align:center;overflow:hidden}
+.platform-shell .student-profile-view .sp-current-avatar>img{display:block;width:100%;height:100%;object-fit:cover}
+.platform-shell .student-profile-view .sp-avatar-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.platform-shell .student-profile-view .sp-avatar-grid button{min-width:0;overflow:hidden;isolation:isolate;min-height:54px}
+.platform-shell .student-profile-view .sp-avatar-grid button>span{font:32px/1.2 'Segoe UI Emoji','Apple Color Emoji',sans-serif;display:block;width:100%;overflow:hidden;text-align:center}
+.platform-shell .student-profile-view .sp-avatar-grid button>svg{top:3px;right:3px;width:16px;height:16px;background:#fff;border-radius:50%;z-index:1}
+.platform-shell .student-profile-view .sp-avatar-actions{gap:10px}
+.platform-shell .student-profile-view .sp-rank-shield{flex:none}
+.platform-shell .student-profile-view .sp-awards-heading{flex-wrap:wrap}
+@media(max-width:760px){.platform-shell .student-profile-view .sp-current-avatar{width:76px;height:76px;min-width:76px}.platform-shell .student-profile-view .sp-current-avatar>span{font-size:45px}.platform-shell .student-profile-view .sp-avatar-grid button>span{font-size:30px}.platform-shell .student-profile-view .sp-avatar-actions .sp-button{flex:1 1 130px;font-size:12px}.platform-shell .student-profile-view .sp-heading{align-items:flex-start;flex-wrap:wrap}.platform-shell .student-profile-view .sp-identity-top h2{font-size:20px}}
+@media(prefers-reduced-motion:reduce){.student-input-surface{transition:none!important}}
