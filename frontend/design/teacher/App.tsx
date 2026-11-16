@@ -1059,13 +1059,13 @@ function Dashboard() {
     }),
     [],
   );
+  if(page==='برنامه‌ریز')return <main><Planner/></main>;
   return (
     <div className={"app-shell"+(page==="دستیار"?" teacher-chat-shell":"")}>
       {page!=="دستیار"&&<Sidebar page={page} setPage={setPage} />}
       <div className="main-shell">
         {page!=="دستیار"&&<Topbar title={titles[page]} onNew={() => setPage("درس‌ها")} />}
         <div className={page==="دستیار"?"teacher-chat-page":"page"}>
-          {page === "برنامه‌ریز" && <Planner/>}
           {page === "خانه" && <خانه goدرس‌ها={() => setPage("درس‌ها")} />}
           {page === "درس‌ها" && <درس‌هاPage />}
           {page === "آزمون‌ها" && <آزمون‌هاPage />}

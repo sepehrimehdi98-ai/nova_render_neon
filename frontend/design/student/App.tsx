@@ -14,6 +14,7 @@ import {DashboardShell} from './nova-ui';
 export default function App(){
  const pages:Record<string,React.ComponentType>={'/planner':Planner,'/':Page0,'/assistant':Page1,'/lessons':Page2,'/login':Page3,'/profile':Page4,'/progress':Page5,'/exams':()=> <CourseWorkspace screen="exams"/>,'/lessons/python-basics':Page6};
  const Page=pages[location.pathname.replace(/\/$/,'')||'/']||pages['/'];
+ if(location.pathname==='/planner')return <main><Planner/></main>;
  if(location.pathname==='/profile')return <Page4/>;
  if(location.pathname==='/lessons/view')return <StoredLesson/>;
  if(location.pathname==='/lessons')return <Page2/>;
