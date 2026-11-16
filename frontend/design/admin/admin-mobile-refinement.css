@@ -97,3 +97,15 @@
 .admin-live-main :is(.course-status,.admin-course-counts)>svg{flex-shrink:0}
 .admin-live-main .admin-lesson-cards article>header{align-items:flex-start}
 @media(max-width:480px){.admin-live-main .admin-lesson-cards article>header>.course-status{margin-inline-start:44px}.admin-live-main .admin-course-summary>div:first-child>.course-status{margin-inline-start:0}.admin-live-main .admin-lesson-cards article>footer>.btn{flex:1 1 150px}}
+
+/* Mobile status labels get a dedicated row rather than competing with titles. */
+@media(max-width:600px){
+ .admin-live-main .admin-lesson-cards article>header{display:grid;grid-template-columns:32px minmax(0,1fr);gap:10px 12px}
+ .admin-live-main .admin-lesson-cards article>header>.course-status{grid-column:2;justify-self:start;margin-inline-start:0;font-size:14px;line-height:2;max-width:100%;padding:6px 10px}
+ .admin-live-main .admin-course-summary>div:first-child{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px}
+ .admin-live-main .admin-course-summary>div:first-child>div{min-width:0}
+ .admin-live-main .admin-course-summary>div:first-child>.course-status{grid-column:2;justify-self:start;margin:0;font-size:14px;line-height:2;padding:6px 10px}
+ .admin-live-main .admin-course-choices .course-status{font-size:13px;line-height:2;padding:5px 9px}
+ .admin-live-main .admin-course-counts>span{font-size:13px;line-height:2;max-width:100%}
+ .admin-live-main :is(.admin-course-summary h2,.admin-lesson-cards h3,.admin-course-choices strong){white-space:normal;overflow:visible;text-overflow:clip;line-height:2}
+}
