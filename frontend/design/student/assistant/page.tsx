@@ -1,5 +1,5 @@
 import AiGuide from '../../AiGuide';
-import ChatTitle from '../../ChatTitle';
+import ChatHistoryList,{type ChatThread} from '../../ChatHistoryList';
 import {useChatViewport} from '../../useChatViewport';
 import {Paperclip,X,BookOpen,ChevronDown} from 'lucide-react';
 import AiMessage from '../../AiMessage';
@@ -36,7 +36,7 @@ export default function AssistantPage() {
   const [input, setInput] = useState('')
   const [purpose,setPurpose]=useState('auto')
   const [webAvailable,setWebAvailable]=useState(false);
-  const [webSearch,setWebSearch]=useState(false),[threads,setThreads]=useState<Row[]>([]),[threadId,setThreadId]=useState(''),[threadRefresh,setThreadRefresh]=useState(0),[userId,setUserId]=useState(''),[newTitle,setNewTitle]=useState('');const posting=useRef(false),chatContext=useRef({courseId:'',threadId:''});
+  const [webSearch,setWebSearch]=useState(false),[threads,setThreads]=useState<ChatThread[]>([]),[threadId,setThreadId]=useState(''),[threadRefresh,setThreadRefresh]=useState(0),[userId,setUserId]=useState('');const posting=useRef(false),chatContext=useRef({courseId:'',threadId:''});
   const [documents,setDocuments]=useState<Row[]>([]),[uploading,setUploading]=useState(false),[uploadError,setUploadError]=useState('');const fileInput=useRef<HTMLInputElement>(null);
 
   const [messages, setMessages] = useState<Message[]>([])
@@ -59,15 +59,15 @@ export default function AssistantPage() {
 
   chatContext.current={courseId,threadId};
   function refreshThreads(cid=courseId){return api('/courses/'+cid+'/student-chats').then(r=>{if(chatContext.current.courseId===cid)setThreads(r.threads)})}
-  useEffect(()=>{setMessages([]);setThreads([]);setThreadId('');setNewTitle('');if(!courseId||!userId)return;let live=true;api('/courses/'+courseId+'/student-chats').then(r=>{if(live){setThreads(r.threads);let saved='';try{saved=sessionStorage.getItem('nova-student-thread:'+userId+':'+courseId)||''}catch{}setThreadId(r.threads.some((t:Row)=>t.id===saved)?saved:r.threads[0]?.id||'')}}).catch(e=>{if(live)setNotice(e.message)});return()=>{live=false}},[courseId,userId]);
+  useEffect(()=>{setMessages([]);setThreads([]);setThreadId('');if(!courseId||!userId)return;let live=true;api('/courses/'+courseId+'/student-chats').then(r=>{if(live){setThreads(r.threads);let saved='';try{saved=sessionStorage.getItem('nova-student-thread:'+userId+':'+courseId)||''}catch{}setThreadId(r.threads.some((t:Row)=>t.id===saved)?saved:r.threads[0]?.id||'')}}).catch(e=>{if(live)setNotice(e.message)});return()=>{live=false}},[courseId,userId]);
   useEffect(()=>{if(!courseId||!threadId)return;try{sessionStorage.setItem('nova-student-thread:'+userId+':'+courseId,threadId)}catch{}let live=true,initial=true,timer:ReturnType<typeof setTimeout>;async function read(){try{const r=await api('/courses/'+courseId+'/student-chats/'+threadId);if(!live)return;if(initial){const last=r.turns.at(-1);setDocuments((last?.context.documents||[]).map((d:Row)=>({...d,courseId})));if(last&&last.status!=='blocked')setLessonId(last.context.lessonId);initial=false}const next:Message[]=[];for(const turn of r.turns){next.push({role:'user',text:turn.question,context:[turn.context.lessonTitle,...(turn.context.documents||[]).map((d:Row)=>d.name)].filter(Boolean).join(' · ')});if(turn.status==='completed')next.push({role:'bot',text:formatConsultResult(turn.result,turn.question)});else if(turn.status==='blocked')next.push({role:'bot',text:aiFailureMessage(turn.result),error:true})}setMessages(next);const pending=r.turns.find((t:Row)=>t.status==='queued'||t.status==='running');setTyping(Boolean(pending)||posting.current);if(pending)timer=setTimeout(()=>poll(pending.jobId),900)}catch(e){if(live){setNotice((e as Error).message);setTyping(false)}}}async function poll(jobId:string){if(!live)return;try{const r=await api('/courses/'+courseId+'/ai/jobs?jobId='+jobId);if(!live)return;const j=r.jobs[0];if(j&&['queued','running'].includes(j.status))timer=setTimeout(()=>poll(jobId),1200);else await read()}catch(e){if(live){setNotice((e as Error).message);timer=setTimeout(()=>poll(jobId),3000)}}}void read();return()=>{live=false;clearTimeout(timer)}},[courseId,threadId,threadRefresh]);
-  async function newChat(){if(typing||!courseId)return;setTyping(true);try{const t=await api('/courses/'+courseId+'/student-chats',{});setNewTitle('');setMessages([]);setThreadId(t.id);setInput('');setSidebar(false);setNotice('');await refreshThreads();inputRef.current?.focus()}catch(e){setNotice((e as Error).message)}finally{setTyping(false)}}
+  async function newChat(){if(typing||!courseId)return;setTyping(true);try{const t=await api('/courses/'+courseId+'/student-chats',{});setMessages([]);setThreadId(t.id);setInput('');setSidebar(false);setNotice('');await refreshThreads();inputRef.current?.focus()}catch(e){setNotice((e as Error).message)}finally{setTyping(false)}}
 
   async function attach(file:File){if(!courseId)return;setUploadError('');if(file.size>1500000||!file.size){setUploadError('فایل باید بین ۱ بایت و ۱٫۵ مگابایت باشد.');return}if(!/\.(pdf|docx|txt|md)$/i.test(file.name)){setUploadError('فقط PDF متنی، DOCX، TXT و Markdown پذیرفته می‌شود.');return}if(documents.length>=6){setUploadError('حداکثر شش فایل برای هر پیام انتخاب کنید.');return}setUploading(true);const captured=courseId;try{const base64=await new Promise<string>((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=()=>reject(Error('خواندن فایل ممکن نشد.'));r.readAsDataURL(file)});const doc=await api('/courses/'+captured+'/documents',{file:{name:file.name,base64}});setDocuments(d=>[...d,{...doc,courseId:captured}])}catch(e){setUploadError((e as Error).message)}finally{setUploading(false)}}
   async function send(text = input) {
     if(!text.trim()||typing||posting.current||uploading||contextLoading||!lessonId||!courseId)return;
     posting.current=true;setTyping(true);setNotice('');const documentIds=documents.filter(d=>d.courseId===courseId).map(d=>d.id);
-    try{let tid=threadId;if(!tid){const t=await api('/courses/'+courseId+'/student-chats',{title:newTitle||'گفت‌وگوی جدید'});tid=t.id;setThreadId(tid)}const cap=['online','local'].includes(service)?{ai:service==='online'}:await api('/capabilities');setService(cap.ai?'online':'local');if('webSearch' in cap)setWebAvailable(Boolean(cap.webSearch));
+    try{let tid=threadId;if(!tid){const t=await api('/courses/'+courseId+'/student-chats',{title:'گفت‌وگوی جدید'});tid=t.id;setThreadId(tid)}const cap=['online','local'].includes(service)?{ai:service==='online'}:await api('/capabilities');setService(cap.ai?'online':'local');if('webSearch' in cap)setWebAvailable(Boolean(cap.webSearch));
       await api(cap.ai?'/courses/'+courseId+'/ai/jobs':'/courses/'+courseId+'/student-chats/'+tid+'/local',{threadId:tid,lessonId,question:text.trim(),purpose,documentIds,publicTopic:webSearch?text.trim().slice(0,200):''});setInput('');await refreshThreads();setThreadRefresh(n=>n+1);
     }catch(e){setNotice(e instanceof Error?e.message:'ارسال انجام نشد؛ متن درخواست حفظ شده است.');setTyping(false)}finally{posting.current=false;setThreadRefresh(n=>n+1)}
   }
@@ -111,7 +111,7 @@ export default function AssistantPage() {
         </button>
         <div className="mt-5 flex-1 overflow-y-auto px-1">
           <h2 className="student-ai-history-heading">گفت‌وگوهای ذخیره‌شده</h2>
-          {threads.map(t=><button type="button" key={t.id} disabled={typing} aria-pressed={threadId===t.id} className="student-ai-history-link student-chat-session" onClick={()=>{setTyping(true);setThreadId(t.id);setThreadRefresh(n=>n+1);setSidebar(false);setNotice('')}}><Icon name="bot" className="size-4"/><span>{t.title}</span></button>)}
+          <ChatHistoryList threads={threads} active={threadId} disabled={typing} onSelect={id=>{setTyping(true);setThreadId(id);setThreadRefresh(n=>n+1);setSidebar(false);setNotice('')}} onRename={async(id,title)=>{await api('/courses/'+courseId+'/student-chats/'+id+'/rename',{title});await refreshThreads()}}/>
           {!threads.length&&<p className="student-ai-history-empty">برای شروع یک گفت‌وگوی مستقل، پیام بفرستید یا گفت‌وگوی جدید بسازید.</p>}
           <p className="student-ai-history-empty">گفت‌وگوها برای همین حساب و دوره ذخیره می‌شوند و پس از ورود دوباره قابل مشاهده‌اند.</p>
         </div>
@@ -147,7 +147,7 @@ export default function AssistantPage() {
             دستیار نووا
 
           </div>
-          <AiGuide scope=".student-assistant-chat" sections={[{selector:'.chat-title-control',title:'گفتگوی دلخواه شما',body:'با نام‌گذاری، عنوان کوتاه خودتان را بنویسید؛ نام اختیاری است و پیام اول آن را عوض نمی‌کند. هر گفتگو مستقل و مخصوص همین حساب و دوره است.'},{selector:'textarea',title:'پرسش، فایل و جستجو',body:'فارسی یا انگلیسی بنویسید، لینک عمومی را در پیام بگذارید و با گیره فایل PDF متنی، DOCX، TXT یا MD تا ۱٫۵ مگابایت پیوست کنید. جستجوی عمومی وب اختیاری است. پاسخ و منابع را بررسی کنید.'},{selector:'.student-ai-context',title:'درس و هدف پاسخ',body:'دوره، درس و هدف پاسخ را مشخص کنید تا راهنمایی مرتبط بگیرید. از فهرست گفتگوها برای ادامه جلسه‌های قبلی استفاده کنید.'}]} label="راهنمای دستیار"/><div className="mr-auto flex items-center gap-2">
+          <AiGuide scope=".student-assistant-chat" sections={[{selector:'[aria-label="باز کردن فهرست گفت‌وگو"]',title:'گفتگوی دلخواه شما',body:'در فهرست گفتگوها، مداد کنار نام را بزنید و عنوان دلخواه بنویسید؛ نام اختیاری است و پیام اول آن را عوض نمی‌کند. هر گفتگو مستقل و مخصوص همین حساب و دوره است.'},{selector:'textarea',title:'پرسش، فایل و جستجو',body:'فارسی یا انگلیسی بنویسید، لینک عمومی را در پیام بگذارید و با گیره فایل PDF متنی، DOCX، TXT یا MD تا ۱٫۵ مگابایت پیوست کنید. جستجوی عمومی وب اختیاری است. پاسخ و منابع را بررسی کنید.'},{selector:'.student-ai-context',title:'درس و هدف پاسخ',body:'دوره، درس و هدف پاسخ را مشخص کنید تا راهنمایی مرتبط بگیرید. از فهرست گفتگوها برای ادامه جلسه‌های قبلی استفاده کنید.'}]} label="راهنمای دستیار"/><div className="mr-auto flex items-center gap-2">
             <span className="hidden items-center gap-1.5 text-[9px] text-[#918a96] sm:flex">
               <i className="size-1.5 rounded-full bg-[#5ac277]" />
               {typing?'در حال آماده‌سازی پاسخ':service==='online'?'پاسخ آنلاین':service==='local'?'جست‌وجو در درس':service==='unknown'?'وضعیت اتصال نامشخص':'بررسی سرویس…'}
@@ -160,7 +160,7 @@ export default function AssistantPage() {
               <Icon name="close" className="size-4" />
             </Link>
           </div>
-        </header><ChatTitle key={threadId||courseId} title={threadId?threads.find(t=>t.id===threadId)?.title:newTitle} disabled={typing} onSave={async title=>{if(!threadId){setNewTitle(title);return}await api('/courses/'+courseId+'/student-chats/'+threadId+'/rename',{title});await refreshThreads()}}/>
+        </header>
 
         <details className="student-ai-context"><summary><BookOpen size={18}/><span>انتخاب دوره و درس</span><strong>{contextLoading?'در حال دریافت…':courses.find(c=>c.id===courseId)?.title||'دوره‌ای در دسترس نیست'}</strong><ChevronDown size={16}/></summary><div><div className="student-course-segments" role="group" aria-label="انتخاب دوره پرسش">{courses.map(c=><button type="button" key={c.id} aria-pressed={courseId===c.id} disabled={typing||uploading} onClick={e=>{setCourseId(c.id);e.currentTarget.closest('details')?.removeAttribute('open')}}>{c.title}</button>)}</div><label className="student-course-native">دوره<select aria-label="دوره پرسش دستیار" disabled={typing} value={courseId} onChange={e=>setCourseId(e.target.value)}>{!courses.length&&<option value="">دوره‌ای در دسترس نیست</option>}{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label><label>درس<select aria-label="درس پرسش دستیار" disabled={typing||contextLoading} value={lessonId} onChange={e=>setLessonId(e.target.value)}>{!lessons.length&&<option value="">درس منتشرشده‌ای در دسترس نیست</option>}{lessons.map(l=><option key={l.id} value={l.id} disabled={lockedLessons.includes(l.id)}>{l.title}{lockedLessons.includes(l.id)?' · نیازمند تکمیل پیش‌نیاز':''}</option>)}</select></label></div></details>
         {contextError&&<p className="student-ai-context-error" role="alert">{contextError}<button type="button" disabled={typing} onClick={()=>setContextAttempt(x=>x+1)}>تلاش دوباره</button></p>}

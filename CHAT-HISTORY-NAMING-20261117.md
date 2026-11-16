@@ -1,0 +1,15 @@
+# Naming chats in the history sidebar
+
+Student and teacher main assistants now share one history-row component. Each row has a conversation-selection button and a separate, always accessible pencil button. Naming happens inline in the history list, with save/cancel, Enter submission, Escape cancellation, a 120-character limit and an inline error. Titles wrap, active conversations are distinguished, and touch targets remain usable in narrow drawers. Teacher mobile history uses the same rows; rename controls do not dismiss the drawer, while selecting a conversation does.
+
+The main-chat naming strip is removed. New teacher conversations are persisted immediately when requested, so a new history entry can be named before sending a message. Student new conversations already use that behavior. Names remain optional; sending a message does not overwrite them. The existing account/course-scoped rename API and persistence/access tests are unchanged. The lesson builder still uses its lesson consultation, without inventing a separate named-session list for it; the admin panel has no independent main chat-history page.
+
+## Why online AI can stop responding
+
+A fresh live probe again returned `AI_DAILY_LIMIT`. This is the upstream account's shared daily quota, not a history/sidebar defect. Student drafting and answer review often require at least two model calls for one displayed answer; retries also consume capacity. All portals currently share the configured provider account.
+
+OpenRouter's current public policy for `:free` variants is 20 requests/minute and 50 requests/day, increased to 1,000/day after a qualifying $10 lifetime credit purchase (the documented fee/rounding threshold starts at $9). Check the actual account counter at `GET /api/v1/key` or in the provider dashboard. Creating more keys does not multiply the shared account allowance. If already on the higher tier, additional top-ups do not indefinitely increase that daily limit. Paid variants have separate billing and provider limits; the current application's free-only guard has not been disabled. No purchase, billing setting or provider change was made.
+
+Official references: [free-model policy](https://openrouter.ai/collections/free-models), [limits and account counter](https://openrouter.ai/docs/api_reference/limits), [credits settings](https://openrouter.ai/settings/credits). Limits can change; consult the account's current allowance before buying credits. After an upstream daily-limit error the existing backend can retain a five-minute cooldown, so newly available capacity may not be used immediately.
+
+Builds, typechecks, shared component checks and the platform regression suite validate code/rendering and existing rename access/persistence. Fresh browser screenshots remain unavailable because browser spawning is blocked in this environment. Live name persistence was validated in the preceding release; this release moves its controls without changing the API contract. Consult handoff evidence for current deployment delivery and the fresh provider-quota probe.
