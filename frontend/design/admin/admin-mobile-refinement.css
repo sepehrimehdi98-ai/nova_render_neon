@@ -65,3 +65,26 @@
  .admin-live-main .audit-event-heading time{width:100%;line-height:1.9}
  .admin-live-main .audit-event-footer a{min-height:44px;display:inline-flex;align-items:center}
 }
+
+/* Shared mobile rules for account forms, course review, recovery, media and tickets. */
+.admin-live-main header{height:auto;min-height:0}
+.admin-live-main :is(.live-two,.live-three,.media-cards,.ticket-columns,.admin-course-workspace,.recovery-review-grid)>*{min-width:0}
+.admin-live-main .table-scroll{max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
+.admin-live-main .table-scroll>table{min-width:600px}
+.admin-live-main :is(.media-item,.admin-course-summary,.recovery-detail-panel){overflow-wrap:anywhere}
+.admin-live-main :is(input,textarea,select){max-width:100%;min-width:0}
+.admin-live-main :is(.media-item img,.media-item video){max-width:100%;height:auto}
+@media(max-width:760px){
+ .admin-live-main :is(.live-two,.live-three,.media-cards,.admin-course-workspace,.recovery-review-grid){grid-template-columns:minmax(0,1fr)}
+ .admin-live-main :is(.section-top,.media-library-toolbar,.admin-course-actions,.admin-course-summary>div,.recovery-page-intro,.ticket-thread-heading){flex-wrap:wrap;gap:14px}
+ .admin-live-main .section-top h2{min-width:0;line-height:1.9}
+ .admin-live-main :is(.btn,.actions button,.admin-course-tabs button){white-space:normal;line-height:1.9;min-height:44px;max-width:100%}
+ .admin-live-main :is(.live-field,.live-field>span){min-width:0;overflow-wrap:anywhere}
+ .admin-live-main :is(.live-field input,.live-field textarea,.live-field select){font-size:16px}
+ .admin-live-main .media-library-toolbar>.live-field{width:100%;min-width:0}
+ .admin-live-main :is(.admin-course-catalog,.recovery-detail-panel){position:static}
+ .admin-live-main :is(.recovery-inbox-steps,.admin-course-meta){grid-template-columns:minmax(0,1fr)}
+ .admin-live-main .recovery-channel-badge{margin-inline-start:0;white-space:normal}
+ .admin-live-main .student-report-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+ .admin-live-main .student-report-actions button{min-height:44px;white-space:normal}
+}

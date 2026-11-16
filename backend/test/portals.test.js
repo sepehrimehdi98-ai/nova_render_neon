@@ -67,6 +67,6 @@ test('password-authenticated portals share publication, submissions and private 
 });
 test('production gateways require an explicit upstream and reject malformed origins',()=>{
  const env=process.env.NODE_ENV,upstream=process.env.API_UPSTREAM;process.env.NODE_ENV='production';delete process.env.API_UPSTREAM;
- try{assert.throws(()=>startPortal({role:'student'}),/API_UPSTREAM is required/);for(const url of ['https://api.example/path','https://api.example/?token=secret','https://api.example/#fragment','https://user:pass@api.example'])assert.throws(()=>startPortal({role:'student',upstream:url}),/HTTP\(S\) origin/);}
+ try{assert.throws(()=>startPortal({role:'student'}),/API_UPSTREAM is required/);assert.throws(()=>startPortal({role:'admin',upstream:'http://api.example'}),/must use HTTPS/);for(const url of ['https://api.example/path','https://api.example/?token=secret','https://api.example/#fragment','https://user:pass@api.example'])assert.throws(()=>startPortal({role:'student',upstream:url}),/HTTP\(S\) origin/);}
  finally{if(env===undefined)delete process.env.NODE_ENV;else process.env.NODE_ENV=env;if(upstream===undefined)delete process.env.API_UPSTREAM;else process.env.API_UPSTREAM=upstream;}
 });

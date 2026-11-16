@@ -6,6 +6,7 @@ const root=path.resolve(options.root||process.env.STATIC_DIRECTORY||path.join(__
 if(process.env.NODE_ENV==='production'&&!options.upstream&&!process.env.API_UPSTREAM)throw Error('API_UPSTREAM is required in production');
 const upstream=new URL(options.upstream||process.env.API_UPSTREAM||'http://127.0.0.1:3003');
 if(!['http:','https:'].includes(upstream.protocol)||upstream.username||upstream.password||upstream.pathname!=='/'||upstream.search||upstream.hash)throw Error('API_UPSTREAM must be an HTTP(S) origin without credentials');
+if(process.env.NODE_ENV==='production'&&upstream.protocol!=='https:')throw Error('Production API_UPSTREAM must use HTTPS');
 const publicOrigin=options.publicOrigin||process.env.RENDER_EXTERNAL_URL;
 const allowedOrigins=publicOrigin?[publicOrigin,...(process.env.PORTAL_ORIGINS||'').split(',').filter(Boolean)]:[];
 for(const origin of allowedOrigins){const parsed=new URL(origin);if(parsed.origin!==origin||parsed.protocol!=='https:')throw Error('Portal origins must be exact HTTPS origins');}
