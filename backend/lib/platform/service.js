@@ -318,7 +318,7 @@ async function createPlatform(store, { demo = false, origin = 'http://127.0.0.1:
                     await q.run('INSERT INTO nova_lesson_note_revisions VALUES(?,?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET revision=excluded.revision',[u.id,lid,current+1]);return send(res,200,{ok:true,revision:current+1});
                   }fail(405,'روش مجاز نیست.');
                 }
-                if(route==='/profile' && req.method==='GET')return send(res,200,{user:publicUser(u),avatar:(await q.one('SELECT avatar FROM nova_profiles WHERE user_id=?',[u.id]))?.avatar||1});
+                if(route==='/profile' && req.method==='GET')return send(res,200,{user:publicUser(u),avatar:(await q.one('SELECT avatar FROM nova_profiles WHERE user_id=?',[u.id]))?.avatar||1,avatarImage:(await q.one('SELECT avatar_data FROM nova_profile_extended WHERE user_id=?',[u.id]))?.avatar_data||null});
                 if(route==='/profile' && req.method==='POST'){
                     const avatar=integer(data.avatar,1,8);
                     await q.run('INSERT INTO nova_profiles(user_id,avatar) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET avatar=excluded.avatar',[u.id,avatar]);

@@ -9,6 +9,7 @@ CREATE INDEX IF NOT EXISTS nova_sessions_user ON nova_sessions(user_id);
 CREATE TABLE IF NOT EXISTS nova_throttles(key_hash TEXT PRIMARY KEY,failures INTEGER NOT NULL,window_at BIGINT NOT NULL);
 CREATE TABLE IF NOT EXISTS nova_courses(id TEXT PRIMARY KEY,title TEXT NOT NULL,description TEXT NOT NULL DEFAULT '',status TEXT NOT NULL CHECK(status IN('draft','published','archived')),created_by TEXT NOT NULL REFERENCES nova_users(id),created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS nova_planner(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES nova_users(id),course_id TEXT REFERENCES nova_courses(id),title TEXT NOT NULL,details TEXT NOT NULL,kind TEXT NOT NULL,starts_at TEXT NOT NULL,ends_at TEXT NOT NULL,priority TEXT NOT NULL,status TEXT NOT NULL,revision INTEGER NOT NULL DEFAULT 1,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS nova_planner_style(plan_id TEXT PRIMARY KEY REFERENCES nova_planner(id),color TEXT NOT NULL,position INTEGER NOT NULL DEFAULT 100000);
 CREATE INDEX IF NOT EXISTS nova_planner_owner_time ON nova_planner(user_id,starts_at);
 CREATE TABLE IF NOT EXISTS nova_teachers(course_id TEXT NOT NULL REFERENCES nova_courses(id),user_id TEXT NOT NULL REFERENCES nova_users(id),PRIMARY KEY(course_id,user_id));
 CREATE TABLE IF NOT EXISTS nova_enrollments(course_id TEXT NOT NULL REFERENCES nova_courses(id),user_id TEXT NOT NULL REFERENCES nova_users(id),status TEXT NOT NULL CHECK(status IN('active','withdrawn')),PRIMARY KEY(course_id,user_id));
