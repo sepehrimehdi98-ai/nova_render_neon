@@ -2,3 +2,28 @@
 
 @media(max-width:760px){body:has(.nova-login-brand) :is(.login-form,.login-box) input,body:has(.nova-login-brand) form input:not([type=checkbox]){font-size:16px;min-height:44px}body:has(.nova-login-brand) form button[type=submit]{min-height:44px}}
 @media(max-width:760px){body:has(.nova-login-brand){min-width:0}}
+
+/* Preserve the complete login design at tablet and phone sizes. */
+@media(max-width:1023px){
+ .nova-student-login,.login-page,.nova-admin-login{display:grid;grid-template-columns:minmax(0,1fr);min-width:0;min-height:100svh;height:auto;overflow:visible}
+ .nova-student-login .student-login-form-panel{min-height:auto;padding:28px 20px;width:100%;min-width:0}
+ .nova-student-login .student-login-form-panel>div{max-width:480px;width:100%;margin-inline:auto}
+ .nova-student-login .login-code-panel{display:flex!important;flex-direction:column;min-height:0;height:auto;padding:28px 22px;gap:24px;order:1}
+ .nova-student-login .login-code-panel>div.relative{min-width:0;max-width:480px;width:100%;margin-inline:auto}
+ .nova-student-login .login-code-panel h2{font-size:25px;line-height:1.7}
+ .nova-student-login .login-code-panel .float-slow{animation:none;transform:none;max-width:100%}
+ .nova-student-login .login-code-panel code{white-space:pre-wrap;overflow-wrap:anywhere}
+ .login-page .login-story,.nova-admin-login .admin-login-story{display:flex!important;position:relative;flex-direction:column;align-items:flex-start;min-height:0;height:auto;padding:28px 24px;gap:16px;overflow:hidden}
+ .login-page .login-story .story-copy{position:relative;z-index:1;max-width:580px;margin:0}
+ .login-page .story-copy h1,.nova-admin-login .admin-login-story h1{font-size:27px;line-height:1.65;margin:0}
+ .login-page .story-copy>p:last-of-type,.nova-admin-login .admin-login-story>p{font-size:13px;line-height:1.9;margin:10px 0 0}
+ .login-page .login-quote{position:relative;inset:auto;max-width:100%;width:100%;margin:0;padding:16px;font-size:12px}
+ .login-page .login-form-wrap,.nova-admin-login .admin-login-panel{min-height:0;height:auto;padding:24px 20px;min-width:0}
+ .login-page .login-form,.nova-admin-login .admin-login-form{width:100%;max-width:480px;min-width:0;padding:24px 20px;margin-inline:auto}
+ .nova-admin-login .admin-login-code{transform:none;padding:16px;min-width:0}
+ .nova-admin-login .admin-login-code code{font-size:13px;overflow-wrap:anywhere;white-space:normal}
+ body:has(.nova-login-brand) :is(input:not([type=checkbox]),select){font-size:16px;min-height:48px;max-width:100%;min-width:0}
+ body:has(.nova-login-brand) button[type=submit]{min-height:48px}
+ .nova-designer-credit{overflow-wrap:anywhere}
+}
+@media(max-width:380px){.nova-student-login .student-login-form-panel,.login-page .login-form-wrap,.nova-admin-login .admin-login-panel{padding-inline:14px}.login-page .login-form,.nova-admin-login .admin-login-form{padding:20px 16px}.nova-login-brand{gap:8px}.nova-login-word{font-size:20px}}

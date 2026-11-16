@@ -93,8 +93,8 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-dvh bg-white lg:grid-cols-[0.92fr_1.08fr]" dir="rtl">
-      <section className="flex min-h-dvh flex-col px-6 py-6 sm:px-12 lg:px-[10%] lg:py-8">
+    <main className="nova-student-login grid min-h-dvh bg-white lg:grid-cols-[0.92fr_1.08fr]" dir="rtl">
+      <section className="student-login-form-panel flex min-h-dvh flex-col px-6 py-6 sm:px-12 lg:px-[10%] lg:py-8">
         <LoginBrand />
         <div className="mx-auto flex w-full max-w-[410px] flex-1 flex-col justify-center py-12">
           <span className="mb-5 grid size-12 place-items-center rounded-[17px] bg-[#eee8ff] text-[#512DA8]">
