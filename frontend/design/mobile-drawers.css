@@ -1,0 +1,41 @@
+.mobile-panel-drawer:not([open]){display:none}.mobile-panel-drawer[open]{display:block}
+.mobile-drawer-trigger{display:none}.mobile-panel-drawer{position:fixed;inset:0 0 0 auto;margin:0;width:min(360px,calc(100vw - 28px));max-width:100%;height:100dvh;max-height:100dvh;padding:0;border:0;border-radius:18px 0 0 18px;background:#fff;color:#29394d;box-shadow:-10px 0 40px #17253620;font-family:Vazirmatn,Tahoma}.mobile-panel-drawer::backdrop{background:#17253670}.mobile-panel-drawer>header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px;border-bottom:1px solid #e1e7ee}.mobile-panel-drawer h2{font-size:18px;font-weight:750;margin:0}.mobile-panel-drawer>header button{display:grid;place-items:center;width:44px;height:44px;background:#f2f4f7;border:0;border-radius:12px;color:#48586c;cursor:pointer}.mobile-drawer-content{padding:18px 16px max(24px,env(safe-area-inset-bottom));overflow-y:auto;max-height:calc(100dvh - 86px);overscroll-behavior:contain}.mobile-drawer-content nav{display:grid;gap:8px}.mobile-drawer-content nav>a,.mobile-drawer-content nav>button,.mobile-drawer-content>.tc-new{display:flex;gap:10px;align-items:center;min-height:48px;width:100%;padding:12px 14px;border:1px solid #e0e6ed;border-radius:10px;background:#fff;color:#41546c;text-align:right;font:14px/1.8 Vazirmatn,Tahoma;text-decoration:none;cursor:pointer;overflow-wrap:anywhere}.mobile-drawer-content nav>:is(.active,[aria-current=page]){background:#edf3fc;border-color:#b9cce7;color:#255eaa}.mobile-drawer-content>h2{font-size:13px;color:#64748a;margin:22px 0 12px}.mobile-drawer-content>p{font-size:12px;color:#62738a;line-height:1.9;margin-top:20px}.mobile-panel-drawer :is(button,a):focus-visible{outline:2px solid #4d7ab7;outline-offset:3px}
+@media(max-width:1023px){
+ body:has(.mobile-panel-drawer[open]){overflow:hidden}
+ .mobile-drawer-trigger{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;min-width:44px;border:1px solid #dce3ec;border-radius:10px;background:#fff;color:#3c526d;padding:8px 11px;font:13px Vazirmatn,Tahoma;cursor:pointer;flex:none}
+ .platform-shell:is(.platform-admin,.platform-teacher)>.platform-header>nav{display:none!important}
+ .platform-shell.platform-teacher .app-shell>.sidebar,.platform-shell.platform-admin .admin-live-nav{display:none!important}
+ .platform-shell.platform-teacher .app-shell{display:block!important}
+ .platform-shell.platform-teacher .app-shell .main-shell{margin:0!important;margin-inline:0!important;width:100%!important;min-width:0}
+ .platform-shell.platform-teacher .app-shell .page{padding:24px 18px;min-width:0}
+ .platform-shell.platform-admin .admin-live-layout{display:block;grid-template-columns:minmax(0,1fr)}
+ .platform-shell.platform-admin .admin-live-main{padding:0 18px 28px}
+ .platform-shell.platform-admin .admin-live-heading{gap:18px;padding-block:24px}
+ .platform-shell.platform-admin .admin-live-heading>label{width:100%;display:grid;gap:8px;font-size:13px}
+ .platform-shell.platform-admin .admin-live-heading select{width:100%;max-width:none;min-height:48px;font-size:16px}
+ .platform-shell:is(.platform-admin,.platform-teacher) :is(.live-panel,.teacher-white-panel){padding:22px 18px}
+ .platform-shell:is(.platform-admin,.platform-teacher) .section-top{gap:14px;flex-wrap:wrap}
+ .platform-shell:is(.platform-admin,.platform-teacher) :is(.btn,.teacher-outline-button){min-height:46px;font-size:14px;line-height:1.8;white-space:normal}
+ .platform-shell:is(.platform-admin,.platform-teacher) :is(.live-field input:not([type=checkbox]):not([type=radio]),.live-field textarea,.live-field select){font-size:16px;min-height:46px}
+ .platform-shell.platform-teacher .teacher-assistant-full>.teacher-conversation{grid-template-columns:minmax(0,1fr)}
+ .platform-shell.platform-teacher .teacher-conversation>.tc-sidebar{display:none!important}
+ .platform-shell.platform-teacher .tc-main>header{gap:10px;padding:16px}
+ .platform-shell.platform-teacher .tc-main>header .mobile-drawer-trigger span{display:none}
+ .platform-shell.platform-teacher .teacher-assistant-full .tc-messages{padding:22px 16px}
+ .platform-shell.platform-teacher .teacher-assistant-full .tc-message p{font-size:15px;line-height:2}
+ .platform-shell.platform-teacher .teacher-assistant-full .source-composer{padding:12px}
+}
+@media(max-width:380px){.platform-header>.mobile-drawer-trigger span{display:none}.platform-shell.platform-admin .admin-live-main{padding-inline:12px}.platform-shell.platform-teacher .app-shell .page{padding-inline:12px}}
+.composer-web-toggle{display:flex;gap:8px;align-items:center;font-size:12px;color:#53667a;min-height:42px;line-height:1.8}.composer-web-toggle input{width:17px;height:17px;accent-color:#547991}@media(max-width:760px){.composer-web-toggle{font-size:13px;min-height:46px}}
+
+@media(max-width:1023px){
+ .platform-shell:is(.platform-admin,.platform-teacher)>.platform-header>.mobile-drawer-trigger{width:44px;padding:9px}
+ .platform-shell:is(.platform-admin,.platform-teacher)>.platform-header>.mobile-drawer-trigger>span{display:none}
+ .platform-shell:is(.platform-admin,.platform-teacher)>.platform-header>.platform-account{display:flex;flex:1;min-width:0;max-width:none;gap:7px;margin-inline-start:auto}
+ .platform-shell:is(.platform-admin,.platform-teacher) .platform-account-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .platform-shell:is(.platform-admin,.platform-teacher) .header-avatar{width:32px;height:32px;font-size:22px}
+}
+
+.mobile-drawer-trigger:focus-visible{outline:2px solid #4d7ab7;outline-offset:3px}
+
+@media(max-width:1023px){.platform-shell.platform-teacher .tc-main>header .tc-mode-label{display:none}}

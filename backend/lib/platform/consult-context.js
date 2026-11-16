@@ -5,4 +5,5 @@ function builderContext(input){
  const terms=[...new Set((String(input.question||'').toLowerCase().match(/[\p{L}\p{N}_]{3,}/gu)||[]))].slice(0,24);
  return (input.blocks||[]).map((b,index)=>({b,index,score:terms.filter(t=>(b.title+' '+b.body).toLowerCase().includes(t)).length})).sort((a,b)=>b.score-a.score||a.index-b.index).slice(0,12).sort((a,b)=>a.index-b.index).map(({b})=>({id:b.id,kind:b.kind,title:b.title,body:String(b.body||'').slice(0,1500),...(b.description?{description:b.description.slice(0,400)}:{})}));
 }
-module.exports={builderContext};
+function summaryContext(input){return (input.blocks||[]).map(({sampleAnswer,correct,feedback,explanation,...block})=>block)}
+module.exports={builderContext,summaryContext};

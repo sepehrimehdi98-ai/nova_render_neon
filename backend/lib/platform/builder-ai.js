@@ -10,11 +10,13 @@ function documentEvidence(documents,question){
 }
 function validateBuilderReply(value,input,evidence){
  const result=require('./lesson-studio').validateProposal(require('./lesson-copy').cleanLessonProposal(value));
+ if(input.webSearch)validateWebReply(value,evidence);
  const citations=value.citations||[];
  if(!Array.isArray(citations)||citations.length>30||citations.some(id=>!evidence.some(e=>e.id===id))||(value.basis==='sources'||needsCitation(input.question,evidence))&&!citations.length)throw Error('INVALID_AI_RESPONSE');
  for(const o of result.operations){if(o.action==='update'&&!input.blocks.some(b=>b.id===o.target&&b.kind===o.block.kind))throw Error('INVALID_AI_RESPONSE');if(o.action==='add'&&input.blockTypes?.length&&!input.blockTypes.includes(o.block.kind))throw Error('INVALID_AI_RESPONSE');}
- if(input.intent==='summary'&&(!result.operations.length||result.operations.some(o=>o.block.kind!=='summary')))throw Error('INVALID_AI_RESPONSE');
+ if(input.intent==='summary'&&(result.operations.length!==1||result.operations.some(o=>o.block.kind!=='summary')))throw Error('INVALID_AI_RESPONSE');
  if(input.intent==='proposal'&&!result.operations.length)throw Error('INVALID_AI_RESPONSE');
  return {...result,sources:evidence.filter(e=>citations.includes(e.id)).map(({text,...s})=>({...s,excerpt:text.slice(0,650)})),verification:'source-ids-checked; teacher-review-required; code-not-executed'};
 }
-module.exports={needsCitation,documentEvidence,validateBuilderReply,validateConversationReply,jsonWithValidation};
+function validateWebReply(value,evidence){if(evidence.some(s=>s.id.startsWith('web:'))&&!value.citations?.some(id=>evidence.some(s=>s.id===id&&s.id.startsWith('web:'))))throw Error('INVALID_AI_RESPONSE');return value;}
+module.exports={validateWebReply,needsCitation,documentEvidence,validateBuilderReply,validateConversationReply,jsonWithValidation};
