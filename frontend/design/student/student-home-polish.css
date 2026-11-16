@@ -1,0 +1,23 @@
+.platform-student .student-coding-hero{border-radius:24px;min-height:300px}
+.platform-student .student-home-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:26px}
+.student-home-actions>a{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:11px 18px;border-radius:12px;font-size:13px;font-weight:700;text-decoration:none}
+.student-home-actions .sh-continue{background:#cef68d;color:#193b2c}
+.student-home-actions .sh-planner{background:#ffffff0d;border:1px solid #ffffff40;color:#f0f8f2}
+.student-home-actions .sh-exams{color:#e4f3e9;padding-inline:10px}
+.student-home-actions>a:hover{filter:brightness(1.08)}
+.student-home-actions>a:focus-visible{outline:2px solid #d9f6ac;outline-offset:4px}
+.platform-student .student-home-achievement{border:1px solid #dce8cf;background:#f0f6e7;border-radius:20px;box-shadow:none}
+.platform-student .student-home-achievement h3{color:#2d4c35;line-height:1.7}
+.platform-student .student-home-achievement p{color:#526646;font-size:12px}
+.platform-student .student-live-home .sh-section-title h2{font-size:21px;line-height:1.7}
+.platform-student .student-live-home .sh-section-title>a{min-height:44px;display:inline-flex;align-items:center;gap:7px}
+@media(max-width:760px){
+ .platform-student .student-coding-hero{padding:24px 20px;min-height:0;border-radius:20px}
+ .platform-student .student-coding-hero h1{font-size:27px;line-height:1.6}
+ .platform-student .student-home-actions{gap:8px;margin-top:22px}
+ .student-home-actions .sh-continue{flex:1 1 100%}
+ .student-home-actions :is(.sh-planner,.sh-exams){flex:1}
+ .platform-student .student-home-achievement{padding:20px}
+ .platform-student .student-live-home .sh-section-title{gap:10px;flex-wrap:wrap}
+ .platform-student .student-live-home .sh-section-title h2{font-size:19px}
+}

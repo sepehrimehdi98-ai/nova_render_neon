@@ -1,3 +1,4 @@
+import './student-home-polish.css';
 import HomeAgenda from '../HomeAgenda';
 import StudentActivitySummary from './StudentActivitySummary';
 import StudentHomeAdditions from './StudentHomeAdditions';
@@ -37,17 +38,10 @@ export default function HomePage() {
           <p className="mt-2 max-w-[460px] text-xs leading-7 text-[#c9bbe8]">
             درس‌های دوره‌ات را ادامه بده، برنامه‌ات را تنظیم کن و قدم بعدی یادگیری را انتخاب کن.
           </p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link
-              href="/lessons"
-              className="inline-flex items-center gap-2 rounded-2xl bg-[#b7f536] px-5 py-3 text-xs font-extrabold text-[#21183d] shadow-[0_8px_25px_rgba(183,245,54,.2)]"
-            >
-              ادامه یادگیری <Icon name="arrow" className="size-4 rotate-180" />
-            </Link>
-            <span className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-[11px] text-[#d9d0ea]">
-              <Icon name="clock" className="size-4" />
-              با برنامه خودت پیش برو
-            </span>
+          <div className="student-home-actions">
+            <Link href="/lessons" className="sh-continue">ادامه یادگیری <Icon name="arrow" className="size-4 rotate-180"/></Link>
+            <Link href="/planner" className="sh-planner"><Icon name="clock" className="size-4"/>برنامه من</Link>
+            <Link href="/exams" className="sh-exams">آزمون‌های من <Icon name="arrow" className="size-4 rotate-180"/></Link>
           </div>
         </div>
         <div className="student-hero-animation relative z-10 mx-auto h-[220px] w-full max-w-[330px]" aria-label="نمونه کد پایتون">
@@ -85,7 +79,7 @@ export default function HomePage() {
           <StudentActivitySummary/>
         </div>
         <aside className="space-y-5">
-          <div className="rounded-[26px] bg-[#e9f7c9] p-5">
+          <div className="student-home-achievement rounded-[26px] bg-[#e9f7c9] p-5">
             <div className="flex items-start justify-between">
               <div>
                 <span className="text-[10px] font-bold text-[#687545]">افتخار این هفته</span>
