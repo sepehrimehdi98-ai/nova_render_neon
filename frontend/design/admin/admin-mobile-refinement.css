@@ -88,3 +88,12 @@
  .admin-live-main .student-report-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
  .admin-live-main .student-report-actions button{min-height:44px;white-space:normal}
 }
+
+/* Status and action text must remain whole, including Persian joiners/descenders. */
+.admin-live-main .course-status,.admin-live-main .account-role,.admin-live-main .chip{height:auto;min-height:32px;max-width:100%;white-space:normal;line-height:2.1;overflow:visible;text-overflow:clip;flex-shrink:0;padding-block:5px}
+.admin-live-main .admin-course-choices>button>span:last-child{flex:1;min-width:0}
+.admin-live-main .admin-ticket-link strong{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:2}
+.admin-live-main .admin-course-counts>span{flex-wrap:wrap;line-height:2;min-width:0}
+.admin-live-main :is(.course-status,.admin-course-counts)>svg{flex-shrink:0}
+.admin-live-main .admin-lesson-cards article>header{align-items:flex-start}
+@media(max-width:480px){.admin-live-main .admin-lesson-cards article>header>.course-status{margin-inline-start:44px}.admin-live-main .admin-course-summary>div:first-child>.course-status{margin-inline-start:0}.admin-live-main .admin-lesson-cards article>footer>.btn{flex:1 1 150px}}
