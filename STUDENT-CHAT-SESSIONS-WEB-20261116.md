@@ -18,7 +18,7 @@ Reference APIs: [MediaWiki search](https://www.mediawiki.org/wiki/API:Search), [
 
 ## Response and execution optimizations
 
-Model requests carry smaller recent history. Independent review remains enabled but receives cited evidence and lesson assessment context rather than duplicate full conversation/source bundles. The browser polls only a pending job rather than downloading a whole saved conversation repeatedly. Search sources are fetched concurrently and cached; normal chat does not trigger web search.
+Model requests carry smaller recent history. Independent review remains enabled but receives cited evidence, lesson assessment context and the last two shortened turns rather than duplicate full conversation/source bundles. The browser polls only a pending job rather than downloading a whole saved conversation repeatedly. Search sources are fetched concurrently and cached; normal chat does not trigger web search.
 
 Each code box can warm Python on pointer/focus interaction and reuse its own worker for repeated runs. Every run gets a new Python globals dictionary; stdout, stderr and input are reset. Workers expire after 60 idle seconds, terminate on Stop/unmount/timeouts, and preserve the existing 24,000-character output cap and 45-second execution limit. Runtime load failures can be retried. Initial download/startup still depends on device/network speed; a fresh Python namespace does not claim a completely new Python process or module registry.
 
