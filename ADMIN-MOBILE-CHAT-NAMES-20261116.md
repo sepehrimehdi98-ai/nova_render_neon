@@ -1,0 +1,11 @@
+# Admin mobile layout, guides and optional chat names
+
+Admin progress, stored-data and event pages now use content-sized headers, wrapping controls, readable metric groups and contained scrolling for wide tables. Progress follows the admin's selected course. Mobile headings no longer let filters overlap the next panel. The established Persian RTL palette and desktop navigation are preserved.
+
+Instructions for records/privacy, queue interpretation, recovery delivery and media workflow are accessible through the existing dismissible, section-highlighting guide. Live errors, data timestamps and consequential recovery/backup warnings remain visible. Guide panels scroll within short viewports; step controls wrap.
+
+Student and teacher main assistants provide an optional editable chat name. Rename uses POST to the owned conversation's /rename route, scoped to account and course, with a 120-character limit. Blank names reset to the default. Sending a message no longer replaces the default title with message content. Existing names are retained until edited. The lesson builder still keeps its lesson consultation rather than a separate chat-session list.
+
+Independent link reading and teacher web retrieval run concurrently, preserving citation validation, file access checks, bounded retrieval and explicit proposal approval. This reduces avoidable serial waiting when both sources are requested; it does not guarantee provider latency or bypass quotas. Student answer review and code verification remain enabled.
+
+Validation: all 62 automated tests and the autosave lifecycle checks pass, including admin accounts, ticket privacy, publication and personal/class chart integration. Chat tests additionally cover rename limits, invalid types, persistence, first-message behavior and other-account denial. All portal builds, main build and component checks pass. Browser checks cover progress, records and health at 320, 768 and 1440 pixels with no page-wide overflow or header-child overlap. Mobile event role/search filters, guide opening/closing and teacher/student chat naming were exercised. Local student response was labelled extractive, not generated AI. See the handoff evidence for live deployment status and AI-provider limitations; local success is not proof that every live action has been tested.

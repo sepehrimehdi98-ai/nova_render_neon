@@ -1,0 +1,67 @@
+/* Headers must grow with wrapped controls; never let a fixed shell height clip them. */
+.admin-live-main :is(.teacher-view-header,.sd-intro,.sd-records>header,.media-library-group>header,.recovery-page-intro){height:auto;min-height:0;position:static;inset:auto;flex-shrink:0;backdrop-filter:none}
+.admin-live-main :is(.teacher-progress,.saved-data-view,.operations-page,.live-panel,.progress-class,.progress-detail){min-width:0;max-width:100%}
+.admin-live-main :is(h1,h2,h3,p,strong,dt,dd,time){overflow-wrap:anywhere}
+.admin-live-main .teacher-view-header{margin-bottom:24px;gap:20px;align-items:flex-start;padding:0;background:transparent;border:0}
+.admin-live-main .teacher-table-scroll{max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
+.admin-live-main .progress-stats{grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:12px}
+.admin-live-main .progress-stats>div{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:start;gap:10px;padding:16px}
+.admin-live-main .progress-stats svg{position:static;width:22px;height:22px}
+.admin-live-main .progress-stats span{padding:0;white-space:normal;line-height:1.8;font-size:13px}
+.admin-live-main .progress-stats strong{grid-column:1/-1;margin:0;text-align:right;font-size:23px;line-height:1.7}
+.admin-live-main .sd-intro{background:transparent;border:0;padding:0;margin-bottom:0}
+.admin-live-main .sd-records>header{margin:0;background:#fff;border:0}
+.admin-live-main .operations-page>.live-panel>.section-top{flex-wrap:wrap;height:auto;align-items:flex-start}
+.admin-live-main .operations-metrics>div{min-width:0;align-content:start}
+.admin-live-main .operations-metrics span{white-space:normal;line-height:1.9}
+.admin-live-main .operations-metrics strong{line-height:1.6}
+.admin-live-main .operations-filters>.live-field{min-width:0;flex:1 1 220px}
+.admin-live-main .operations-filters :is(input,select){width:100%;min-width:0;max-width:100%}
+.admin-live-main .system-analysis table{min-width:620px}
+.admin-live-main .system-analysis :is(th,td){white-space:normal;line-height:1.9}
+.admin-live-main .system-analysis th:first-child,.admin-live-main .system-analysis td:first-child{min-width:180px;overflow-wrap:anywhere}
+.admin-live-main .nova-audit-event :is(.audit-event-heading,.audit-event-footer,.audit-event-facts){height:auto;min-height:0}
+.admin-live-main .audit-event-sentence{display:block;line-height:2.1}
+.admin-live-main .audit-event-sentence :is(strong,span){margin-inline-end:5px}
+@media(max-width:760px){
+ .admin-live-main{padding-inline:16px!important}
+ .admin-live-main .admin-live-heading{display:grid;grid-template-columns:minmax(0,1fr) 48px;gap:16px;min-height:0;padding-block:24px;margin-bottom:24px}
+ .admin-live-heading .admin-page-title{grid-column:1/-1;min-width:0;align-items:flex-start}
+ .admin-live-heading .admin-page-title>div{min-width:0;flex:1}
+ .admin-live-heading .admin-page-title h1{font-size:23px;line-height:1.7}
+ .admin-live-heading>.admin-recovery-bell{grid-column:1;justify-self:start;min-height:44px;max-width:100%}
+ .admin-live-heading>.ai-guide-trigger{grid-column:2;grid-row:2;width:44px;height:44px;justify-self:end}
+ .admin-live-heading>label{grid-column:1/-1;display:grid;gap:8px;width:100%;font-size:13px}
+ .admin-live-heading>label select{width:100%;max-width:100%;font-size:16px}
+ .admin-live-main .live-panel{padding:20px 16px}
+ .admin-live-main .teacher-view-header{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-bottom:24px}
+ .admin-live-main .teacher-view-header h1{font-size:22px;line-height:1.7}
+ .admin-live-main .teacher-view-header>div{justify-self:stretch;display:grid;grid-template-columns:minmax(0,1fr);gap:12px;width:100%}
+ .admin-live-main .teacher-view-header label{min-width:0;width:100%;padding:0;border:0;display:flex;background:transparent}
+ .admin-live-main .teacher-view-header select{width:100%;max-width:100%;min-width:0;font-size:16px;min-height:48px}
+ .admin-live-main .progress-section-head{display:grid;gap:16px}
+ .admin-live-main .progress-section-head h2{font-size:20px;line-height:1.7}
+ .admin-live-main .progress-tabs{display:flex;flex-wrap:wrap;gap:8px}
+ .admin-live-main .progress-tabs button{flex:1;min-height:44px;white-space:normal;font-size:13px}
+ .admin-live-main .teacher-search{width:100%;max-width:100%;min-width:0}
+ .admin-live-main .teacher-data-table{min-width:520px;font-size:13px}
+ .admin-live-main .progress-results .teacher-data-table{min-width:0;table-layout:fixed}
+ .admin-live-main .progress-results :is(th,td){white-space:normal;overflow-wrap:anywhere;line-height:1.9}
+ .admin-live-main .teacher-data-table button{min-height:44px}
+ .admin-live-main .sd-intro{gap:12px;flex-wrap:wrap}
+ .admin-live-main .sd-intro h2{font-size:21px;line-height:1.7}
+ .admin-live-main .sd-intro>div{flex:1 1 180px}
+ .admin-live-main .sd-records>header{display:grid;gap:16px;padding:20px 16px}
+ .admin-live-main .sd-exports{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .admin-live-main .sd-exports .sd-button{white-space:normal;font-size:13px}
+ .admin-live-main .operations-metrics{grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:12px}
+ .admin-live-main .operations-metrics>div{padding:16px}
+ .admin-live-main .operations-filters{display:grid;gap:16px}
+ .admin-live-main .operations-filters>.live-field{width:100%;min-width:0}
+ .admin-live-main .system-analysis-bands>div{flex-basis:100%;padding:16px}
+ .admin-live-main .operations-security{align-items:flex-start;line-height:1.9}
+ .admin-live-main .nova-audit-event{padding:16px}
+ .admin-live-main .audit-event-heading{align-items:flex-start;gap:12px}
+ .admin-live-main .audit-event-heading time{width:100%;line-height:1.9}
+ .admin-live-main .audit-event-footer a{min-height:44px;display:inline-flex;align-items:center}
+}
