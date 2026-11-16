@@ -10,6 +10,10 @@ services:
         value: "10000"
       - key: NODE_ENV
         value: production
+      - key: AI_WEB_ENABLED
+        value: "true"
+      - key: AI_WEB_MODE
+        value: public
       - key: AI_PROVIDER
         value: openrouter
       - key: OPENROUTER_CHAT_MODEL

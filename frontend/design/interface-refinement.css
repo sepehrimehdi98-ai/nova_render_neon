@@ -22,3 +22,9 @@
 .platform-shell .student-profile-view .sp-awards-heading{flex-wrap:wrap}
 @media(max-width:760px){.platform-shell .student-profile-view .sp-current-avatar{width:76px;height:76px;min-width:76px}.platform-shell .student-profile-view .sp-current-avatar>span{font-size:45px}.platform-shell .student-profile-view .sp-avatar-grid button>span{font-size:30px}.platform-shell .student-profile-view .sp-avatar-actions .sp-button{flex:1 1 130px;font-size:12px}.platform-shell .student-profile-view .sp-heading{align-items:flex-start;flex-wrap:wrap}.platform-shell .student-profile-view .sp-identity-top h2{font-size:20px}}
 @media(prefers-reduced-motion:reduce){.student-input-surface{transition:none!important}}
+
+.platform-shell.nova-interface-meta .lesson-note .floating-lesson-note textarea,
+.platform-shell.nova-interface-meta .lesson-note .floating-lesson-note textarea:focus,
+.platform-shell.nova-interface-meta .lesson-note .floating-lesson-note textarea:focus-visible{outline:none!important;box-shadow:none!important;border:0!important;background:transparent!important;caret-color:#354455}
+.platform-shell.nova-interface-meta .lesson-note .floating-lesson-note:focus-within{border-color:#9aa6b4!important;box-shadow:none!important}
+.platform-shell.nova-interface-meta .lesson-note .floating-lesson-note:has(textarea:focus-visible){outline:2px solid #aab4c1;outline-offset:2px}

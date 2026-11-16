@@ -5,7 +5,8 @@ import {Copy,RotateCcw} from 'lucide-react';
 import './assistant-polish.css';
 import ChatPurpose from '../../ChatPurpose';
 import {api,type Row} from '../../../src/live/api';
-import {consult,extractFromFiles} from '../../consult';
+import {formatConsultResult} from '../../consult';
+import {aiFailureMessage} from '../../ai-failure';
 'use client'
 
 import Link from '../navigation'
@@ -32,6 +33,8 @@ export default function AssistantPage() {
   const chatHeight=useChatViewport();
   const [input, setInput] = useState('')
   const [purpose,setPurpose]=useState('auto')
+  const [webAvailable,setWebAvailable]=useState(false);
+  const [webSearch,setWebSearch]=useState(false),[threads,setThreads]=useState<Row[]>([]),[threadId,setThreadId]=useState(''),[threadRefresh,setThreadRefresh]=useState(0),[userId,setUserId]=useState('');const posting=useRef(false),chatContext=useRef({courseId:'',threadId:''});
   const [documents,setDocuments]=useState<Row[]>([]),[uploading,setUploading]=useState(false),[uploadError,setUploadError]=useState('');const fileInput=useRef<HTMLInputElement>(null);
 
   const [messages, setMessages] = useState<Message[]>([])
@@ -45,35 +48,26 @@ export default function AssistantPage() {
   useEffect(()=>{setLessons([]);setLockedLessons([]);setLessonId('');if(!courseId)return;const c=new AbortController();setContextLoading(true);setContextError('');Promise.all([api('/courses/'+courseId,undefined,c.signal),api('/courses/'+courseId+'/structure',undefined,c.signal)]).then(([r,structure])=>{if(!c.signal.aborted){setLessons(r.lessons);setLockedLessons(structure.locked||[]);setLessonId(r.lessons.find((l:Row)=>!structure.locked?.includes(l.id))?.id||'');setContextLoading(false)}}).catch(e=>{if(!c.signal.aborted){setContextError(e.message);setContextLoading(false)}});return()=>c.abort()},[courseId,contextAttempt])
   useEffect(()=>{setDocuments([]);setUploadError('')},[courseId]);
   const inputRef=useRef<HTMLTextAreaElement>(null)
-  useEffect(()=>{const c=new AbortController();api('/me',undefined,c.signal).then(r=>setUserName(r.user.name)).catch(()=>{});api('/capabilities',undefined,c.signal).then(r=>setService(r.ai?'online':'local')).catch(()=>{if(!c.signal.aborted)setService('unknown')});return()=>c.abort()},[])
+  useEffect(()=>{const c=new AbortController();api('/me',undefined,c.signal).then(r=>{setUserName(r.user.name);setUserId(r.user.id)}).catch(()=>{});api('/capabilities',undefined,c.signal).then(r=>{setService(r.ai?'online':'local');setWebAvailable(Boolean(r.webSearch))}).catch(()=>{if(!c.signal.aborted)setService('unknown')});return()=>c.abort()},[])
   const endRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'nearest' })
   }, [messages, typing])
 
-  function newChat() {
-    if(typing)return
-    setMessages([])
-    setInput('')
-    setSidebar(false)
-    setNotice('')
-    inputRef.current?.focus()
-  }
+  chatContext.current={courseId,threadId};
+  function refreshThreads(cid=courseId){return api('/courses/'+cid+'/student-chats').then(r=>{if(chatContext.current.courseId===cid)setThreads(r.threads)})}
+  useEffect(()=>{setMessages([]);setThreads([]);setThreadId('');if(!courseId||!userId)return;let live=true;api('/courses/'+courseId+'/student-chats').then(r=>{if(live){setThreads(r.threads);let saved='';try{saved=sessionStorage.getItem('nova-student-thread:'+userId+':'+courseId)||''}catch{}setThreadId(r.threads.some((t:Row)=>t.id===saved)?saved:r.threads[0]?.id||'')}}).catch(e=>{if(live)setNotice(e.message)});return()=>{live=false}},[courseId,userId]);
+  useEffect(()=>{if(!courseId||!threadId)return;try{sessionStorage.setItem('nova-student-thread:'+userId+':'+courseId,threadId)}catch{}let live=true,initial=true,timer:ReturnType<typeof setTimeout>;async function read(){try{const r=await api('/courses/'+courseId+'/student-chats/'+threadId);if(!live)return;if(initial){setDocuments((r.turns.at(-1)?.context.documents||[]).map((d:Row)=>({...d,courseId})));initial=false}const next:Message[]=[];for(const turn of r.turns){next.push({role:'user',text:turn.question,context:[turn.context.lessonTitle,...(turn.context.documents||[]).map((d:Row)=>d.name)].filter(Boolean).join(' · ')});if(turn.status==='completed')next.push({role:'bot',text:formatConsultResult(turn.result,turn.question)});else if(turn.status==='blocked')next.push({role:'bot',text:aiFailureMessage(turn.result),error:true})}setMessages(next);const pending=r.turns.find((t:Row)=>t.status==='queued'||t.status==='running');setTyping(Boolean(pending)||posting.current);if(pending)timer=setTimeout(()=>poll(pending.jobId),900)}catch(e){if(live){setNotice((e as Error).message);setTyping(false)}}}async function poll(jobId:string){if(!live)return;try{const r=await api('/courses/'+courseId+'/ai/jobs?jobId='+jobId);if(!live)return;const j=r.jobs[0];if(j&&['queued','running'].includes(j.status))timer=setTimeout(()=>poll(jobId),1200);else await read()}catch(e){if(live){setNotice((e as Error).message);timer=setTimeout(()=>poll(jobId),3000)}}}void read();return()=>{live=false;clearTimeout(timer)}},[courseId,threadId,threadRefresh]);
+  async function newChat(){if(typing||!courseId)return;setTyping(true);try{const t=await api('/courses/'+courseId+'/student-chats',{});setMessages([]);setThreadId(t.id);setInput('');setSidebar(false);setNotice('');await refreshThreads();inputRef.current?.focus()}catch(e){setNotice((e as Error).message)}finally{setTyping(false)}}
 
   async function attach(file:File){if(!courseId)return;setUploadError('');if(file.size>1500000||!file.size){setUploadError('فایل باید بین ۱ بایت و ۱٫۵ مگابایت باشد.');return}if(!/\.(pdf|docx|txt|md)$/i.test(file.name)){setUploadError('فقط PDF متنی، DOCX، TXT و Markdown پذیرفته می‌شود.');return}if(documents.length>=6){setUploadError('حداکثر شش فایل برای هر پیام انتخاب کنید.');return}setUploading(true);const captured=courseId;try{const base64=await new Promise<string>((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=()=>reject(Error('خواندن فایل ممکن نشد.'));r.readAsDataURL(file)});const doc=await api('/courses/'+captured+'/documents',{file:{name:file.name,base64}});setDocuments(d=>[...d,{...doc,courseId:captured}])}catch(e){setUploadError((e as Error).message)}finally{setUploading(false)}}
   async function send(text = input) {
-    if (!text.trim() || typing || uploading || contextLoading || !lessonId || !courseId) return
-    const context=[courses.find(c=>c.id===courseId)?.title,lessons.find(l=>l.id===lessonId)?.title].filter(Boolean).concat(documents.filter(d=>d.courseId===courseId).map(d=>d.name)).join(' · ')
-    setMessages((current) => [...current, { role: 'user', text: text.trim(),context }])
-    setInput('')
-    setTyping(true)
-    try{
-      const cap=['online','local'].includes(service)?{ai:service==='online'}:await api('/capabilities');setService(cap.ai?'online':'local');
-      const answer=cap.ai?await consult(courseId,lessonId,text,'','',purpose,documents.filter(d=>d.courseId===courseId).map(d=>d.id)):documents.some(d=>d.courseId===courseId)?await extractFromFiles(courseId,lessonId,text,documents.filter(d=>d.courseId===courseId).map(d=>d.id)):'جست‌وجوی محلی · '+(lessons.find(l=>l.id===lessonId)?.title||'درس')+'\n'+(await api('/lessons/'+lessonId+'/local-chat',{question:text,purpose})).answer;
-      setMessages(current=>[...current,{role:'bot',text:answer}]);
-    }catch(e){setMessages(current=>[...current,{role:'bot',text:e instanceof Error?e.message:'پاسخ دریافت نشد؛ دوباره تلاش کنید.',error:true}])}
-    finally{setTyping(false)}
+    if(!text.trim()||typing||posting.current||uploading||contextLoading||!lessonId||!courseId)return;
+    posting.current=true;setTyping(true);setNotice('');const documentIds=documents.filter(d=>d.courseId===courseId).map(d=>d.id);
+    try{let tid=threadId;if(!tid){const t=await api('/courses/'+courseId+'/student-chats',{});tid=t.id;setThreadId(tid)}const cap=['online','local'].includes(service)?{ai:service==='online'}:await api('/capabilities');setService(cap.ai?'online':'local');
+      await api(cap.ai?'/courses/'+courseId+'/ai/jobs':'/courses/'+courseId+'/student-chats/'+tid+'/local',{threadId:tid,lessonId,question:text.trim(),purpose,documentIds,publicTopic:webSearch?text.trim().slice(0,200):''});setInput('');await refreshThreads();setThreadRefresh(n=>n+1);
+    }catch(e){setNotice(e instanceof Error?e.message:'ارسال انجام نشد؛ متن درخواست حفظ شده است.');setTyping(false)}finally{posting.current=false;setThreadRefresh(n=>n+1)}
   }
 
   return (
@@ -114,9 +108,10 @@ export default function AssistantPage() {
 
         </button>
         <div className="mt-5 flex-1 overflow-y-auto px-1">
-          <h2 className="student-ai-history-heading">همین گفت‌وگو</h2>
-          {messages.filter(m=>m.role==='user').length?messages.map((m,index)=>m.role==='user'?<a key={index} className="student-ai-history-link" href={'#student-ai-message-'+index} onClick={()=>setSidebar(false)}><Icon name="bot" className="size-4"/><span>{m.text}</span></a>:null):<p className="student-ai-history-empty">پس از ارسال پرسش، دسترسی به پیام‌های همین گفت‌وگو اینجا نمایش داده می‌شود.</p>}
-          <p className="student-ai-history-empty">این فهرست تاریخچه ذخیره‌شده نیست؛ با شروع گفت‌وگوی جدید یا بارگذاری مجدد صفحه، نمای فعلی پاک می‌شود.</p>
+          <h2 className="student-ai-history-heading">گفت‌وگوهای ذخیره‌شده</h2>
+          {threads.map(t=><button type="button" key={t.id} disabled={typing} aria-pressed={threadId===t.id} className="student-ai-history-link student-chat-session" onClick={()=>{setTyping(true);setThreadId(t.id);setThreadRefresh(n=>n+1);setSidebar(false);setNotice('')}}><Icon name="bot" className="size-4"/><span>{t.title}</span></button>)}
+          {!threads.length&&<p className="student-ai-history-empty">برای شروع یک گفت‌وگوی مستقل، پیام بفرستید یا گفت‌وگوی جدید بسازید.</p>}
+          <p className="student-ai-history-empty">گفت‌وگوها برای همین حساب و دوره ذخیره می‌شوند و پس از ورود دوباره قابل مشاهده‌اند.</p>
         </div>
         <div className="border-t border-[#e2ddd7] pt-3">
           <Link
@@ -241,7 +236,7 @@ export default function AssistantPage() {
           <div className="mx-auto max-w-[780px]">
             <div className="student-input-surface rounded-[18px] border border-[#dcdfe4] bg-white p-2">
               <div className="student-ai-files">{documents.filter(d=>d.courseId===courseId).map(d=><span key={d.id}>{d.name}<button type="button" aria-label={'حذف پیوست '+d.name} disabled={typing} onClick={()=>setDocuments(items=>items.filter(x=>x.id!==d.id))}><X size={13}/></button></span>)}</div>{uploadError&&<p role="alert">{uploadError}</p>}<input hidden ref={fileInput} type="file" accept=".pdf,.docx,.txt,.md" onChange={e=>{const file=e.target.files?.[0];e.target.value='';if(file)void attach(file)}}/>
-              <ChatPurpose value={purpose} onChange={setPurpose} text={input} disabled={typing}/>
+              <label className="student-web-toggle"><input type="checkbox" checked={webSearch} disabled={typing||service!=='online'||!webAvailable} onChange={e=>setWebSearch(e.target.checked)}/>جست‌وجوی منابع عمومی وب</label><ChatPurpose value={purpose} onChange={setPurpose} text={input} disabled={typing}/>
               <textarea
                 ref={inputRef}
                 aria-label="پیام دستیار"
@@ -270,7 +265,7 @@ export default function AssistantPage() {
                 </button>
               </div>
             </div>
-            {notice&&<p className="student-ai-action-notice" role="status">{notice}</p>}
+            {notice&&<p className="student-ai-action-notice" role="alert">{notice}</p>}
             <p className="mt-2 text-center text-[8px] text-[#aaa4ae]">
               دستیار نووا ممکن است اشتباه کند؛ پاسخ‌های مهم را با محتوای درس بررسی کن.
             </p>

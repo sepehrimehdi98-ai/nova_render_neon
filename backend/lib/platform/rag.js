@@ -34,7 +34,8 @@ async function ragRoutes({q,u,route,req,data,scope,lessonScope,send,res,fail,id,
    const documents=await require('./teacher-conversation').selectedDocuments(q,u,cid,data.documentIds||[],fail,id);
    const publicTopic=data.publicTopic?text(data.publicTopic,200,3):'';
    const focusBlockId=teacher&&data.focusBlockId?text(data.focusBlockId,80,1):'';if(focusBlockId&&!JSON.parse(lesson.draft_json).blocks.some(b=>b.id===focusBlockId))fail(400,'بلوک انتخاب‌شده در پیش‌نویس نیست.');
-   const jid=await enqueue(teacher?'author':'tutor',{question,lessonId,publicTopic,focusBlockId,purpose,documentIds:documents.map(d=>d.id),...(teacher?{draft:JSON.parse(lesson.draft_json),draftRev:lesson.draft_rev}:{})});return send(res,202,{id:jid});
+   const threadId=!teacher&&data.threadId?id(data.threadId):'';let thread;if(threadId){const chats=require('./student-chats');thread=await chats.ownThread(q,u,cid,threadId,fail);await chats.room(q,threadId,u.id,fail);}
+   const jid=await enqueue(teacher?'author':'tutor',{question,lessonId,threadId,publicTopic,focusBlockId,purpose,documentIds:documents.map(d=>d.id),...(teacher?{draft:JSON.parse(lesson.draft_json),draftRev:lesson.draft_rev}:{})});if(thread){const version=await q.one('SELECT content_json FROM nova_versions WHERE lesson_id=? AND version=?',[lessonId,lesson.published_version]);await q.run('INSERT INTO nova_student_turns VALUES(?,?,?,?,?,?,?,?)',[randomUUID(),threadId,jid,question,'',JSON.stringify({lessonId,lessonTitle:JSON.parse(version.content_json).title,documents:documents.map(d=>({id:d.id,name:d.name,mime:d.mime,bytes:d.bytes}))}),'queued',new Date().toISOString()]);await require('./student-chats').touch(q,thread,question);}return send(res,202,{id:jid});
   }
  }
  fail(405,'روش مجاز نیست.');

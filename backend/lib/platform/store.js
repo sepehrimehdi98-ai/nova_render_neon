@@ -48,6 +48,11 @@ CREATE TABLE IF NOT EXISTS nova_worker_health(kind TEXT PRIMARY KEY,last_seen TE
 CREATE INDEX IF NOT EXISTS nova_enrollments_user_status ON nova_enrollments(user_id,status,course_id);
 CREATE INDEX IF NOT EXISTS nova_teachers_user ON nova_teachers(user_id,course_id);
 CREATE INDEX IF NOT EXISTS nova_ai_history ON nova_ai_jobs(user_id,course_id,lesson_id,kind,status,created_at);
+CREATE TABLE IF NOT EXISTS nova_student_threads(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES nova_users(id),course_id TEXT NOT NULL REFERENCES nova_courses(id),title TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS nova_student_threads_owner ON nova_student_threads(user_id,course_id,updated_at);
+CREATE TABLE IF NOT EXISTS nova_student_turns(id TEXT PRIMARY KEY,thread_id TEXT NOT NULL REFERENCES nova_student_threads(id),job_id TEXT UNIQUE REFERENCES nova_ai_jobs(id),question TEXT NOT NULL,answer TEXT NOT NULL,context_json TEXT NOT NULL,status TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS nova_student_turns_thread ON nova_student_turns(thread_id,created_at);
+
 CREATE INDEX IF NOT EXISTS nova_attempts_lesson_version ON nova_attempts(lesson_id,version);
 CREATE INDEX IF NOT EXISTS nova_practice_lesson_date ON nova_practice(lesson_id,created_at);
 CREATE TABLE IF NOT EXISTS nova_audit(id TEXT PRIMARY KEY,actor_id TEXT NOT NULL REFERENCES nova_users(id),action TEXT NOT NULL,target_id TEXT NOT NULL,created_at TEXT NOT NULL);

@@ -22,7 +22,7 @@ test('Document processing and index synchronize revisions and reject revoked sou
 test('Web evidence uses provider annotations, allowlisted HTTPS URLs and explicit cost opt-in',async()=>{
  const original=global.fetch;let request;
  try{
- const env={AI_PROVIDER:'openrouter',OPENROUTER_API_KEY:'test',AI_WEB_ENABLED:'true'};
+ const env={AI_PROVIDER:'openrouter',OPENROUTER_API_KEY:'test',AI_WEB_ENABLED:'true',AI_WEB_MODE:'openrouter'};
  await assert.rejects(provider(env).search('Python loops'),/WEB_NOT_CONFIGURED/);
  global.fetch=async(url,opts)=>{request=JSON.parse(opts.body);return new Response(JSON.stringify({choices:[{message:{content:'Untrusted generated summary is not evidence',annotations:[{type:'url_citation',url_citation:{url:'https://docs.python.org/3/tutorial/',title:'Python',content:'Official tutorial excerpt about loops and iteration.'}},{type:'url_citation',url_citation:{url:'https://evil.test/',content:'Untrusted site content about programming.'}},{type:'url_citation',url_citation:{url:'https://docs.python.org/no-content',title:'No excerpt'}}]}}]}));};
  const sources=await provider({...env,OPENROUTER_FREE_ONLY:'false'}).search('Python loops');assert.equal(sources.length,1);assert.equal(request.messages[1].content,'Python loops');assert.equal(request.plugins[0].max_results,3);assert.match(sources[0].url,/docs.python.org/);

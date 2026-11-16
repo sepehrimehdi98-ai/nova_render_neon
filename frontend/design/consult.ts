@@ -10,8 +10,7 @@ export async function consult(course:string,lessonId:string,question:string,publ
     const current=jobs.find((row:Row)=>row.id===job.id);
     if(current?.status==='completed'){
       const result=JSON.parse(current.result_json);
-      const citations=(result.sources||[]).map((source:Row)=>(source.url||source.title||'محتوای درس')+(source.page?' · '+source.page:'')).join('\n');
-      return String(result.answer)+(result.linkNotices?.length?'\n\n'+result.linkNotices.join('\n'):'')+(citations?'\n\n'+(/[\u0600-\u06ff]/.test(question)?'منابع:':'Sources:')+'\n'+citations:'')+(result.webStatus==='unavailable'?'\nجست‌وجوی وب در دسترس نبود؛ فقط منابع نمایش‌داده‌شده و دانش عمومی در دسترس بودند.':'');
+      return formatConsultResult(result,question);
     }
     if(current && ['failed','blocked'].includes(current.status)){const code=JSON.parse(current.result_json||'{}').error;
  if(documentIds.length&&['AI_DAILY_LIMIT','AI_RATE_LIMITED','AI_PROVIDER_UNAVAILABLE','AI_TIMEOUT'].includes(code)){return extractFromFiles(course,lessonId,question,documentIds);}
@@ -19,4 +18,9 @@ const errors:Record<string,string>={AI_DAILY_LIMIT:'سهمیه روزانه سر
     await new Promise(resolve=>setTimeout(resolve,1000));
   }
   return 'درخواست ثبت شد و در صف پردازش است.';
+}
+
+export function formatConsultResult(result:Row,question:string){
+ const citations=(result.sources||[]).map((source:Row)=>(source.url||source.title||'محتوای درس')+(source.page?' · '+source.page:'')).join('\n');
+ return String(result.answer)+(result.linkNotices?.length?'\n\n'+result.linkNotices.join('\n'):'')+(citations?'\n\n'+(/[\u0600-\u06ff]/.test(question)?'منابع:':'Sources:')+'\n'+citations:'')+(result.webStatus==='unavailable'?(/[\u0600-\u06ff]/.test(question)?'\nجست‌وجوی وب در دسترس نبود؛ پاسخ بر پایه جست‌وجوی وب نیست.':'\nWeb search was unavailable; this answer is not web-grounded.'):result.webStatus==='no_verified_sources'?(/[\u0600-\u06ff]/.test(question)?'\nمنبع عمومی مرتبطی پیدا نشد؛ پاسخ بر پایه جست‌وجوی وب نیست.':'\nNo matching public references were found; this answer is not web-grounded.'):'');
 }
