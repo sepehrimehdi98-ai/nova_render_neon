@@ -7,7 +7,7 @@
   },
   "scripts": {
     "start": "node product-server.js",
-    "test": "node --test --test-isolation=none test/planner.test.js test/passwords.test.js test/platform-database.test.js test/platform-extensions.test.js test/platform-journey.test.js test/platform-learning.test.js test/ai-examples.test.js test/openrouter.test.js test/rag-pipeline.test.js test/lesson-cover.test.js test/builder-inputs.test.js test/teacher-workspace.test.js test/learning-workspace.test.js test/lesson-studio.test.js test/builder-consultation.test.js test/consult-context.test.js test/chat-input.test.js test/profile-conversation.test.js test/roles-connected.test.js test/chat-behavior.test.js test/ai-speed.test.js test/backup-safety.test.js test/admin-oversight.test.js test/lesson-note-security.test.js test/recovery-workflow.test.js",
+    "test": "node --test --test-isolation=none test/dashboard-home.test.js test/planner.test.js test/passwords.test.js test/platform-database.test.js test/platform-extensions.test.js test/platform-journey.test.js test/platform-learning.test.js test/ai-examples.test.js test/openrouter.test.js test/rag-pipeline.test.js test/lesson-cover.test.js test/builder-inputs.test.js test/teacher-workspace.test.js test/learning-workspace.test.js test/lesson-studio.test.js test/builder-consultation.test.js test/consult-context.test.js test/chat-input.test.js test/profile-conversation.test.js test/roles-connected.test.js test/chat-behavior.test.js test/ai-speed.test.js test/backup-safety.test.js test/admin-oversight.test.js test/lesson-note-security.test.js test/recovery-workflow.test.js",
     "db:migrate": "node scripts/platform-migrate.js",
     "db:check": "node scripts/database-check.js",
     "admin:create": "node scripts/platform-admin.js",

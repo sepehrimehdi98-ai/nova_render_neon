@@ -1,3 +1,4 @@
+import {useChatViewport} from '../../useChatViewport';
 import {Paperclip,X,BookOpen,ChevronDown} from 'lucide-react';
 import AiMessage from '../../AiMessage';
 import {Copy,RotateCcw} from 'lucide-react';
@@ -28,6 +29,7 @@ const starters = [
 ]
 
 export default function AssistantPage() {
+  const chatHeight=useChatViewport();
   const [input, setInput] = useState('')
   const [purpose,setPurpose]=useState('auto')
   const [documents,setDocuments]=useState<Row[]>([]),[uploading,setUploading]=useState(false),[uploadError,setUploadError]=useState('');const fileInput=useRef<HTMLInputElement>(null);
@@ -75,7 +77,7 @@ export default function AssistantPage() {
   }
 
   return (
-    <div className="student-conversation-layout flex h-dvh overflow-hidden bg-white text-[#233e2e]" dir="rtl">
+    <div className="student-conversation-layout flex h-dvh overflow-hidden bg-white text-[#233e2e]" style={chatHeight?{height:chatHeight}:undefined} dir="rtl">
       {sidebar && (
         <button
           aria-label="بستن منو"
@@ -163,7 +165,7 @@ export default function AssistantPage() {
           </div>
         </header>
 
-        <details className="student-ai-context"><summary><BookOpen size={18}/><span>انتخاب دوره و درس</span><strong>{contextLoading?'در حال دریافت…':courses.find(c=>c.id===courseId)?.title||'دوره‌ای در دسترس نیست'}</strong><ChevronDown size={16}/></summary><div><div className="student-course-segments" role="group" aria-label="انتخاب دوره پرسش">{courses.map(c=><button type="button" key={c.id} aria-pressed={courseId===c.id} disabled={typing||uploading} onClick={()=>setCourseId(c.id)}>{c.title}</button>)}</div><label className="student-course-native">دوره<select aria-label="دوره پرسش دستیار" disabled={typing} value={courseId} onChange={e=>setCourseId(e.target.value)}>{!courses.length&&<option value="">دوره‌ای در دسترس نیست</option>}{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label><label>درس<select aria-label="درس پرسش دستیار" disabled={typing||contextLoading} value={lessonId} onChange={e=>setLessonId(e.target.value)}>{!lessons.length&&<option value="">درس منتشرشده‌ای در دسترس نیست</option>}{lessons.map(l=><option key={l.id} value={l.id} disabled={lockedLessons.includes(l.id)}>{l.title}{lockedLessons.includes(l.id)?' · نیازمند تکمیل پیش‌نیاز':''}</option>)}</select></label></div></details>
+        <details className="student-ai-context"><summary><BookOpen size={18}/><span>انتخاب دوره و درس</span><strong>{contextLoading?'در حال دریافت…':courses.find(c=>c.id===courseId)?.title||'دوره‌ای در دسترس نیست'}</strong><ChevronDown size={16}/></summary><div><div className="student-course-segments" role="group" aria-label="انتخاب دوره پرسش">{courses.map(c=><button type="button" key={c.id} aria-pressed={courseId===c.id} disabled={typing||uploading} onClick={e=>{setCourseId(c.id);e.currentTarget.closest('details')?.removeAttribute('open')}}>{c.title}</button>)}</div><label className="student-course-native">دوره<select aria-label="دوره پرسش دستیار" disabled={typing} value={courseId} onChange={e=>setCourseId(e.target.value)}>{!courses.length&&<option value="">دوره‌ای در دسترس نیست</option>}{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label><label>درس<select aria-label="درس پرسش دستیار" disabled={typing||contextLoading} value={lessonId} onChange={e=>setLessonId(e.target.value)}>{!lessons.length&&<option value="">درس منتشرشده‌ای در دسترس نیست</option>}{lessons.map(l=><option key={l.id} value={l.id} disabled={lockedLessons.includes(l.id)}>{l.title}{lockedLessons.includes(l.id)?' · نیازمند تکمیل پیش‌نیاز':''}</option>)}</select></label></div></details>
         {contextError&&<p className="student-ai-context-error" role="alert">{contextError}<button type="button" disabled={typing} onClick={()=>setContextAttempt(x=>x+1)}>تلاش دوباره</button></p>}
         {!contextLoading&&!contextError&&!lessonId&&<p className="student-ai-context-error">برای پرسش مرتبط با درس، یک درس منتشرشده با پیش‌نیاز تکمیل‌شده لازم است.</p>}
         <div className="flex-1 overflow-y-auto">
@@ -235,7 +237,7 @@ export default function AssistantPage() {
           )}
         </div>
 
-        <div className="shrink-0 bg-gradient-to-t from-white via-white to-white/0 px-4 pb-4 pt-4">
+        <div className="student-chat-composer shrink-0 bg-gradient-to-t from-white via-white to-white/0 px-4 pb-4 pt-4">
           <div className="mx-auto max-w-[780px]">
             <div className="rounded-[22px] border border-[#dcd6df] bg-white p-2 shadow-[0_12px_38px_rgba(41,30,58,.11)] focus-within:border-[#5b966b]">
               <div className="student-ai-files">{documents.filter(d=>d.courseId===courseId).map(d=><span key={d.id}>{d.name}<button type="button" aria-label={'حذف پیوست '+d.name} disabled={typing} onClick={()=>setDocuments(items=>items.filter(x=>x.id!==d.id))}><X size={13}/></button></span>)}</div>{uploadError&&<p role="alert">{uploadError}</p>}<input hidden ref={fileInput} type="file" accept=".pdf,.docx,.txt,.md" onChange={e=>{const file=e.target.files?.[0];e.target.value='';if(file)void attach(file)}}/>

@@ -1,4 +1,4 @@
-import {PlannerSummary} from '../Planner';
+import HomeAgenda from '../HomeAgenda';
 import StudentActivitySummary from './StudentActivitySummary';
 import StudentHomeAdditions from './StudentHomeAdditions';
 import {api} from '../../src/live/api';
@@ -102,7 +102,7 @@ export default function HomePage() {
               <div className="h-full rounded-full bg-[#6e9a21]" style={{width:(learning?.percent||0)+'%'}} />
             </div>
           </div>
-          <PlannerSummary/>
+          <HomeAgenda role="student"/>
 
         </aside>
       </div>

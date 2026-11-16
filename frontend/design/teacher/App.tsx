@@ -1,3 +1,5 @@
+import HomeAgenda from '../HomeAgenda';
+import {useChatViewport} from '../useChatViewport';
 import Planner,{PlannerSummary} from '../Planner';
 import AiGuide from '../AiGuide';
 import {builderGuide} from '../PanelGuides';
@@ -278,7 +280,91 @@ function Topbar({ title, onNew }: { title: string; onNew: () => void }) {
   );
 }
 
-function خانه({goدرس‌ها}:{goدرس‌ها:()=>void}){const [courses,setCourses]=useState<Row[]>([]),[name,setName]=useState(''),[error,setError]=useState('');useEffect(()=>{Promise.all([api('/me'),api('/courses')]).then(([me,c])=>{setName(me.user.name);setCourses(c.courses)}).catch(e=>setError(e.message))},[]);return <section className="teacher-real-home"><header><h1>سلام {name}، امروز چه چیزی می‌سازیم؟</h1><p>دوره‌های واقعی شما، برنامه شخصی و زمان کلاس‌ها</p><button className="btn primary" onClick={goدرس‌ها}>مدیریت دوره‌ها و درس‌ها</button></header>{error&&<p role="alert">{error}</p>}<div className="teacher-course-links">{courses.map(c=><a key={c.id} href={'/?page=lessons&course='+c.id}><BookOpen size={18}/>{c.title}<small>{c.status==='published'?'منتشرشده':c.status==='archived'?'بایگانی':'پیش‌نویس'}</small></a>)}</div><PlannerSummary/></section>}
+function خانه({ goدرس‌ها }: { goدرس‌ها: () => void }) {
+  const [data,setData]=useState<Row|null>(null),[error,setError]=useState(''),[agenda,setAgenda]=useState<Row[]>([]);
+  useEffect(()=>{const c=new AbortController();api('/dashboard/home',undefined,c.signal).then(setData).catch(e=>{if(!c.signal.aborted)setError(e.message)});return()=>c.abort()},[]);
+  const stats=data?.summary,todayClasses=agenda.filter(e=>e.kind==='class').length,number=(n:unknown)=>typeof n==='number'?n.toLocaleString('fa-IR'):'—';
+  return (
+    <div className="page-stack">
+      <section className="hero">
+        <div>
+          <p className="eyebrow light">{new Date().toLocaleDateString('fa-IR',{weekday:'long',day:'numeric',month:'long'})}</p>
+          <h2>
+            سلام {data?.user.name||'دبیر گرامی'}.
+            <br />
+            <em>آماده‌ای الهام‌بخش باشی؟</em>
+          </h2>
+          <p>{data?`امروز ${number(todayClasses)} کلاس و ${number(stats.pendingReviews)} تمرین در انتظار بررسی دارید.`:'در حال دریافت نمای امروز شما…'}</p>{error&&<p role="alert">{error}</p>}
+          <a className="light-btn" href="/?page=lessons&newLesson=1">
+            ساخت درس <Icon name="arrow" size={18} />
+          </a>
+        </div>
+        <div className="hero-art">
+          <div className="sun" />
+          <div className="book-art">
+            <span />
+            <span />
+            <span />
+          </div>
+          <a className="float-card fc1" href="/?page=assistant">
+            <Icon name="sparkle" size={16} /> گفت‌وگو با دستیار
+          </a>
+          <div className="float-card fc2">
+            {number(stats?.pendingReviews)} <small>برای بررسی</small>
+          </div>
+        </div>
+      </section>
+      <section className="stats-grid">
+        <Stat
+          icon="users"
+          label="دانش‌آموز فعال"
+          value={number(stats?.activeStudents)}
+          یادداشت="ثبت‌نام فعال در دوره‌های شما"
+          tone="green"
+        />
+        <Stat
+          icon="book"
+          label="درس منتشرشده"
+          value={number(stats?.publishedLessons)}
+          یادداشت={data?number(stats.draftLessons)+" درس پیش‌نویس":"در حال دریافت…"}
+          tone="purple"
+        />
+        <Stat
+          icon="exam"
+          label="بررسی‌های معلق"
+          value={number(stats?.pendingReviews)}
+          یادداشت="تمرین‌های ارزیابی‌نشده"
+          tone="orange"
+        />
+        <Stat
+          icon="chart"
+          label="میانگین نمره"
+          value={stats?.averageScore==null?"—":number(Math.round(stats.averageScore))+"٪"}
+          یادداشت="میانگین آزمون‌های ارسال‌شده"
+          tone="blue"
+        />
+      </section>
+      <div className="content-split">
+        <section className="panel">
+          <div className="panel-head">
+            <div>
+              <p className="eyebrow">محتوای شما</p>
+              <h3>درس‌های اخیر</h3>
+            </div>
+            <button onClick={goدرس‌ها}>
+              مشاهده همه <Icon name="arrow" size={15} />
+            </button>
+          </div>
+          <div className="lesson-list">
+            {(data?.lessons||[]).map((lesson:Row,i:number)=><a className="lesson-row restored-lesson-row" href={'/?page=lessons&course='+lesson.course_id} key={lesson.id}><span className="lesson-icon" style={{background:['#eaf4dc','#eee7ff','#fff0df'][i%3]}}><Icon name="book" size={21}/></span><div className="lesson-info"><strong>{lesson.title}</strong><span>{lesson.course_title}</span></div><span className={'status '+lesson.status}>{lesson.status==='published'?'منتشرشده':'پیش‌نویس'}</span><div className="mini-progress" aria-label="تکمیل نسخه منتشرشده توسط دانش‌آموزان"><span>{lesson.progress===null?'—':number(lesson.progress)+'٪'}</span><div><i style={{width:(lesson.progress??0)+'%'}}/></div></div><span className="more-btn"><Icon name="arrow" size={16}/></span></a>)}{data&&!data.lessons.length&&<p className="teacher-empty">هنوز درسی در دوره‌های شما ثبت نشده است.</p>}
+          </div>
+        </section>
+        <HomeAgenda role="teacher" onLoad={setAgenda}/>
+      </div>
+    </div>
+  );
+}
+
 
 function Stat({
   icon,
@@ -1041,7 +1127,7 @@ function SampleAnalyticsPage() {
 
 function پیام‌هاPage() { return <LiveTickets role="teacher"/>; }
 
-function TeacherAssistantPage(){const [courses,setCourses]=useState<Row[]>([]),[cid,setCid]=useState('');useEffect(()=>{api('/courses').then(r=>{setCourses(r.courses);const preferred=new URLSearchParams(location.search).get('course');setCid(r.courses.some((c:Row)=>c.id===preferred)?preferred:r.courses[0]?.id||'')})},[]);return <div className="teacher-modern-view teacher-assistant-full"><label className="document-course-select">دوره<select aria-label="دوره گفت‌وگو" value={cid} onChange={e=>setCid(e.target.value)}>{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label><TeacherConversation key={cid} course={cid}/></div>}
+function TeacherAssistantPage(){const chatHeight=useChatViewport();const [courses,setCourses]=useState<Row[]>([]),[cid,setCid]=useState('');useEffect(()=>{api('/courses').then(r=>{setCourses(r.courses);const preferred=new URLSearchParams(location.search).get('course');setCid(r.courses.some((c:Row)=>c.id===preferred)?preferred:r.courses[0]?.id||'')})},[]);return <div className="teacher-modern-view teacher-assistant-full" style={chatHeight?{height:chatHeight}:undefined}><label className="document-course-select">دوره<select aria-label="دوره گفت‌وگو" value={cid} onChange={e=>setCid(e.target.value)}>{courses.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label><TeacherConversation key={cid} course={cid}/></div>}
 
 function Dashboard() {
   const [page, setPage] = useState<Page>(()=>new URLSearchParams(location.search).get('page')==='planner'?'برنامه‌ریز':new URLSearchParams(location.search).get('page')==='exams'?'آزمون‌ها':new URLSearchParams(location.search).get('page')==='lessons'?'درس‌ها':new URLSearchParams(location.search).get('page')==='assistant'?'دستیار':new URLSearchParams(location.search).get('page')==='progress'?'تحلیل‌ها':new URLSearchParams(location.search).get('page')==='tickets'?'پیام‌ها':'خانه');
