@@ -9,7 +9,7 @@ test('task routing pairs models with matching keys while preserving prompts and 
  await client.forTask('block',{intent:'proposal'}).json('Be a teacher',{question:'Create a code block',evidence:[{id:'doc:1:1',text:'print(8)'}]});
  await client.forTask('tutor',{}).json('Independently check relevance',{draft:{answer:'ok'}});
  await client.forTask('tutor',{documentIds:['doc']}).json('Answer from file',{question:'Summarize',evidence:{sources:[]}});
- assert.equal(requests[0].model,env.OPENROUTER_CHAT_MODEL);assert.equal(requests[0].key,'Bearer chat-test-only');
+ assert.deepEqual(requests[0].response_format,{type:'json_object'});assert.equal(requests[0].reasoning.enabled,false);assert.equal(requests[0].model,env.OPENROUTER_CHAT_MODEL);assert.equal(requests[0].key,'Bearer chat-test-only');
  for(const r of requests.slice(1)){assert.equal(r.model,env.OPENROUTER_CONTENT_MODEL);assert.equal(r.key,'Bearer content-test-only')}
  assert.equal(JSON.parse(requests[0].messages[1].content).history[0].answer,'previous');assert.equal(JSON.parse(requests[1].messages[1].content).evidence[0].text,'print(8)');
  assert.match(requests[0].messages[0].content,/untrusted reference data/);assert.equal(client.embeddingModel,'local-keyword-v1');assert.equal((await client.embed(['متغیر']))[0].length,1024);assert.equal(requests.length,4);
