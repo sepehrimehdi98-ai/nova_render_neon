@@ -53,3 +53,11 @@ test('ordinary lesson consultation cannot produce unsolicited block operations',
  assert.equal(allowsBuilderOperations({question:'سلام',intent:'proposal',blockTypes:['text']}),true);
  let calls=0;const reply=await jsonWithValidation({json:async()=>++calls===1?proposal:{answer:'Yes, let us discuss the lesson.',operations:[],citations:[],basis:'general'}},'Consultation only',input,v=>validateBuilderReply(v,input,[]));assert.equal(calls,2);assert.equal(reply.operations.length,0);
 });
+
+test('Persian output rejects foreign fragments and uses one bounded repair without changing code',async()=>{
+ const {validateReplyLanguage}=require('../lib/platform/reply-language'),{jsonWithValidation}=require('../lib/platform/builder-ai');
+ assert.throws(()=>validateReplyLanguage({answer:'متغیر را 前に آموزش بده'},{question:'روش تدریس متغیر چیست؟'}),/INVALID_AI_RESPONSE/);
+ assert.throws(()=>validateReplyLanguage({answer:'از Random words استفاده کن'},{question:'فقط فارسی پاسخ بده'}),/INVALID_AI_RESPONSE/);
+ assert.doesNotThrow(()=>validateReplyLanguage({answer:'کد: `print("你好")`',operations:[{block:{kind:'code',body:'print("你好")'}}]},{question:'یک مثال فارسی برای کد بده'}));
+ let calls=0;const answer=await jsonWithValidation({json:async()=>({answer:++calls===1?'متغیر 前に':'متغیر نامی برای اشاره به یک مقدار است.',operations:[]})},'Consult naturally',{question:'متغیر چیست؟'},()=>{});assert.equal(calls,2);assert.ok(!answer.answer.includes('前'));
+});
