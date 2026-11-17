@@ -2,7 +2,7 @@
 const ULTRA='nvidia/nemotron-3-ultra-550b-a55b:free';
 function configured(env=process.env){return env.AI_PROVIDER==='openrouter'?Boolean(env.OPENROUTER_CHAT_API_KEY||env.OPENROUTER_CONTENT_API_KEY||env.OPENROUTER_API_KEY):Boolean(env.LIARA_AI_API_KEY&&env.LIARA_AI_CHAT_MODEL);}
 function contentTask(kind,input={}){return ['document','author','review','index'].includes(kind)||Boolean(input.documentIds?.length)||kind==='block'&&Boolean(input.intent==='proposal'||input.intent==='summary'||input.blockTypes?.length||input.target);}
-function contentRequest(instruction,data={}){return /^(Independently|Check source|Refine|Act as a teacher author)/.test(instruction)||data.intent==='proposal'||data.intent==='summary'||Boolean(data.blockTypes?.length||data.selectedDocuments?.length||data.document)||Boolean(Array.isArray(data.evidence)&&data.evidence.some(e=>e.documentId));}
+function contentRequest(instruction,data={}){return require('./response-style').responseStyle(data.question,data.purpose).language==='Persian'||/^(Independently|Check source|Refine|Act as a teacher author)/.test(instruction)||data.intent==='proposal'||data.intent==='summary'||Boolean(data.blockTypes?.length||data.selectedDocuments?.length||data.document)||Boolean(Array.isArray(data.evidence)&&data.evidence.some(e=>e.documentId));}
 function routedProvider(env,signal,create){
  if(env.AI_PROVIDER!=='openrouter'||!env.OPENROUTER_CHAT_API_KEY&&!env.OPENROUTER_CONTENT_API_KEY)return create(env,signal);
  const clients=new Map();

@@ -33,3 +33,7 @@ Blocked: Lightning chat calls returned AI_AUTHENTICATION_FAILED. OPENROUTER_CHAT
 ## Corrected key deployment and retest
 
 Render deployment dep-dbu1v2kipgvc73afp5h0 (6234a217) succeeded after saving the corrected chat key and restoring the accidentally renamed API_KEYOPENROUTER_ field to OPENROUTER_API_KEY. Live teacher chat served Lightning directly, and Super VL file reading, lesson summary and admin consultation passed. One existing student-context test was withheld by review rather than failing authentication; a fresh student chat then passed on Lightning with independent model review. Both primary model credentials now work. Full API observations: teacher chat ~4.1 seconds, file reading ~10.2 seconds, builder summary ~10.4 seconds, admin consultation ~10.3 seconds, fresh student chat ~7.6 seconds. These include requests/polling and are not provider-only timings or guarantees. The earlier link-citation check remains a separate unresolved validation item.
+
+## Current routing after teacher QA
+
+Persian answers now select Super VL directly because Lightning produced visibly garbled/mixed Persian in live comparisons. Explicit English ordinary requests retain Lightning. This applies consistently to main chat, builder consultation and tutoring without changing prompts/history/RAG permissions or adding a routing model call. File analysis, authoring and independent review remain on Super VL. See TEACHER-AI-VALIDATION-20261117.md for the consultation-only guard, safe reference redirects and live coverage.

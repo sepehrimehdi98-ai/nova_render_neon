@@ -5,7 +5,7 @@ const {configured}=require('../lib/platform/ai-routing');
 const env={AI_PROVIDER:'openrouter',OPENROUTER_CHAT_API_KEY:'chat-test-only',OPENROUTER_CONTENT_API_KEY:'content-test-only',OPENROUTER_API_KEY:'legacy-test-only',OPENROUTER_CHAT_MODEL:'nvidia/nemotron-3.5-lightning:free',OPENROUTER_CONTENT_MODEL:'nvidia/nemotron-3.5-super-vl:free'};
 test('task routing pairs models with matching keys while preserving prompts and evidence',async()=>{
  const old=global.fetch,requests=[];try{global.fetch=async(url,opts)=>{requests.push({url,key:opts.headers.authorization,...JSON.parse(opts.body)});return new Response(JSON.stringify({choices:[{message:{content:'{"answer":"ok","citations":[]}'}}]}))};
- const client=provider(env);await client.json('Answer the teacher',{question:'سلام',history:[{answer:'previous'}]});
+ const client=provider(env);await client.json('Answer the teacher',{question:'Hello',history:[{answer:'previous'}]});
  await client.forTask('block',{intent:'proposal'}).json('Be a teacher',{question:'Create a code block',evidence:[{id:'doc:1:1',text:'print(8)'}]});
  await client.forTask('tutor',{}).json('Independently check relevance',{draft:{answer:'ok'}});
  await client.forTask('tutor',{documentIds:['doc']}).json('Answer from file',{question:'Summarize',evidence:{sources:[]}});
@@ -28,4 +28,8 @@ test('route cooldown is isolated, readiness supports new keys, free guard and op
  assert.equal(configured({...env,OPENROUTER_API_KEY:''}),true);assert.throws(()=>provider({...env,OPENROUTER_CONTENT_MODEL:'paid'}),/FREE_MODEL_REQUIRED/);
  calls=0;global.fetch=async()=>{calls++;return new Response('{}',{status:503})};await assert.rejects(provider({...env,OPENROUTER_FREE_FALLBACK:'off'}).json('Answer',{}));assert.equal(calls,1);
  }finally{global.fetch=old}
+});
+
+test('Persian replies select content model directly while explicit English keeps fast chat',async()=>{
+ const old=global.fetch,requests=[];try{global.fetch=async(url,opts)=>{requests.push({key:opts.headers.authorization,...JSON.parse(opts.body)});return new Response(JSON.stringify({choices:[{message:{content:'{"answer":"ok"}'}}]}))};const client=provider(env);await client.forTask('block',{}).json('Consult naturally',{question:'روش تدریس متغیرها چیست؟'});await client.forTask('tutor',{}).json('Explain',{question:'متغیر چیست؟ Answer in English, briefly.'});assert.equal(requests.length,2);assert.equal(requests[0].model,env.OPENROUTER_CONTENT_MODEL);assert.equal(requests[0].key,'Bearer content-test-only');assert.equal(requests[1].model,env.OPENROUTER_CHAT_MODEL);assert.equal(requests[1].key,'Bearer chat-test-only');assert.match(requests[0].messages[0].content,/fluent natural Persian/)}finally{global.fetch=old}
 });
