@@ -210,7 +210,7 @@ async function createPlatform(store, { demo = false, origin = 'http://127.0.0.1:
             if (route === '/health' && req.method === 'GET') {
                 await store.tx(q => q.one('SELECT 1 AS healthy'));
                 const worker=await store.tx(q=>q.one("SELECT last_seen FROM nova_worker_health WHERE kind='ai'"));
-                const aiReady=Boolean(worker&&Date.now()-Date.parse(worker.last_seen)<900000&&(process.env.OPENROUTER_API_KEY||process.env.LIARA_AI_API_KEY));
+                const aiReady=Boolean(worker&&Date.now()-Date.parse(worker.last_seen)<900000&&(require('./ai-routing').configured()));
                 return send(res, 200, { ok: true, demoMode: demo, storage: store.postgres ? 'postgresql' : 'sqlite-local', aiReady });
             }
             let data = {};

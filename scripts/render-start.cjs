@@ -14,11 +14,11 @@ const startupDeadline = setTimeout(() => {
 }, 60000);
 (async () => {
   let worker;
-  if(process.env.OPENROUTER_API_KEY) require('../backend/lib/platform/rag-engine').provider();
+  if(require('../backend/lib/platform/ai-routing').configured()) require('../backend/lib/platform/rag-engine').provider();
   const app = await require('../backend/product-server').start({onStartup:report});
   clearTimeout(startupDeadline);
   console.info(JSON.stringify({event:'nova_listening',address:app.server.address()}));
-  if(process.env.OPENROUTER_API_KEY) {
+  if(require('../backend/lib/platform/ai-routing').configured()) {
     worker=require('node:child_process').fork(require('node:path').join(__dirname,'../backend/scripts/ai-worker.js'),[],{stdio:'inherit'});
     worker.on('exit',()=>{console.error('AI worker exited; restarting service.');app.close().finally(()=>process.exit(1));});
     app.server.on('request',(req,res)=>{if(req.method!=='POST')return;res.once('finish',()=>{if((res.statusCode===202||res.statusCode===201&&req.url.includes('/ai/sources'))&&worker?.connected)worker.send({type:'nova:ai-work'},()=>{});});});

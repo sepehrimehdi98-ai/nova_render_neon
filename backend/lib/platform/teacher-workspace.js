@@ -33,7 +33,7 @@ async function teacherWorkspace(c){
  const cid=id(m[1]);await scope(q,u,cid);if(m[2]==='my-progress'){if(req.method!=='GET'||u.role!=='student')fail(403,'فقط عملکرد شخصی دانش‌آموز');return personalProgress(c,cid);}if(u.role==='student'&&(m[2]!=='documents'||m[3]&&m[4]!=='file'))fail(403,'این بخش فقط برای مدرس و مدیر است.');const reply=(x,status=200)=>send(res,status,x);
  if(m[2]==='progress'){if(req.method!=='GET')fail(405,'روش مجاز نیست.');return progress(c,cid);}
  if(!m[3]){
-  if(req.method==='GET')return reply({documents:await q.all('SELECT id,name,mime,bytes,pages_json,created_at FROM nova_documents WHERE course_id=? AND user_id=? ORDER BY created_at DESC LIMIT 50',[cid,u.id]).then(rows=>rows.map(({pages_json,...r})=>({...r,pages:JSON.parse(pages_json).length}))),online:!!(process.env.OPENROUTER_API_KEY||process.env.LIARA_AI_API_KEY)});
+  if(req.method==='GET')return reply({documents:await q.all('SELECT id,name,mime,bytes,pages_json,created_at FROM nova_documents WHERE course_id=? AND user_id=? ORDER BY created_at DESC LIMIT 50',[cid,u.id]).then(rows=>rows.map(({pages_json,...r})=>({...r,pages:JSON.parse(pages_json).length}))),online:!!(require('./ai-routing').configured())});
   const n=await q.one('SELECT COUNT(*) AS n FROM nova_documents WHERE user_id=? AND course_id=?',[u.id,cid]);if(Number(n.n)>=50)fail(409,'حداکثر ۵۰ سند در هر دوره؛ برای مدیریت اسناد با مدیر تماس بگیرید.');
   if(data.file?.base64?.length>2000000)fail(413,'حجم فایل بیشتر از ۱٫۵ مگابایت است.');let f;try{f=await parseDocument(data.file)}catch{fail(400,'فایل PDF متنی، DOCX، TXT یا Markdown تا ۱٫۵ مگابایت، ۱۰۰ صفحه و ۱۲۰هزار نویسه لازم است. فایل اسکن‌شده نیاز به OCR دارد.');}
   const did=randomUUID();await q.run('INSERT INTO nova_documents VALUES(?,?,?,?,?,?,?,?)',[did,cid,u.id,f.name,f.mime,f.bytes,JSON.stringify(f.pages),new Date().toISOString()]);await q.run('INSERT INTO nova_document_files VALUES(?,?)',[did,f.buffer.toString('base64')]);return reply({id:did,name:f.name,mime:f.mime,bytes:f.bytes,pages:f.pages.length},201);
@@ -44,7 +44,7 @@ async function teacherWorkspace(c){
  if(m[4]==='jobs'&&req.method==='GET')return reply({jobs:await q.all("SELECT id,status,result_json FROM nova_ai_jobs WHERE course_id=? AND user_id=? AND kind='document' ORDER BY created_at DESC LIMIT 30",[cid,u.id])});
  if(m[4]!=='chat'||req.method!=='POST')fail(405,'روش مجاز نیست.');if(data.mode!==undefined&&!['local','online'].includes(data.mode))fail(400,'روش پاسخ معتبر نیست.');const question=text(data.question,4000,3);const at=new Date().toISOString();
  if(data.mode==='online'){
-  if(!(process.env.OPENROUTER_API_KEY||process.env.LIARA_AI_API_KEY))fail(503,'سرویس AI آنلاین تنظیم نشده؛ استخراج محلی در دسترس است.');
+  if(!(require('./ai-routing').configured()))fail(503,'سرویس AI آنلاین تنظیم نشده؛ استخراج محلی در دسترس است.');
   if(q.postgres)await q.one('SELECT id FROM nova_users WHERE id=? FOR UPDATE',[u.id]);const n=await q.one("SELECT COUNT(*) AS n FROM nova_ai_jobs WHERE user_id=? AND (status='queued' OR status='running' OR created_at>?)",[u.id,new Date(Date.now()-3600000).toISOString()]);if(Number(n.n)>=20)fail(429,'سقف درخواست؛ کمی بعد دوباره تلاش کنید.');
   const jid=randomUUID();await q.run('INSERT INTO nova_ai_jobs VALUES(?,?,?,?,?,?,?,?,?,?,?)',[jid,u.id,cid,null,'document',JSON.stringify({question,documentId:doc.id}),'queued','{}',null,null,at]);await message('user',question,[],'online');return reply({id:jid,status:'queued'},202);
  }
