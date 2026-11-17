@@ -24,7 +24,7 @@ test('OpenRouter routing, authentication, JSON and safe failures',async()=>{
  assert.throws(()=>provider({...env,OPENROUTER_CHAT_MODEL:'paid-model'}),/FREE_MODEL_REQUIRED/);
  assert.throws(()=>provider({...env,OPENROUTER_API_KEY:''}),/AI_NOT_CONFIGURED/);
  global.fetch=async()=>new Response('{}',{status:429});await assert.rejects(client.json('',{}),/AI_RATE_LIMITED/);
- global.fetch=async()=>new Response(JSON.stringify({error:{message:'secret'}}));await assert.rejects(client.json('',{}),/AI_PROVIDER_UNAVAILABLE/);
+ global.fetch=async()=>new Response(JSON.stringify({error:{message:'secret'}}));await assert.rejects(provider(env).json('',{}),/AI_PROVIDER_UNAVAILABLE/);
  global.fetch=async()=>new Response(JSON.stringify({choices:[{message:{content:'invalid json'}}]}));await assert.rejects(client.json('',{}));
  }finally{global.fetch=original;}
 });
@@ -69,4 +69,4 @@ test('Seeded lessons persist and OpenRouter RAG completes student and teacher jo
 });
 
 
-test('daily provider quota uses a short shared cooldown without repeated upstream requests',async()=>{const previous=global.fetch;let calls=0;try{global.fetch=async()=>{calls++;return new Response(JSON.stringify({error:{message:'Daily free models per day limit exceeded'}}),{status:429})};const client=provider({AI_PROVIDER:'openrouter',OPENROUTER_API_KEY:'test'});await assert.rejects(client.json('Explain',{}),/AI_DAILY_LIMIT/);await assert.rejects(client.json('Explain again',{}),e=>e.message==='AI_DAILY_LIMIT'&&e.retryAfterSeconds<=300);assert.equal(calls,1)}finally{global.fetch=previous}});
+test('daily provider quota waits for reset without repeated inference requests',async()=>{const previous=global.fetch;let calls=0;try{global.fetch=async()=>{calls++;return new Response(JSON.stringify({error:{message:'Daily free models per day limit exceeded'}}),{status:429})};const client=provider({AI_PROVIDER:'openrouter',OPENROUTER_API_KEY:'test'});await assert.rejects(client.json('Explain',{}),/AI_DAILY_LIMIT/);await assert.rejects(client.json('Explain again',{}),e=>e.message==='AI_DAILY_LIMIT'&&e.retryAfterSeconds<=86400);assert.equal(calls,1)}finally{global.fetch=previous}});
