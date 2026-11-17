@@ -2,6 +2,22 @@
 const test=require('node:test'),assert=require('node:assert/strict'),{EventEmitter}=require('node:events');
 const {publicAddress,chatUrl,fetchChatReference}=require('../lib/platform/chat-reference');
 const {parseChatInput,responseLanguage,resolveChatLinks}=require('../lib/platform/chat-input');
+
+test('same-host documentation redirects recheck DNS, preserve anchors and remain bounded',async()=>{
+ const {fetchFreshReference,referenceSection}=require('../lib/platform/chat-reference');
+ const html='<p>Unrelated introduction.</p><section id="print"><h2>print</h2><p>Display values on the output stream.</p></section>';
+ assert.ok(!referenceSection(html,'#print').includes('Unrelated'));
+ assert.equal(referenceSection(html,'#missing'),html);
+ let lookups=0,requests=0;
+ const lookup=async()=>{lookups++;return [{address:'93.184.215.14',family:4}]};
+ function request(url,opts,callback){requests++;const req=new EventEmitter();req.end=()=>queueMicrotask(()=>{const res=new EventEmitter();res.statusCode=url.pathname==='/old'?301:200;res.headers=res.statusCode===301?{location:'/new'}:{'content-type':'text/html'};res.resume=()=>queueMicrotask(()=>req.emit('close'));callback(res);if(res.statusCode===200){res.emit('data',Buffer.from(html));res.emit('end');req.emit('close')}});req.destroy=e=>{req.emit('error',e);req.emit('close')};return req}
+ const text=await fetchFreshReference('https://example.org/old#print',{lookup,request});assert.match(text,/Display values/);assert.ok(!text.includes('Unrelated'));assert.equal(lookups,2);assert.equal(requests,2);
+ lookups=0;requests=0;await assert.rejects(fetchFreshReference('https://example.org/old#print',{lookup:async()=>[{address:++lookups===1?'93.184.215.14':'127.0.0.1',family:4}],request}),/UNSAFE/);assert.equal(requests,1,'redirect target is checked before another request');
+ requests=0;function redirectRequest(location){return(url,opts,callback)=>{const req=new EventEmitter();req.end=()=>queueMicrotask(()=>{const res=new EventEmitter();res.statusCode=302;res.headers={location};res.resume=()=>queueMicrotask(()=>req.emit('close'));callback(res)});req.destroy=e=>req.emit('error',e);requests++;return req}}
+ await assert.rejects(fetchFreshReference('https://example.org/old',{lookup,request:redirectRequest('https://other.org/new')}),/UNSAFE_CHAT_REDIRECT/);
+ await assert.rejects(fetchFreshReference('https://example.org/old',{lookup,request:redirectRequest('http://example.org/new')}),/UNSAFE_CHAT_LINK/);
+ requests=0;await assert.rejects(fetchFreshReference('https://example.org/old',{lookup,request:redirectRequest('/old')}),/REDIRECT_LIMIT/);assert.equal(requests,3);
+});
 test('bilingual chat accepts public links, short English and balanced URL punctuation',async()=>{
  assert.equal(responseLanguage('Hi'),'English');assert.equal(responseLanguage('متغیر چیست؟'),'Persian');assert.deepEqual(parseChatInput('Explain https://en.wikipedia.org/wiki/Python_(programming_language).').links,['https://en.wikipedia.org/wiki/Python_(programming_language)']);assert.deepEqual(parseChatInput('(https://docs.python.org/3/tutorial/).').links,['https://docs.python.org/3/tutorial/']);
  const r=await resolveChatLinks('Explain https://www.wikipedia.org/',async()=> 'Python is a programming language with readable syntax.');assert.equal(r.sources.length,1);assert.equal(r.notices.length,0);

@@ -1,0 +1,9 @@
+# Teacher and lesson-builder AI validation — 2026-11-17
+
+The live teacher assistant passed Persian conversation, English follow-up with context, selected-file fact extraction and citations, direct public-reference Q&A, and opt-in public search. The lesson builder passed code/practical-exercise proposals, four-option question generation, targeted block updates, precise summary proposals and selected-document consultation. Stored teacher messages and builder jobs were read back through the API. These checks use synthetic QA content, not private learner records.
+
+A live ordinary consultation unexpectedly returned block operations. Fixed by an explicit consultation-only system instruction and a server-side validation gate. Explicit proposal/summary/target/block-type requests authorize operations; normal conversation does not. Invalid operations get one bounded repair attempt; teacher approval is still required to alter the draft. No published lesson was modified.
+
+Some Python documentation URLs now redirect to new paths. Reference fetching now permits at most two HTTPS redirects on the same host, with fresh DNS and public-address checks at every hop. Cross-host redirects, HTTP downgrade, credentials, private destinations and redirect loops remain blocked. Fragment anchors prioritize the requested section before excerpt limits. No arbitrary redirect following or browser credentials were introduced.
+
+Local validation: full npm test passed 74 tests, including consultation gating and redirect/DNS-rebinding/anchor cases; npm run build passed. Live post-deployment validation is recorded separately in handoff evidence. Current accepted file formats and limits remain unchanged (textual PDF, DOCX, TXT, MD); this change does not add OCR. Model review/citations are safeguards, not guarantees of factual correctness.

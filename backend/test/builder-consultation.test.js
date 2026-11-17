@@ -37,7 +37,19 @@ test('lesson proposals remove decorative markup while preserving code, quotation
  const raw={answer:'## Key points\n- **Variables** store values.\n\n### Improvement\n- Add one comparison.',operations:[{action:'add',block:{kind:'code',title:'# Example',description:'- **Print** the value.',body:code}},{action:'add',block:{kind:'exercise',title:'Practice',body:'## Task\n- Print "Nova".',starter:code,sampleAnswer:code,feedback:'**Good work**'}},{action:'add',block:{kind:'summary',title:'## Summary',body:'"Variables hold values."\n- Use meaningful names.'}}],citations:[],basis:'general'};
  const clean=cleanLessonProposal(raw);assert.equal(clean.operations[0].block.body,code);assert.equal(clean.operations[1].block.starter,code);assert.equal(clean.operations[1].block.sampleAnswer,code);assert.equal(clean.operations[1].block.body,'Task\nPrint "Nova".');assert.equal(clean.operations[2].block.body,'"Variables hold values."\nUse meaningful names.');assert.ok(!clean.answer.includes('#'));assert.ok(!clean.answer.includes('**'));assert.equal(raw.operations[0].block.title,'# Example','input remains unchanged');
  assert.equal(lessonProse('C# and -2 remain; `a_b` is a name.'),'C# and -2 remain; `a_b` is a name.');assert.equal(lessonProse('```python\n# comment\nprint("Nova")\n```'),'```python\n# comment\nprint("Nova")\n```');
- assert.equal(validateBuilderReply(raw,{blocks:[]},[]).operations[0].block.body,code);
- assert.throws(()=>validateBuilderReply({...raw,citations:['forged']},{blocks:[]},[]),/INVALID_AI_RESPONSE/);
+ assert.equal(validateBuilderReply(raw,{blocks:[],intent:'proposal'},[]).operations[0].block.body,code);
+ assert.throws(()=>validateBuilderReply({...raw,citations:['forged']},{blocks:[],intent:'proposal'},[]),/INVALID_AI_RESPONSE/);
  assert.equal(cleanLessonProposal({answer:'## Ordinary chat',operations:[]}).answer,'## Ordinary chat');
+});
+
+test('ordinary lesson consultation cannot produce unsolicited block operations',async()=>{
+ const {allowsBuilderOperations,jsonWithValidation,validateBuilderReply}=require('../lib/platform/builder-ai');
+ const input={question:'Hello! Can we discuss teaching before making changes?',blocks:[]};
+ const proposal={answer:'Proposed',operations:[{action:'add',block:{kind:'text',body:'A variable refers to a value.'}}],citations:[],basis:'general'};
+ assert.equal(allowsBuilderOperations(input),false);assert.throws(()=>validateBuilderReply(proposal,input,[]),/INVALID_AI_RESPONSE/);
+ assert.equal(allowsBuilderOperations({question:'Do not change the lesson, explain variables.'}),false);
+ assert.equal(allowsBuilderOperations({question:'Add a summary of variables.'}),true);
+ assert.equal(allowsBuilderOperations({question:'یک نکته اضافه کن'}),true);
+ assert.equal(allowsBuilderOperations({question:'سلام',intent:'proposal',blockTypes:['text']}),true);
+ let calls=0;const reply=await jsonWithValidation({json:async()=>++calls===1?proposal:{answer:'Yes, let us discuss the lesson.',operations:[],citations:[],basis:'general'}},'Consultation only',input,v=>validateBuilderReply(v,input,[]));assert.equal(calls,2);assert.equal(reply.operations.length,0);
 });
