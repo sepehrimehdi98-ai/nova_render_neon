@@ -21,6 +21,11 @@ function routedProvider(env,signal,create){
   embed:texts=>route('chat').client.embed(texts),
   search:topic=>route('chat').client.search(topic),
   forTask:(kind,input)=>view(contentTask(kind,input)?'content':'chat'),
+  async repairJson(instruction,data,online=false){
+   if(!env.OPENROUTER_API_KEY||env.OPENROUTER_FREE_FALLBACK==='off')return view(task).json(instruction,data,online);
+   const name=contentRequest(instruction,data)?'content':task||'chat',result=await route('ultra').client.json(instruction,data,online),copy={...result};
+   Object.defineProperty(copy,'__routing',{value:{...result.__routing,requestedModel:route(name).model,route:name,usedFreeFallback:true,fallbackReason:'response_validation'},enumerable:false});return copy;
+  },
   async json(instruction,data,online=false){
    const name=contentRequest(instruction,data)?'content':task||'chat',primary=route(name);
    try{return await primary.client.json(instruction,data,online)}catch(error){
