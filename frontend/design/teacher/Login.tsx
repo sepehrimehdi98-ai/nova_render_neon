@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {ArrowLeft} from 'lucide-react';
+import {ArrowLeft,ShieldCheck} from 'lucide-react';
 import {api} from '../../src/live/api';
 import {LoginBrand,DesignerCredit} from '../LoginBrand';
 import AccountRecovery from '../AccountRecovery';
@@ -28,10 +28,10 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
         <div className="orbit orbit-one" />
         <div className="orbit orbit-two" />
         <div className="login-quote">
-          <div className="quote-avatar">م‌س</div>
+          <div className="quote-avatar" aria-hidden="true"><ShieldCheck size={20} strokeWidth={1.75}/></div>
           <div>
-            <strong>«نووا زمان بیشتری برای تدریس به من می‌دهد.»</strong>
-            <span>مریم سانتوس · دبیر زیست‌شناسی</span>
+            <strong>هوش مصنوعی پیشنهاد می‌دهد؛ تصمیم نهایی با شماست.</strong>
+            <span>هیچ محتوایی بدون تأیید شما به درس اضافه یا منتشر نمی‌شود.</span>
           </div>
         </div>
       </section>
